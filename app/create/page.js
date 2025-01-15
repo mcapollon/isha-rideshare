@@ -5,9 +5,9 @@ import { useForm } from 'react-hook-form'
 import { useSession } from 'next-auth/react'
 import { redirect } from 'next/navigation'
 import { CheckIcon } from '@heroicons/react/24/outline'
-import { Radio, RadioGroup } from '@headlessui/react'
 import { AddressAutofill } from '@mapbox/search-js-react'
-import { format } from 'date-fns'
+import { getCountryCode } from 'countries-list'
+import axios from 'axios'
 
 const steps = [
     {
@@ -24,23 +24,28 @@ const steps = [
 const ishaYogaCenters = [
     {
         name: 'Isha Yoga Center, Coimbatore',
-        address: 'XPGP+CMF, Isha Yoga Center Rd, Ikkaraibooluvampatti, Tamil Nadu 641114, India'
+        address: 'XPGP+CMF, Isha Yoga Center Rd, Ikkaraibooluvampatti, Tamil Nadu 641114, India',
+        coordinates: {lat: '10.9763407', long: '76.7342506'}
     },
     {
         name: 'Sadhguru Sannidhi, Bengaluru',
-        address: 'FPP4+MH, Avalagurki, Karnataka 562101'
+        address: 'FPP4+MH, Avalagurki, Karnataka 562101',
+        coordinates: {lat: '13.4861346', long: '77.7064053'}
     },
     {
         name: 'Sadhguru Sanndhi, Chattarpur',
-        address: 'Mandi Road, 4, Osho Dr, Gadaipur, New Delhi, Delhi 110030'
+        address: 'Mandi Road, 4, Osho Dr, Gadaipur, New Delhi, Delhi 110030',
+        coordinates: {lat: '28.4813421', long: '77.1517377'}
     },
     {
         name: 'Isha Institute of Inner-sciences (iii)',
-        address: '951 Isha Lane, McMinnville, TN - 37110, USA'
+        address: '951 Isha Lane, McMinnville, TN - 37110, USA',
+        coordinates: {lat: '35.5649253', long: '-85.5729322'}
     },
     {
         name: 'Isha Yoga Center, California',
-        address: 'Isha Yoga Center LA, 7045 Farralone Ave. Canoga Park, CA 91303'
+        address: 'Isha Yoga Center LA, 7045 Farralone Ave. Canoga Park, CA 91303',
+        coordinates: {lat: '34.1991773', long: '-118.6128837'}
     }
 ]
 
@@ -61,6 +66,9 @@ export default function Page() {
         handleSubmit,
         reset,
         trigger,
+        watch,
+        getValues,
+        setValue,
         formState: { errors }
     } = useForm()
 
@@ -94,10 +102,122 @@ export default function Page() {
     const { data: session, status } = useSession()
 
     const [selected, setSelected] = useState(ishaYogaCenters[3])
+    const [ishaYogaCenterSelectedCoordinates, setIshaYogaCenterSelectedCoordinates] = useState()
+    const [startingPointValue, setStartingPointValue] = useState('')
     const [mem, setMem] = useState(luggageOptions[2])
+    const [userIp, setUserIp] = useState('')
 
-    const currentDate = format(new Date(), 'yyyy-MM-ddTHH:mm')
-    console.log(format(new Date(), 'yyyy-MM-ddTHH:mm'), 'CURRENT DATE')
+    //@Todo Fix min date Requirement for calendar
+    //const currentDate = format(new Date(), 'yyyy-MM-ddTHH:mm')
+    //console.log(format(new Date(), 'yyyy-MM-ddTHH:mm'), 'CURRENT DATE')
+
+      const handleOnRetrieve = (res) => {
+        // console.log(encodeURI(res.features[0].properties.address_line1))
+        // axios.get('https://api.ipify.org?format=json')
+        // .then((response) => {
+        //     setUserIp(response.data.ip)
+        //     console.log('Your Public IP Address:', response.data.ip);
+
+        //     axios.get(`https://api.mapbox.com/search/geocode/v6/forward`, {
+        //         params: {
+        //             q: encodeURI(res.features[0].properties.address_line1),
+        //             access_token: process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN,
+        //             proximity: ip
+        //         }
+        //     })
+        //     .then((response) => {
+        //         const coordinates = response.data.features[0].geometry.coordinates
+        //         console.log('Geocoding result', coordinates)
+        //     }).catch((error) => console.log(error))
+        // })
+        // .catch(error => {
+        //     console.error('Error fetching IP:', error);
+        // });
+
+        axios.get(`https://ipinfo.io/json?`, {
+            token: process.env.NEXT_PUBLIC_IPINFO_TOKEN
+        })
+        .then((response) => {
+            console.log(getCountryCode(res.features[0].properties.country), "Country Code")
+            const [lat, long] = response.data.loc.split(',')
+
+            axios.get(`https://maps.googleapis.com/maps/api/geocode/json?`, {
+                params: {
+                    address: encodeURI(res.features[0].properties.address_line1),
+                    key: process.env.NEXT_PUBLIC_GOOGLE_MAPS,
+                    // proximity: [long, lat],
+                    // country: [getCountryCode(res.features[0].properties.country)]
+                }
+            }).then((response) => {
+                const coordinates = response.data.results[0].geometry.location
+                console.log('Geocoding results', coordinates)
+            }).catch((error) => console.log(error))
+
+        }).catch((error) => console.log(error))
+
+        // axios.get(`https://api.mapbox.com/search/geocode/v6/forward`, {
+        //     params: {
+        //         q: encodeURI(res.features[0].properties.address_line1),
+        //         access_token: process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN,
+        //         proximity: ip
+        //     }
+        // })
+        // .then((response) => {
+        //     const coordinates = response.data.features[0].geometry.coordinates
+        //     console.log('Geocoding result', coordinates)
+        // }).catch((error) => console.log(error))
+
+      }
+
+      const handleIshaYogaCenterChange = (e) => {
+        switch(e.target.value) {
+            case 'Isha Yoga Center, Coimbatore':
+                setIshaYogaCenterSelectedCoordinates({lat: '10.9763407', long: '76.7342506'})
+                break;
+            case 'Sadhguru Sannidhi, Bengaluru':
+                setIshaYogaCenterSelectedCoordinates({lat: '13.4861346', long: '77.7064053'})
+                break;
+            case 'Sadhguru Sanndhi, Chattarpur':
+                setIshaYogaCenterSelectedCoordinates({lat: '28.4813421', long: '77.1517377'})
+                break;
+            case 'Isha Institute of Inner-sciences (iii)':
+                setIshaYogaCenterSelectedCoordinates({lat: '35.5649253', long: '-85.5729322'})
+                break;
+            case 'Isha Yoga Center, California':
+                setIshaYogaCenterSelectedCoordinates({lat: '34.1991773', long: '-118.6128837'})
+                break;
+            default:
+                setIshaYogaCenterSelectedCoordinates({lat: '10.9763407', long: '76.7342506'})
+                break;
+        }
+      }
+
+    //   let timer, timoutVal = 1000
+    //   const handleKeyUp = (e) => {
+    //     window.clearTimeout(timer)
+    //     timer = window.setTimeout(() => {
+    //         //Done typing
+    //         if (!startingPointValue) {
+    //             setStartingPointValue(getValues('startingPoint'))
+    //         }
+            
+    //         console.log(startingPointValue, 'Starting Point Value')
+    //         axios.get('https://api.mapbox.com/search/geocode/v6/forward', {
+    //             params: {
+    //                 q: startingPointValue,
+    //                 access_token: process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN
+    //             }
+    //         })
+    //         .then((response) => {
+    //             const coordinates = response.data.features[0].properties.coordinates
+    //             // console.log('Geocoding result', coordinates)
+    //         })
+    //     }, timoutVal)
+    //   }
+
+      const handleKeyDown = () => {
+        window.clearTimeout(timer)
+      }
 
     if (!session || !session?.user) {
         redirect("/api/auth/signin")
@@ -168,7 +288,7 @@ export default function Page() {
                                             Starting Point
                                         </label>
                                         <div className='mt-2'>
-                                            <AddressAutofill accessToken={process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN}>
+                                            <AddressAutofill onRetrieve={(res) => {handleOnRetrieve(res)}} accessToken={process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN}>
                                                 <input
                                                     type='text'
                                                     id='startingPoint'
@@ -196,11 +316,12 @@ export default function Page() {
                                             <select
                                                 id='ishaYogaCenter'
                                                 {...register('ishaYogaCenter', { required: true })}
+                                                onChange={(e) => handleIshaYogaCenterChange(e)}
                                                 autoComplete='country-name'
                                                 className='col-start-1 ring-1 shadow-sm row-start-1 w-full appearance-none rounded-md bg-white py-1.5 pr-8 pl-3 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-[#52422a] sm:text-sm/6'
                                             >
                                                 {ishaYogaCenters.map((center, id) => (
-                                                    <option key={id}>{center.name}</option>
+                                                    <option key={id} value={center.name}>{center.name}</option>
                                                 ))}
                                             </select>
                                             {errors.lastName?.message && (
@@ -222,7 +343,7 @@ export default function Page() {
                                             <input
                                                 type='datetime-local'
                                                 id='dateAndTime'
-                                                {...register('departureTime', { min: currentDate, required: true })}
+                                                {...register('departureTime', { required: true })}
                                                 className='block w-full rounded-md border-0 p-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:outline-[#52422a] sm:text-sm sm:leading-6' />
                                             {errors.departureTime?.message && (
                                                 <p className='mt-2 text-sm text-red-400'>
