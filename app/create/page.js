@@ -5,8 +5,8 @@ import { useForm } from 'react-hook-form'
 import { useSession } from 'next-auth/react'
 import { redirect } from 'next/navigation'
 import { CheckIcon } from '@heroicons/react/24/outline'
-import { AddressAutofill } from '@mapbox/search-js-react'
-import { getCountryCode } from 'countries-list'
+import Autocomplete from "react-google-autocomplete";
+import { DirectionsService } from '@react-google-maps/api';
 import axios from 'axios'
 
 const steps = [
@@ -78,10 +78,10 @@ export default function Page() {
     }
 
     const next = async () => {
-        const fields = steps[currentStep].fields
-        const output = await trigger(fields, { shouldFocus: true })
+        // const fields = steps[currentStep].fields
+        // const output = await trigger(fields)
 
-        if (!output) return
+        // if (!output) return
 
         if (currentStep < steps.length - 1) {
             if (currentStep === steps.length - 2) {
@@ -102,122 +102,113 @@ export default function Page() {
     const { data: session, status } = useSession()
 
     const [selected, setSelected] = useState(ishaYogaCenters[3])
-    const [ishaYogaCenterSelectedCoordinates, setIshaYogaCenterSelectedCoordinates] = useState()
+    const [ishaYogaCenterSelectedCoordinates, setIshaYogaCenterSelectedCoordinates] = useState({lat: 10.9763407, lng: 76.7342506})
     const [startingPointValue, setStartingPointValue] = useState('')
     const [mem, setMem] = useState(luggageOptions[2])
     const [userIp, setUserIp] = useState('')
+    const [countryCode, setCountryCode] = useState('')
+    const [directionsResult, setDirectionsResult] = useState(null);
 
     //@Todo Fix min date Requirement for calendar
     //const currentDate = format(new Date(), 'yyyy-MM-ddTHH:mm')
     //console.log(format(new Date(), 'yyyy-MM-ddTHH:mm'), 'CURRENT DATE')
 
-      const handleOnRetrieve = (res) => {
-        // console.log(encodeURI(res.features[0].properties.address_line1))
-        // axios.get('https://api.ipify.org?format=json')
-        // .then((response) => {
-        //     setUserIp(response.data.ip)
-        //     console.log('Your Public IP Address:', response.data.ip);
+    useEffect(() => {
+        // Fetch user's country code based on IP address
+        axios.get('https://ipinfo.io/json?token=' + process.env.NEXT_PUBLIC_IPINFO_TOKEN)
+            .then(response => {
+                setCountryCode(response.data.country)
+            })
+            .catch(error => {
+                console.error('Error fetching user country code:', error);
+            });
+    }, []);
 
-        //     axios.get(`https://api.mapbox.com/search/geocode/v6/forward`, {
-        //         params: {
-        //             q: encodeURI(res.features[0].properties.address_line1),
-        //             access_token: process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN,
-        //             proximity: ip
-        //         }
-        //     })
-        //     .then((response) => {
-        //         const coordinates = response.data.features[0].geometry.coordinates
-        //         console.log('Geocoding result', coordinates)
-        //     }).catch((error) => console.log(error))
-        // })
-        // .catch(error => {
-        //     console.error('Error fetching IP:', error);
-        // });
+    const handleOnRetrieve = (res) => {
+        console.log(getCountryCode(res.features[0].properties.country), "Country Code")
+        const [lat, long] = response.data.loc.split(',')
 
-        axios.get(`https://ipinfo.io/json?`, {
-            token: process.env.NEXT_PUBLIC_IPINFO_TOKEN
-        })
-        .then((response) => {
-            console.log(getCountryCode(res.features[0].properties.country), "Country Code")
-            const [lat, long] = response.data.loc.split(',')
-
-            axios.get(`https://maps.googleapis.com/maps/api/geocode/json?`, {
-                params: {
-                    address: encodeURI(res.features[0].properties.address_line1),
-                    key: process.env.NEXT_PUBLIC_GOOGLE_MAPS,
-                    // proximity: [long, lat],
-                    // country: [getCountryCode(res.features[0].properties.country)]
-                }
-            }).then((response) => {
-                const coordinates = response.data.results[0].geometry.location
-                console.log('Geocoding results', coordinates)
-            }).catch((error) => console.log(error))
-
+        axios.get(`https://maps.googleapis.com/maps/api/geocode/json?`, {
+            params: {
+                address: encodeURI(res.features[0].properties.address_line1),
+                key: process.env.NEXT_PUBLIC_GOOGLE_MAPS,
+                // proximity: [long, lat],
+                // country: [getCountryCode(res.features[0].properties.country)]
+            }
+        }).then((response) => {
+            console.log(response)
+            const coordinates = response.data.results[0].geometry.location
+            console.log('Geocoding results', coordinates)
         }).catch((error) => console.log(error))
+    }
 
-        // axios.get(`https://api.mapbox.com/search/geocode/v6/forward`, {
-        //     params: {
-        //         q: encodeURI(res.features[0].properties.address_line1),
-        //         access_token: process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN,
-        //         proximity: ip
-        //     }
-        // })
-        // .then((response) => {
-        //     const coordinates = response.data.features[0].geometry.coordinates
-        //     console.log('Geocoding result', coordinates)
-        // }).catch((error) => console.log(error))
-
-      }
-
-      const handleIshaYogaCenterChange = (e) => {
-        switch(e.target.value) {
+    const handleIshaYogaCenterChange = (e) => {
+        switch(e) {
             case 'Isha Yoga Center, Coimbatore':
-                setIshaYogaCenterSelectedCoordinates({lat: '10.9763407', long: '76.7342506'})
+                setIshaYogaCenterSelectedCoordinates({ lat: 10.9763407, lng: 76.7342506 });
+                return { lat: 10.9763407, lng: 76.7342506 }
                 break;
             case 'Sadhguru Sannidhi, Bengaluru':
-                setIshaYogaCenterSelectedCoordinates({lat: '13.4861346', long: '77.7064053'})
+                setIshaYogaCenterSelectedCoordinates({ lat: 13.4861346, lng: 77.7064053 });
+                return { lat: 13.4861346, lng: 77.7064053 }
                 break;
             case 'Sadhguru Sanndhi, Chattarpur':
-                setIshaYogaCenterSelectedCoordinates({lat: '28.4813421', long: '77.1517377'})
+                setIshaYogaCenterSelectedCoordinates({ lat: 28.4813421, lng: 77.1517377 });
+                return { lat: 28.4813421, lng: 77.1517377 }
                 break;
             case 'Isha Institute of Inner-sciences (iii)':
-                setIshaYogaCenterSelectedCoordinates({lat: '35.5649253', long: '-85.5729322'})
+                setIshaYogaCenterSelectedCoordinates({ lat: 35.5649253, lng: -85.5729322 });
+                return { lat: 35.5649253, lng: -85.5729322 }
                 break;
             case 'Isha Yoga Center, California':
-                setIshaYogaCenterSelectedCoordinates({lat: '34.1991773', long: '-118.6128837'})
+                setIshaYogaCenterSelectedCoordinates({ lat: 34.1991773, lng: -118.6128837 });
+                return { lat: 34.1991773, lng: -118.6128837 }
                 break;
             default:
-                setIshaYogaCenterSelectedCoordinates({lat: '10.9763407', long: '76.7342506'})
+                setIshaYogaCenterSelectedCoordinates({ lat: 10.9763407, lng: 76.7342506 });
+                return { lat: 10.9763407, lng: 76.7342506 }
                 break;
         }
-      }
+    };
 
-    //   let timer, timoutVal = 1000
-    //   const handleKeyUp = (e) => {
-    //     window.clearTimeout(timer)
-    //     timer = window.setTimeout(() => {
-    //         //Done typing
-    //         if (!startingPointValue) {
-    //             setStartingPointValue(getValues('startingPoint'))
-    //         }
-            
-    //         console.log(startingPointValue, 'Starting Point Value')
-    //         axios.get('https://api.mapbox.com/search/geocode/v6/forward', {
-    //             params: {
-    //                 q: startingPointValue,
-    //                 access_token: process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN
-    //             }
-    //         })
-    //         .then((response) => {
-    //             const coordinates = response.data.features[0].properties.coordinates
-    //             // console.log('Geocoding result', coordinates)
-    //         })
-    //     }, timoutVal)
-    //   }
+    const handleOriginSelected = (place) => {
+        let origin;
+    
+        if (place.geometry) {
+            const lat = place.geometry.location.lat();
+            const lng = place.geometry.location.lng();
+            console.log('Isha Yoga Center:', { ishaYogaCenterSelectedCoordinates });
+            origin = { lat: lat, lng: lng };
+        } else {
+            console.log('geometry does not exist')
+            origin = place.place_id;
+            console.log('Origin:', origin);
+        }
+    
+        // Check if a driving route exists between the starting point and the selected Isha Yoga center
+        const directionsService = new window.google.maps.DirectionsService();
+        console.log('Isha Yoga Center - Right before Direction Services:', getValues('ishaYogaCenter'));
+        directionsService.route(
+            {
+                origin: origin,
+                destination: {
+                    lat: parseFloat(handleIshaYogaCenterChange(getValues('ishaYogaCenter')).lat),
+                    lng: parseFloat(handleIshaYogaCenterChange(getValues('ishaYogaCenter')).lng)
+                },
+                travelMode: 'DRIVING'
+            },
+            (result, status) => {
+                if (status === window.google.maps.DirectionsStatus.OK) {
+                    setDirectionsResult(result);
+                    console.log('Directions result:', result);
+                } else {
+                    console.log('Error fetching directions:', status);
+                }
+            }
+        );
+    };
 
-      const handleKeyDown = () => {
-        window.clearTimeout(timer)
-      }
+      
 
     if (!session || !session?.user) {
         redirect("/api/auth/signin")
@@ -288,15 +279,19 @@ export default function Page() {
                                             Starting Point
                                         </label>
                                         <div className='mt-2'>
-                                            <AddressAutofill onRetrieve={(res) => {handleOnRetrieve(res)}} accessToken={process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN}>
-                                                <input
-                                                    type='text'
-                                                    id='startingPoint'
-                                                    autoComplete="address-line1"
-                                                    {...register('startingPoint', { required: true })}
-                                                    className='block w-full rounded-md border-0 p-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:outline-[#52422a] sm:text-sm sm:leading-6'
-                                                />
-                                            </AddressAutofill>
+                                            <Autocomplete
+                                                apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS}
+                                                onPlaceSelected={handleOriginSelected}
+                                                id='startingPoint'
+                                                {...register('startingPoint', { required: true })}
+                                                className='block w-full rounded-md border-0 p-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:outline-[#52422a] sm:text-sm sm:leading-6'
+                                                options={{
+                                                    componentRestrictions: {country: [countryCode]},
+                                                    types: ['address'],
+                                                    
+                                                }}
+                                                
+                                            />
                                             {errors.startingPoint?.message && (
                                                 <p className='mt-2 text-sm text-red-400'>
                                                     {errors.startingPoint.message}
@@ -317,11 +312,10 @@ export default function Page() {
                                                 id='ishaYogaCenter'
                                                 {...register('ishaYogaCenter', { required: true })}
                                                 onChange={(e) => handleIshaYogaCenterChange(e)}
-                                                autoComplete='country-name'
                                                 className='col-start-1 ring-1 shadow-sm row-start-1 w-full appearance-none rounded-md bg-white py-1.5 pr-8 pl-3 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-[#52422a] sm:text-sm/6'
                                             >
                                                 {ishaYogaCenters.map((center, id) => (
-                                                    <option key={id} value={center.name}>{center.name}</option>
+                                                    <option key={id} value={center.name} >{center.name}</option>
                                                 ))}
                                             </select>
                                             {errors.lastName?.message && (

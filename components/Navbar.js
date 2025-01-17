@@ -49,7 +49,7 @@ export default function Navbar() {
         ) : (
           
             <div className="flex flex-1 md:flex-auto lg:flex-none items-center justify-end gap-x-6">
-              <a href="/login" className="hidden text-sm/6 font-semibold text-gray-900 lg:block">
+              <a href="/api/auth/signin" className="hidden text-sm/6 font-semibold text-gray-900 lg:block">
                 Log in
               </a>
               <a
