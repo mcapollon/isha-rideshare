@@ -5,9 +5,8 @@ import { useForm } from 'react-hook-form'
 import { useSession } from 'next-auth/react'
 import { redirect } from 'next/navigation'
 import { CheckIcon } from '@heroicons/react/24/outline'
-import Autocomplete from "react-google-autocomplete";
-import { DirectionsService } from '@react-google-maps/api';
-import axios from 'axios'
+// import { DirectionsService } from '@react-google-maps/api';
+import MultistepForm from '@/components/createForm/multistep-form'
 
 const steps = [
     {
@@ -57,158 +56,15 @@ const luggageOptions = [
 ]
 
 export default function Page() {
-    const [previousStep, setPreviousStep] = useState(0)
-    const [currentStep, setCurrentStep] = useState(0)
-    const delta = currentStep - previousStep
-
-    const {
-        register,
-        handleSubmit,
-        reset,
-        trigger,
-        watch,
-        getValues,
-        setValue,
-        formState: { errors }
-    } = useForm()
-
-    const processForm = data => {
-        console.log(data)
-        reset()
-    }
-
-    const next = async () => {
-        // const fields = steps[currentStep].fields
-        // const output = await trigger(fields)
-
-        // if (!output) return
-
-        if (currentStep < steps.length - 1) {
-            if (currentStep === steps.length - 2) {
-                await handleSubmit(processForm)()
-            }
-            setPreviousStep(currentStep)
-            setCurrentStep(step => step + 1)
-        }
-    }
-
-    const prev = () => {
-        if (currentStep > 0) {
-            setPreviousStep(currentStep)
-            setCurrentStep(step => step - 1)
-        }
-    }
 
     const { data: session, status } = useSession()
 
-    const [selected, setSelected] = useState(ishaYogaCenters[3])
-    const [ishaYogaCenterSelectedCoordinates, setIshaYogaCenterSelectedCoordinates] = useState({lat: 10.9763407, lng: 76.7342506})
-    const [startingPointValue, setStartingPointValue] = useState('')
-    const [mem, setMem] = useState(luggageOptions[2])
-    const [userIp, setUserIp] = useState('')
-    const [countryCode, setCountryCode] = useState('')
-    const [directionsResult, setDirectionsResult] = useState(null);
+   
 
     //@Todo Fix min date Requirement for calendar
     //const currentDate = format(new Date(), 'yyyy-MM-ddTHH:mm')
     //console.log(format(new Date(), 'yyyy-MM-ddTHH:mm'), 'CURRENT DATE')
 
-    useEffect(() => {
-        // Fetch user's country code based on IP address
-        axios.get('https://ipinfo.io/json?token=' + process.env.NEXT_PUBLIC_IPINFO_TOKEN)
-            .then(response => {
-                setCountryCode(response.data.country)
-            })
-            .catch(error => {
-                console.error('Error fetching user country code:', error);
-            });
-    }, []);
-
-    const handleOnRetrieve = (res) => {
-        console.log(getCountryCode(res.features[0].properties.country), "Country Code")
-        const [lat, long] = response.data.loc.split(',')
-
-        axios.get(`https://maps.googleapis.com/maps/api/geocode/json?`, {
-            params: {
-                address: encodeURI(res.features[0].properties.address_line1),
-                key: process.env.NEXT_PUBLIC_GOOGLE_MAPS,
-                // proximity: [long, lat],
-                // country: [getCountryCode(res.features[0].properties.country)]
-            }
-        }).then((response) => {
-            console.log(response)
-            const coordinates = response.data.results[0].geometry.location
-            console.log('Geocoding results', coordinates)
-        }).catch((error) => console.log(error))
-    }
-
-    const handleIshaYogaCenterChange = (e) => {
-        switch(e) {
-            case 'Isha Yoga Center, Coimbatore':
-                setIshaYogaCenterSelectedCoordinates({ lat: 10.9763407, lng: 76.7342506 });
-                return { lat: 10.9763407, lng: 76.7342506 }
-                break;
-            case 'Sadhguru Sannidhi, Bengaluru':
-                setIshaYogaCenterSelectedCoordinates({ lat: 13.4861346, lng: 77.7064053 });
-                return { lat: 13.4861346, lng: 77.7064053 }
-                break;
-            case 'Sadhguru Sanndhi, Chattarpur':
-                setIshaYogaCenterSelectedCoordinates({ lat: 28.4813421, lng: 77.1517377 });
-                return { lat: 28.4813421, lng: 77.1517377 }
-                break;
-            case 'Isha Institute of Inner-sciences (iii)':
-                setIshaYogaCenterSelectedCoordinates({ lat: 35.5649253, lng: -85.5729322 });
-                return { lat: 35.5649253, lng: -85.5729322 }
-                break;
-            case 'Isha Yoga Center, California':
-                setIshaYogaCenterSelectedCoordinates({ lat: 34.1991773, lng: -118.6128837 });
-                return { lat: 34.1991773, lng: -118.6128837 }
-                break;
-            default:
-                setIshaYogaCenterSelectedCoordinates({ lat: 10.9763407, lng: 76.7342506 });
-                return { lat: 10.9763407, lng: 76.7342506 }
-                break;
-        }
-    };
-
-    const handleOriginSelected = (place) => {
-        let origin;
-    
-        if (place.geometry) {
-            const lat = place.geometry.location.lat();
-            const lng = place.geometry.location.lng();
-            console.log('Isha Yoga Center:', { ishaYogaCenterSelectedCoordinates });
-            origin = { lat: lat, lng: lng };
-        } else {
-            console.log('geometry does not exist')
-            origin = place.place_id;
-            console.log('Origin:', origin);
-        }
-    
-        // Check if a driving route exists between the starting point and the selected Isha Yoga center
-        const directionsService = new window.google.maps.DirectionsService();
-        console.log('Isha Yoga Center - Right before Direction Services:', getValues('ishaYogaCenter'));
-        directionsService.route(
-            {
-                origin: origin,
-                destination: {
-                    lat: parseFloat(handleIshaYogaCenterChange(getValues('ishaYogaCenter')).lat),
-                    lng: parseFloat(handleIshaYogaCenterChange(getValues('ishaYogaCenter')).lng)
-                },
-                travelMode: 'DRIVING'
-            },
-            (result, status) => {
-                if (status === window.google.maps.DirectionsStatus.OK) {
-                    setDirectionsResult(result);
-                    console.log('Directions result:', result);
-                } else {
-                    console.log('Error fetching directions:', status);
-                }
-            }
-        );
-    };
-
-      
 
     if (!session || !session?.user) {
         redirect("/api/auth/signin")
@@ -222,42 +78,9 @@ export default function Page() {
                 </div>
 
                 <section className='flex flex-col mx-4 md:mx-8 lg:mx-auto pt-4 md:pt-28 px-4 pb-4 max-w-7xl -mt-24 bg-white drop-shadow-md rounded-lg'>
-                    {/* steps */}
-                    <nav aria-label='Progress'>
-                        <ol role="list" className="divide-y divide-gray-300 rounded-md border border-gray-300 md:flex md:divide-y-0">
-                            {steps.map((step, index) => (
-                                <li key={step.name} className="relative md:flex md:flex-1">
-                                    {currentStep > index ? (
-                                        <a href={step.href} className="group flex w-full items-center">
-                                            <span className="flex items-center px-6 py-4 text-sm font-medium">
-                                                <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-indigo-600 group-hover:bg-indigo-800">
-                                                    <CheckIcon aria-hidden="true" className="size-6 text-white" />
-                                                </span>
-                                                <span className="ml-4 text-sm font-bold text-black">{step.name}</span>
-                                            </span>
-                                        </a>
-                                    ) : currentStep === index ? (
-                                        <a href={step.href} aria-current="step" className="flex items-center px-6 py-4 text-sm font-medium">
-                                            <span className="flex size-10 shrink-0 items-center justify-center rounded-full border-2 border-indigo-600">
-                                                <span className="text-indigo-600">{step.id}</span>
-                                            </span>
-                                            <span className="ml-4 text-sm font-medium text-black">{step.name}</span>
-                                        </a>
-                                    ) : (
-                                        <div className='group flex w-full flex-col border-l-4 border-gray-200 py-2 pl-4 transition-colors md:border-l-0 md:border-t-4 md:pb-0 md:pl-0 md:pt-4'>
-                                            <span className='text-sm font-extrabold text-gray-500 transition-colors'>
-                                                {step.id}
-                                            </span>
-                                            <span className='text-sm font-medium text-black'>{step.name}</span>
-                                        </div>
-                                    )}
-                                </li>
-                            ))}
-                        </ol>
-                    </nav>
-
+                    <MultistepForm />
                     {/* Form */}
-                    <form className='mt-12 py-12' onSubmit={handleSubmit(processForm)}>
+                    {/* <form className='mt-12 py-12' onSubmit={handleSubmit(processForm)}>
                         {currentStep === 0 && (
                             <motion.div
                                 initial={{ x: delta >= 0 ? '50%' : '-50%', opacity: 0 }}
@@ -283,7 +106,7 @@ export default function Page() {
                                                 apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS}
                                                 onPlaceSelected={handleOriginSelected}
                                                 id='startingPoint'
-                                                {...register('startingPoint', { required: true })}
+                                                {...register('startingPoint', { required: false })}
                                                 className='block w-full rounded-md border-0 p-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:outline-[#52422a] sm:text-sm sm:leading-6'
                                                 options={{
                                                     componentRestrictions: {country: [countryCode]},
@@ -310,7 +133,7 @@ export default function Page() {
                                         <div className='mt-2'>
                                             <select
                                                 id='ishaYogaCenter'
-                                                {...register('ishaYogaCenter', { required: true })}
+                                                {...register('ishaYogaCenter', { required: false })}
                                                 onChange={(e) => handleIshaYogaCenterChange(e)}
                                                 className='col-start-1 ring-1 shadow-sm row-start-1 w-full appearance-none rounded-md bg-white py-1.5 pr-8 pl-3 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-[#52422a] sm:text-sm/6'
                                             >
@@ -337,7 +160,7 @@ export default function Page() {
                                             <input
                                                 type='datetime-local'
                                                 id='dateAndTime'
-                                                {...register('departureTime', { required: true })}
+                                                {...register('departureTime', { required: false })}
                                                 className='block w-full rounded-md border-0 p-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:outline-[#52422a] sm:text-sm sm:leading-6' />
                                             {errors.departureTime?.message && (
                                                 <p className='mt-2 text-sm text-red-400'>
@@ -357,7 +180,7 @@ export default function Page() {
                                         <div className='mt-2'>
                                             <select
                                                 id='numberOfSeats'
-                                                {...register('numberOfSeats', { required: true })}
+                                                {...register('numberOfSeats', { required: false })}
                                                 autoComplete={1}
                                                 className='col-start-1 ring-1 shadow-sm row-start-1 w-full appearance-none rounded-md bg-white py-1.5 pr-8 pl-3 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-[#52422a] sm:text-sm/6'
                                             >
@@ -419,7 +242,7 @@ export default function Page() {
                                         <div className='mt-2'>
                                             <textarea
                                                 id="description"
-                                                {...register('description', {required: true})}
+                                                {...register('description', {required: false})}
                                                 name="description"
                                                 placeholder='Provide as much description as possible about the pickup and dropoff locations for your passengers.'
                                                 rows={4}
@@ -579,10 +402,10 @@ export default function Page() {
                                 </p>
                             </>
                         )}
-                    </form>
+                    </form> */}
 
                     {/* Navigation */}
-                    <div className='mt-8 pt-5'>
+                    {/* <div className='mt-8 pt-5'>
                         <div className='flex justify-between'>
                             <button
                                 type='submit'
@@ -627,7 +450,7 @@ export default function Page() {
                                 </svg>
                             </button>
                         </div>
-                    </div>
+                    </div> */}
                 </section>
             </div>
         )
