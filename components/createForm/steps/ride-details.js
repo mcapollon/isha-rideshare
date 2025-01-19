@@ -1,6 +1,6 @@
 'use client'
 
-import { useFormContext } from 'react-hook-form'
+import { useFormContext, Controller } from 'react-hook-form'
 import { useState, useEffect, useRef } from 'react'
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -54,7 +54,10 @@ const luggageOptions = [
 
 
 
+
 export default function RideDetailsStep() {
+    const { register, control, watch, getValues } = useFormContext()
+
     const [selected, setSelected] = useState(ishaYogaCenters[3])
     const [ishaYogaCenterSelectedCoordinates, setIshaYogaCenterSelectedCoordinates] = useState({ lat: 10.9763407, lng: 76.7342506 })
     const [startingPointValue, setStartingPointValue] = useState('')
@@ -77,26 +80,32 @@ export default function RideDetailsStep() {
         switch (e) {
             case 'Isha Yoga Center, Coimbatore':
                 setIshaYogaCenterSelectedCoordinates({ lat: 10.9763407, lng: 76.7342506 });
+                console.log('Isha Yoga Center - Switch:', getValues('ishaYogaCenter'));
                 return { lat: 10.9763407, lng: 76.7342506 }
                 break;
             case 'Sadhguru Sannidhi, Bengaluru':
                 setIshaYogaCenterSelectedCoordinates({ lat: 13.4861346, lng: 77.7064053 });
+                console.log('Isha Yoga Center - Switch:', getValues('ishaYogaCenter'));
                 return { lat: 13.4861346, lng: 77.7064053 }
                 break;
             case 'Sadhguru Sanndhi, Chattarpur':
                 setIshaYogaCenterSelectedCoordinates({ lat: 28.4813421, lng: 77.1517377 });
+                console.log('Isha Yoga Center - Switch:', getValues('ishaYogaCenter'));
                 return { lat: 28.4813421, lng: 77.1517377 }
                 break;
             case 'Isha Institute of Inner-sciences (iii)':
                 setIshaYogaCenterSelectedCoordinates({ lat: 35.5649253, lng: -85.5729322 });
+                console.log('Isha Yoga Center - Switch:', getValues('ishaYogaCenter'));
                 return { lat: 35.5649253, lng: -85.5729322 }
                 break;
             case 'Isha Yoga Center, California':
                 setIshaYogaCenterSelectedCoordinates({ lat: 34.1991773, lng: -118.6128837 });
+                console.log('Isha Yoga Center - Switch:', getValues('ishaYogaCenter'));
                 return { lat: 34.1991773, lng: -118.6128837 }
                 break;
             default:
                 setIshaYogaCenterSelectedCoordinates({ lat: 10.9763407, lng: 76.7342506 });
+                console.log('Isha Yoga Center - Switch:', getValues('ishaYogaCenter'));
                 return { lat: 10.9763407, lng: 76.7342506 }
                 break;
         }
@@ -139,18 +148,6 @@ export default function RideDetailsStep() {
             }
         );
     };
-
-    const { register, control, watch } = useFormContext()
-
-    // const { startingPointRef, autocompleteRef } = usePlacesWidget({
-    //     apiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS,
-    //     onPlaceSelected: handleOriginSelected,
-    //     options: {
-    //         componentRestrictions: { country: [countryCode] },
-    //         types: ['address'],
-    //     }
-    // });
-
     
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -164,23 +161,31 @@ export default function RideDetailsStep() {
                     {...register('startingPoint', { required: false })}
                     className='flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm'
                     options={{
-                        componentRestrictions: { country: [countryCode] },
+                        componentRestrictions: { country: [countryCode.toString()] },
                         types: ['address'],
                     }}
                 />
             </div>
             <div className="space-y-2">
                 <Label htmlFor="destination">Destination</Label>
-                <Select {...register("destination", { required: "Destination is required" })}>
-                    <SelectTrigger>
-                        <SelectValue placeholder="Select destination" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {destinations.map((dest) => (
-                            <SelectItem key={dest} value={dest}>{dest}</SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
+                <Controller
+                    name="ishaYogaCenter"
+                    control={control}
+                    defaultValue=""
+                    rules={{ required: "Isha Yoga Center is required" }}
+                    render={({ field }) => (
+                        <Select {...field} onValueChange={(e) => {field.onChange(e); handleIshaYogaCenterChange(e)}}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select Isha Yoga Center" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {ishaYogaCenters.map((ishaYogaCenter, i) => (
+                                    <SelectItem key={i} value={ishaYogaCenter.name}>{ishaYogaCenter.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    )}
+                />
             </div>
             <div className="space-y-2 inline-grid">
                 <Label htmlFor="departure">Departure</Label>
