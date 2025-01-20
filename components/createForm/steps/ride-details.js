@@ -56,7 +56,7 @@ const luggageOptions = [
 
 
 export default function RideDetailsStep() {
-    const { register, control, watch, getValues } = useFormContext()
+    const { register, control, watch, getValues, setValue } = useFormContext()
 
     const [selected, setSelected] = useState(ishaYogaCenters[3])
     const [ishaYogaCenterSelectedCoordinates, setIshaYogaCenterSelectedCoordinates] = useState({ lat: 10.9763407, lng: 76.7342506 })
@@ -141,13 +141,25 @@ export default function RideDetailsStep() {
             (result, status) => {
                 if (status === window.google.maps.DirectionsStatus.OK) {
                     setDirectionsResult(result);
-                    console.log('Directions result:', result);
+                    setValue('rideDistance', result.routes[0].legs[0].distance.value);
+                    console.log('Directions result:', 
+                        {
+                            distance: result.routes[0].legs[0].distance,
+                            duration: result.routes[0].legs[0].duration,
+                            start: result.routes[0].legs[0].start_address,
+                            destination: result.routes[0].legs[0].end_address
+                        });
+                        
                 } else {
                     console.log('Error fetching directions:', status);
                 }
             }
         );
     };
+
+    //@Todo Fix min date Requirement for calendar
+    //const currentDate = format(new Date(), 'yyyy-MM-ddTHH:mm')
+    //console.log(format(new Date(), 'yyyy-MM-ddTHH:mm'), 'CURRENT DATE')
     
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -161,7 +173,7 @@ export default function RideDetailsStep() {
                     {...register('startingPoint', { required: false })}
                     className='flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm'
                     options={{
-                        componentRestrictions: { country: [countryCode.toString()] },
+                        // componentRestrictions: { country: [countryCode.toString()] },
                         types: ['address'],
                     }}
                 />
@@ -192,7 +204,7 @@ export default function RideDetailsStep() {
                 <DatePicker
                     id="departure"
                     selected={watch("departure")}
-                    onChange={(date) => control.setValue("departure", date)}
+                    // onChange={(date) => control.setValue("departure", date)}
                     showTimeSelect
                     dateFormat="MMMM d, yyyy h:mm aa"
                     minDate={new Date()}
@@ -214,7 +226,7 @@ export default function RideDetailsStep() {
             </div>
             <div className="space-y-2 col-span-full">
                 <Label>Luggage</Label>
-                <RadioGroup {...register("luggage", { required: "Luggage option is required" })}>
+                <RadioGroup {...register("luggage", { required: "Luggage option is required" | true })}>
                     {luggageOptions.map((option) => (
                         <div key={option.value} className="flex items-center space-x-2">
                             <RadioGroupItem value={option.value} id={option.value} />
@@ -227,11 +239,10 @@ export default function RideDetailsStep() {
                 <Label htmlFor="description">Description</Label>
                 <Textarea
                     id="description"
-                    {...register("description")}
+                    {...register("description", {required: true})}
                     placeholder="Add any additional details about your ride"
                 />
             </div>
-            {/* <Script src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS}&loading=async&libraries=places`} /> */}
         </div>
     )
 }
