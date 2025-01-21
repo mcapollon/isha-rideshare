@@ -1,8 +1,7 @@
 'use client'
 
 import { useFormContext, Controller } from 'react-hook-form'
-import { useState, useEffect, useRef } from 'react'
-import { Input } from "@/components/ui/input"
+import { useState, useEffect } from 'react'
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
@@ -10,13 +9,8 @@ import { Textarea } from "@/components/ui/textarea"
 import DatePicker from "react-datepicker"
 import "react-datepicker/dist/react-datepicker.css"
 import Autocomplete from "react-google-autocomplete";
-import { usePlacesWidget } from "react-google-autocomplete";
-// import Script from 'next/script'
 import axios from 'axios'
 
-const destinations = [
-    "New York", "Los Angeles", "Chicago", "Houston", "Phoenix", "Philadelphia", "San Antonio"
-]
 const ishaYogaCenters = [
     {
         name: 'Isha Yoga Center, Coimbatore',
@@ -52,11 +46,8 @@ const luggageOptions = [
     { value: "large", label: "Large" },
 ]
 
-
-
-
 export default function RideDetailsStep() {
-    const { register, control, watch, getValues, setValue } = useFormContext()
+    const { register, control, watch, getValues, setValue, formState: { errors }, clearErrors } = useFormContext()
 
     const [selected, setSelected] = useState(ishaYogaCenters[3])
     const [ishaYogaCenterSelectedCoordinates, setIshaYogaCenterSelectedCoordinates] = useState({ lat: 10.9763407, lng: 76.7342506 })
@@ -82,37 +73,30 @@ export default function RideDetailsStep() {
                 setIshaYogaCenterSelectedCoordinates({ lat: 10.9763407, lng: 76.7342506 });
                 console.log('Isha Yoga Center - Switch:', getValues('ishaYogaCenter'));
                 return { lat: 10.9763407, lng: 76.7342506 }
-                break;
             case 'Sadhguru Sannidhi, Bengaluru':
                 setIshaYogaCenterSelectedCoordinates({ lat: 13.4861346, lng: 77.7064053 });
                 console.log('Isha Yoga Center - Switch:', getValues('ishaYogaCenter'));
                 return { lat: 13.4861346, lng: 77.7064053 }
-                break;
             case 'Sadhguru Sanndhi, Chattarpur':
                 setIshaYogaCenterSelectedCoordinates({ lat: 28.4813421, lng: 77.1517377 });
                 console.log('Isha Yoga Center - Switch:', getValues('ishaYogaCenter'));
                 return { lat: 28.4813421, lng: 77.1517377 }
-                break;
             case 'Isha Institute of Inner-sciences (iii)':
                 setIshaYogaCenterSelectedCoordinates({ lat: 35.5649253, lng: -85.5729322 });
                 console.log('Isha Yoga Center - Switch:', getValues('ishaYogaCenter'));
                 return { lat: 35.5649253, lng: -85.5729322 }
-                break;
             case 'Isha Yoga Center, California':
                 setIshaYogaCenterSelectedCoordinates({ lat: 34.1991773, lng: -118.6128837 });
                 console.log('Isha Yoga Center - Switch:', getValues('ishaYogaCenter'));
                 return { lat: 34.1991773, lng: -118.6128837 }
-                break;
             default:
                 setIshaYogaCenterSelectedCoordinates({ lat: 10.9763407, lng: 76.7342506 });
                 console.log('Isha Yoga Center - Switch:', getValues('ishaYogaCenter'));
                 return { lat: 10.9763407, lng: 76.7342506 }
-                break;
         }
     };
 
     const handleOriginSelected = (place) => {
-        
         let origin;
 
         if (place.geometry) {
@@ -157,36 +141,44 @@ export default function RideDetailsStep() {
         );
     };
 
-    //@Todo Fix min date Requirement for calendar
-    //const currentDate = format(new Date(), 'yyyy-MM-ddTHH:mm')
-    //console.log(format(new Date(), 'yyyy-MM-ddTHH:mm'), 'CURRENT DATE')
-    
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
                 <Label htmlFor="startingPoint">Starting Point</Label>
-                <Autocomplete
-                    apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS}
-                    onPlaceSelected={handleOriginSelected}
-                    id='startingPoint'
-                    // ref={startingPointRef}
-                    {...register('startingPoint', { required: false })}
-                    className='flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm'
-                    options={{
-                        // componentRestrictions: { country: [countryCode.toString()] },
-                        types: ['address'],
-                    }}
-                />
+                <Controller
+                    name="startingPoint"
+                    control={control}
+                    rules={{ required: "Starting point is required" }}
+                    defaultValue=""
+                    render={({ field }) => (
+                        <Autocomplete
+                            {...field}
+                            value={field.value}
+                            apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS}
+                            onPlaceSelected={(place) => {
+                                field.onChange(place.formatted_address);
+                                handleOriginSelected(place);
+                                clearErrors('startingPoint');
+                            }}
+                            className='flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm'
+                            options={{
+                                types: ['address'],
+                            }}
+                        />
+                    )}
+                 />
+                
+                {errors.startingPoint && <span className="text-red-500">{errors.startingPoint.message}</span>}
             </div>
             <div className="space-y-2">
-                <Label htmlFor="destination">Destination</Label>
+                <Label htmlFor="ishaYogaCenter">Isha Yoga Center</Label>
                 <Controller
                     name="ishaYogaCenter"
                     control={control}
                     defaultValue=""
                     rules={{ required: "Isha Yoga Center is required" }}
                     render={({ field }) => (
-                        <Select {...field} onValueChange={(e) => {field.onChange(e); handleIshaYogaCenterChange(e)}}>
+                        <Select {...field} onValueChange={(e) => { field.onChange(e); handleIshaYogaCenterChange(e); clearErrors('ishaYogaCenter') }}>
                             <SelectTrigger>
                                 <SelectValue placeholder="Select Isha Yoga Center" />
                             </SelectTrigger>
@@ -198,50 +190,79 @@ export default function RideDetailsStep() {
                         </Select>
                     )}
                 />
+                {errors.ishaYogaCenter && <span className="text-red-500">{errors.ishaYogaCenter.message}</span>}
             </div>
             <div className="space-y-2 inline-grid">
                 <Label htmlFor="departure">Departure</Label>
-                <DatePicker
-                    id="departure"
-                    selected={watch("departure")}
-                    // onChange={(date) => control.setValue("departure", date)}
-                    showTimeSelect
-                    dateFormat="MMMM d, yyyy h:mm aa"
-                    minDate={new Date()}
-                    className="w-full p-2 border rounded-md"
+                <Controller
+                    name="departure"
+                    control={control}
+                    defaultValue={null}
+                    rules={{ required: "Departure date and time is required" }}
+                    render={({ field }) => (
+                        <DatePicker
+                            id="departure"
+                            selected={field.value}
+                            onChange={(date) => { field.onChange(date); clearErrors('departure') }}
+                            showTimeSelect
+                            dateFormat="MMMM d, yyyy h:mm aa"
+                            minDate={new Date()}
+                            className="w-full p-2 border rounded-md"
+                        />
+                    )}
                 />
+                {errors.departure && <span className="text-red-500">{errors.departure.message}</span>}
             </div>
             <div className="space-y-2">
                 <Label htmlFor="seats">Number of Seats</Label>
-                <Select {...register("seats", { required: "Number of seats is required" })}>
-                    <SelectTrigger>
-                        <SelectValue placeholder="Select seats" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {[1, 2, 3, 4, 5, 6, 7].map((num) => (
-                            <SelectItem key={num} value={num.toString()}>{num}</SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
+                <Controller 
+                    name='seats'
+                    control={control}
+                    rules={{ required: 'Number of seats is required' }}
+                    render={({ field }) => (
+                        <Select {...field} onValueChange={(e) => {field.onChange(e); clearErrors('seats')}}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select seats" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {[1, 2, 3, 4, 5, 6, 7].map((num) => (
+                                    <SelectItem key={num} value={num.toString()}>{num}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    )}
+                    />
+                
+                {errors.seats && <span className="text-red-500">{errors.seats.message}</span>}
             </div>
             <div className="space-y-2 col-span-full">
                 <Label>Luggage</Label>
-                <RadioGroup {...register("luggage", { required: "Luggage option is required" | true })}>
-                    {luggageOptions.map((option) => (
-                        <div key={option.value} className="flex items-center space-x-2">
-                            <RadioGroupItem value={option.value} id={option.value} />
-                            <Label htmlFor={option.value}>{option.label}</Label>
-                        </div>
-                    ))}
-                </RadioGroup>
+                <Controller 
+                    name='luggage'
+                    control={control}
+                    rules={{ required: 'Luggage option is required' }}
+                    render={({ field }) => (
+                        <RadioGroup {...field} onValueChange={(e) => {field.onChange(e); clearErrors('luggage')}}>
+                            {luggageOptions.map((option) => (
+                                <div key={option.value} className="flex items-center space-x-2">
+                                    <RadioGroupItem value={option.value} id={option.value} />
+                                    <Label htmlFor={option.value}>{option.label}</Label>
+                                </div>
+                            ))}
+                        </RadioGroup>
+                    )}
+                />
+                {errors.luggage && <span className="text-red-500">{errors.luggage.message}</span>}
             </div>
             <div className="space-y-2 col-span-full">
                 <Label htmlFor="description">Description</Label>
                 <Textarea
                     id="description"
-                    {...register("description", {required: true})}
+                    {...register("description", { required: "Description is required" })}
                     placeholder="Add any additional details about your ride"
+                    onChange={() => clearErrors('description')}
                 />
+                {errors.description && <span className="text-red-500">{errors.description.message}</span>}
             </div>
         </div>
     )
