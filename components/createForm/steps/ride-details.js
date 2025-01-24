@@ -1,7 +1,7 @@
 'use client'
 
 import { useFormContext, Controller } from 'react-hook-form'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
@@ -9,7 +9,6 @@ import { Textarea } from "@/components/ui/textarea"
 import DatePicker from "react-datepicker"
 import "react-datepicker/dist/react-datepicker.css"
 import Autocomplete from "react-google-autocomplete";
-import axios from 'axios'
 
 const ishaYogaCenters = [
     {
@@ -49,51 +48,75 @@ const luggageOptions = [
 export default function RideDetailsStep() {
     const { register, control, watch, getValues, setValue, setError, formState: { errors }, clearErrors } = useFormContext()
 
-    const [selected, setSelected] = useState(ishaYogaCenters[3])
     const [ishaYogaCenterSelectedCoordinates, setIshaYogaCenterSelectedCoordinates] = useState({ lat: 10.9763407, lng: 76.7342506 })
-    const [startingPointValue, setStartingPointValue] = useState('')
-    const [mem, setMem] = useState(luggageOptions[2])
-    const [countryCode, setCountryCode] = useState('')
-    const [directionsResult, setDirectionsResult] = useState(null);
-
-    useEffect(() => {
-        // Fetch user's country code based on IP address
-        axios.get('https://ipinfo.io/json?token=' + process.env.NEXT_PUBLIC_IPINFO_TOKEN)
-            .then(response => {
-                setCountryCode(response.data.country)
-            })
-            .catch(error => {
-                console.error('Error fetching user country code:', error);
-            });
-    }, []);
+    const [origin, setOrigin] = useState(null)
 
     const handleIshaYogaCenterChange = (e) => {
-        switch (e) {
-            case 'Isha Yoga Center, Coimbatore':
-                setIshaYogaCenterSelectedCoordinates({ lat: 10.9763407, lng: 76.7342506 });
-                console.log('Isha Yoga Center - Switch:', getValues('ishaYogaCenter'));
-                return { lat: 10.9763407, lng: 76.7342506 }
-            case 'Sadhguru Sannidhi, Bengaluru':
-                setIshaYogaCenterSelectedCoordinates({ lat: 13.4861346, lng: 77.7064053 });
-                console.log('Isha Yoga Center - Switch:', getValues('ishaYogaCenter'));
-                return { lat: 13.4861346, lng: 77.7064053 }
-            case 'Sadhguru Sanndhi, Chattarpur':
-                setIshaYogaCenterSelectedCoordinates({ lat: 28.4813421, lng: 77.1517377 });
-                console.log('Isha Yoga Center - Switch:', getValues('ishaYogaCenter'));
-                return { lat: 28.4813421, lng: 77.1517377 }
-            case 'Isha Institute of Inner-sciences (iii)':
-                setIshaYogaCenterSelectedCoordinates({ lat: 35.5649253, lng: -85.5729322 });
-                console.log('Isha Yoga Center - Switch:', getValues('ishaYogaCenter'));
-                return { lat: 35.5649253, lng: -85.5729322 }
-            case 'Isha Yoga Center, California':
-                setIshaYogaCenterSelectedCoordinates({ lat: 34.1991773, lng: -118.6128837 });
-                console.log('Isha Yoga Center - Switch:', getValues('ishaYogaCenter'));
-                return { lat: 34.1991773, lng: -118.6128837 }
-            default:
-                setIshaYogaCenterSelectedCoordinates({ lat: 10.9763407, lng: 76.7342506 });
-                console.log('Isha Yoga Center - Switch:', getValues('ishaYogaCenter'));
-                return { lat: 10.9763407, lng: 76.7342506 }
+        if (origin) {
+            console.log('Origin:', origin);
+            switch (e) {
+                case 'Isha Yoga Center, Coimbatore':
+                    setIshaYogaCenterSelectedCoordinates({ lat: 10.9763407, lng: 76.7342506 });
+                    getDirections(origin, { lat: 10.9763407, lng: 76.7342506 });
+                    // return { lat: 10.9763407, lng: 76.7342506 }
+                    break;
+                case 'Sadhguru Sannidhi, Bengaluru':
+                    setIshaYogaCenterSelectedCoordinates({ lat: 13.4861346, lng: 77.7064053 });
+                    getDirections(origin, { lat: 13.4861346, lng: 77.7064053 });
+                    // return { lat: 13.4861346, lng: 77.7064053 }
+                    break;
+                case 'Sadhguru Sanndhi, Chattarpur':
+                    setIshaYogaCenterSelectedCoordinates({ lat: 28.4813421, lng: 77.1517377 });
+                    getDirections(origin, { lat: 28.4813421, lng: 77.1517377 });
+                    // return { lat: 28.4813421, lng: 77.1517377 }
+                    break;
+                case 'Isha Institute of Inner-sciences (iii)':
+                    setIshaYogaCenterSelectedCoordinates({ lat: 35.5649253, lng: -85.5729322 });
+                    getDirections(origin, { lat: 35.5649253, lng: -85.5729322 });
+                    // return { lat: 35.5649253, lng: -85.5729322 }
+                    break;
+                case 'Isha Yoga Center, California':
+                    setIshaYogaCenterSelectedCoordinates({ lat: 34.1991773, lng: -118.6128837 });
+                    getDirections(origin, { lat: 34.1991773, lng: -118.6128837 });
+                    // return { lat: 34.1991773, lng: -118.6128837 }
+                    break;
+                default:
+                    setIshaYogaCenterSelectedCoordinates({ lat: 10.9763407, lng: 76.7342506 });
+                    getDirections(origin, { lat: 10.9763407, lng: 76.7342506 });
+                    // return { lat: 10.9763407, lng: 76.7342506 }
+                    break;
+            }
+        } else {
+            console.log('No origin:', origin);
+            switch (e) {
+                case 'Isha Yoga Center, Coimbatore':
+                    setIshaYogaCenterSelectedCoordinates({ lat: 10.9763407, lng: 76.7342506 });
+                    // return { lat: 10.9763407, lng: 76.7342506 }
+                    break;
+                case 'Sadhguru Sannidhi, Bengaluru':
+                    setIshaYogaCenterSelectedCoordinates({ lat: 13.4861346, lng: 77.7064053 });                
+                    // return { lat: 13.4861346, lng: 77.7064053 }
+                    break;
+                case 'Sadhguru Sanndhi, Chattarpur':
+                    setIshaYogaCenterSelectedCoordinates({ lat: 28.4813421, lng: 77.1517377 });
+                    // return { lat: 28.4813421, lng: 77.1517377 }
+                    break;
+                case 'Isha Institute of Inner-sciences (iii)':
+                    setIshaYogaCenterSelectedCoordinates({ lat: 35.5649253, lng: -85.5729322 });
+                    // return { lat: 35.5649253, lng: -85.5729322 }
+                    break;
+                case 'Isha Yoga Center, California':
+                    setIshaYogaCenterSelectedCoordinates({ lat: 34.1991773, lng: -118.6128837 });
+                    // return { lat: 34.1991773, lng: -118.6128837 }
+                    break;
+                default:
+                    setIshaYogaCenterSelectedCoordinates({ lat: 10.9763407, lng: 76.7342506 });
+                    // return { lat: 10.9763407, lng: 76.7342506 }
+                    break;
+            }
         }
+
+        
     };
 
     const handleOriginSelected = (place) => {
@@ -102,29 +125,35 @@ export default function RideDetailsStep() {
         if (place.geometry) {
             const lat = place.geometry.location.lat();
             const lng = place.geometry.location.lng();
-            console.log('Isha Yoga Center:', { ishaYogaCenterSelectedCoordinates });
             origin = { lat: lat, lng: lng };
+            setOrigin(origin);
+            setValue('startingCity', place.address_components[3].long_name);
         } else {
-            console.log('geometry does not exist')
             origin = place.place_id;
-            console.log('Origin:', origin);
         }
 
+        const destination = handleIshaYogaCenterChange(getValues('ishaYogaCenter'))
+        console.log(destination)
+
+        getDirections(origin, ishaYogaCenterSelectedCoordinates);
         // Check if a driving route exists between the starting point and the selected Isha Yoga center
+        
+
+    };
+
+    const getDirections = (origin, destination) => {
         const directionsService = new window.google.maps.DirectionsService();
-        console.log('Isha Yoga Center - Right before Direction Services:', getValues('ishaYogaCenter'));
         directionsService.route(
             {
                 origin: origin,
                 destination: {
-                    lat: parseFloat(handleIshaYogaCenterChange(getValues('ishaYogaCenter')).lat),
-                    lng: parseFloat(handleIshaYogaCenterChange(getValues('ishaYogaCenter')).lng)
+                    lat: parseFloat(destination.lat),
+                    lng: parseFloat(destination.lng)
                 },
                 travelMode: 'DRIVING'
             },
             (result, status) => {
                 if (status === window.google.maps.DirectionsStatus.OK) {
-                    setDirectionsResult(result);
                     setValue('rideDistance', result.routes[0].legs[0].distance.value);
                     console.log('Directions result:', 
                         {
@@ -133,14 +162,14 @@ export default function RideDetailsStep() {
                             start: result.routes[0].legs[0].start_address,
                             destination: result.routes[0].legs[0].end_address
                         });
-                        
+                        clearErrors('startingPoint');   
                 } else {
                     setError('startingPoint', { type: "custom", message: "There is no valid route between your starting point and the selected isha yoga center" })
                     console.log('Error fetching directions:', status);
                 }
             }
         );
-    };
+    }
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

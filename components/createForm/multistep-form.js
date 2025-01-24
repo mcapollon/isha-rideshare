@@ -20,6 +20,7 @@ export default function MultistepForm() {
         mode: 'onBlur',
         defaultValues: {
             startingPoint: '',
+            startingCity: '',
             ishaYogaCenter: '',
             departure: null,
             seats: '',
@@ -48,6 +49,7 @@ export default function MultistepForm() {
             .from('rides')
             .insert({
                 startingPoint: data.startingPoint,
+                startingCity: data.startingCity,
                 ishaYogaCenter: data.ishaYogaCenter,
                 departure: data.departure,
                 seats: data.seats,
@@ -63,8 +65,6 @@ export default function MultistepForm() {
         // Here you would typically send the form data to your backend
         setStep(3)
     }
-
-    const onError = (errors, e) => console.log(errors, e)
 
     const renderStep = () => {
         switch (step) {
