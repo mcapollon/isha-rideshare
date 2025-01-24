@@ -13,7 +13,6 @@ export default function ContactDetailsStep() {
           id="email"
           type="email"
           {...register("email", { 
-            required: "Email is required",
             pattern: {
               value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
               message: "Invalid email address"
@@ -27,7 +26,6 @@ export default function ContactDetailsStep() {
           id="phone"
           type="tel"
           {...register("phone", { 
-            required: "Phone number is required",
             pattern: {
               value: /^[0-9]{10}$/,
               message: "Invalid phone number, should be 10 digits"

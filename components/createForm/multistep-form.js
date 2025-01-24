@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useForm, FormProvider } from 'react-hook-form'
+import { useForm, FormProvider, useFormContext } from 'react-hook-form'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import RideDetailsStep from './steps/ride-details'
@@ -9,17 +9,30 @@ import PricingStep from './steps/pricing'
 import ContactDetailsStep from './steps/contact-details'
 import ReviewStep from './steps/review'
 import { Stepper } from './stepper'
+import { createClient } from '@/utils/supabase/client'
 
-
-const steps = ['Ride Details', 'Pricing', 'Contact Details', 'Review'];
+// const steps = ['Ride Details', 'Pricing', 'Contact Details', 'Review'];
+const steps = ['Ride Details', 'Pricing', 'Review'];
 
 export default function MultistepForm() {
     const [step, setStep] = useState(1)
-    const methods = useForm({mode: 'onBlur'})
+    const methods = useForm({
+        mode: 'onBlur',
+        defaultValues: {
+            startingPoint: '',
+            ishaYogaCenter: '',
+            departure: null,
+            seats: '',
+            luggage: '',
+            description: '',
+            rideDistance: null
+        }
+    })
 
     const nextStep = () => {
         methods.trigger().then((isValid) => {
             if (isValid) {
+                console.log('Current form data:', methods.getValues())
                 setStep(step + 1)
             }
         })
@@ -27,11 +40,31 @@ export default function MultistepForm() {
     }
     const prevStep = () => setStep(step - 1)
 
-    const onSubmit = (data) => {
+    const onSubmit = async (data) => {
         console.log('Form submitted:', data)
+
+        const supabase = createClient()
+        const { error } = await supabase
+            .from('rides')
+            .insert({
+                startingPoint: data.startingPoint,
+                ishaYogaCenter: data.ishaYogaCenter,
+                departure: data.departure,
+                seats: data.seats,
+                luggage: data.luggage,
+                description: data.description,
+                rideDistance: data.rideDistance,
+                pricePerSeat: data.pricePerSeat,
+            })
+            if (error) {
+                console.log(error, 'form error')
+            }
+            
         // Here you would typically send the form data to your backend
-        setStep(4)
+        setStep(3)
     }
+
+    const onError = (errors, e) => console.log(errors, e)
 
     const renderStep = () => {
         switch (step) {
@@ -39,9 +72,9 @@ export default function MultistepForm() {
                 return <RideDetailsStep />
             case 2:
                 return <PricingStep />
+            // case 3:
+            //     return <ContactDetailsStep />
             case 3:
-                return <ContactDetailsStep />
-            case 4:
                 return <ReviewStep />
             default:
                 return null
@@ -59,7 +92,7 @@ export default function MultistepForm() {
                         <Stepper currentStep={step} steps={steps} />
                     </div>
                     <div className="mt-8">
-                        <form onSubmit={methods.handleSubmit(onSubmit)}>
+                        <form>
                             {renderStep()}
                         </form>
                     </div>
@@ -70,12 +103,12 @@ export default function MultistepForm() {
                             Previous
                         </Button>
                     )}
-                    {step < 4 ? (
+                    {step < steps.length ? (
                         <Button type="button" onClick={nextStep}>
                             Next
                         </Button>
                     ) : (
-                        <Button type="submit">Submit</Button>
+                        <Button type="submit" onClick={methods.handleSubmit(onSubmit)}>Submit</Button>
                     )}
                 </CardFooter>
             </Card>

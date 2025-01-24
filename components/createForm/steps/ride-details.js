@@ -47,7 +47,7 @@ const luggageOptions = [
 ]
 
 export default function RideDetailsStep() {
-    const { register, control, watch, getValues, setValue, formState: { errors }, clearErrors } = useFormContext()
+    const { register, control, watch, getValues, setValue, setError, formState: { errors }, clearErrors } = useFormContext()
 
     const [selected, setSelected] = useState(ishaYogaCenters[3])
     const [ishaYogaCenterSelectedCoordinates, setIshaYogaCenterSelectedCoordinates] = useState({ lat: 10.9763407, lng: 76.7342506 })
@@ -135,6 +135,7 @@ export default function RideDetailsStep() {
                         });
                         
                 } else {
+                    setError('startingPoint', { type: "custom", message: "There is no valid route between your starting point and the selected isha yoga center" })
                     console.log('Error fetching directions:', status);
                 }
             }
