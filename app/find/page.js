@@ -6,54 +6,155 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { createClient } from "@/utils/supabase/client"
 import { useEffect, useState } from "react"
-import { set } from "date-fns"
+import { format, set } from "date-fns";
+import DatePicker from "react-datepicker"
+import "react-datepicker/dist/react-datepicker.css"
+import { Controller, useForm } from "react-hook-form";
+import Autocomplete from "react-google-autocomplete";
 
 export default function Page() {
+  const ishaYogaCenters = [
+    {
+        name: 'Isha Yoga Center, Coimbatore',
+        address: 'XPGP+CMF, Isha Yoga Center Rd, Ikkaraibooluvampatti, Tamil Nadu 641114, India',
+        coordinates: { lat: '10.9763407', long: '76.7342506' }
+    },
+    {
+        name: 'Sadhguru Sannidhi, Bengaluru',
+        address: 'FPP4+MH, Avalagurki, Karnataka 562101',
+        coordinates: { lat: '13.4861346', long: '77.7064053' }
+    },
+    {
+        name: 'Sadhguru Sanndhi, Chattarpur',
+        address: 'Mandi Road, 4, Osho Dr, Gadaipur, New Delhi, Delhi 110030',
+        coordinates: { lat: '28.4813421', long: '77.1517377' }
+    },
+    {
+        name: 'Isha Institute of Inner-sciences (iii)',
+        address: '951 Isha Lane, McMinnville, TN - 37110, USA',
+        coordinates: { lat: '35.5649253', long: '-85.5729322' }
+    },
+    {
+        name: 'Isha Yoga Center, California',
+        address: 'Isha Yoga Center LA, 7045 Farralone Ave. Canoga Park, CA 91303',
+        coordinates: { lat: '34.1991773', long: '-118.6128837' }
+    }
+]
+
   const supabase = createClient()
 
+  const { register, control, watch, getValues, setValue, setError, formState: { errors }, clearErrors } = useForm()
   const [rides, setRides] = useState([])
 
   useEffect(() => {
-    getRides().then((rides) => {
+    getAllRides().then((rides) => {
       setRides(rides)
       console.log(rides)
     })
-
   }, [])
 
-  
-
-  async function getRides() {
+  async function getAllRides() {
     let { data: rides, error } = await supabase
       .from('rides')
       .select('*')
 
-    return rides
+      return rides
   }
 
-  
+  const [searchStartingPoint, setSearchStartingPoint] = useState('')
+  const [searchIshaYogaCenter, setSearchIshaYogaCenter] = useState('')
+
+  async function getRidesFiltered() {    
+
+    if (searchStartingPoint && searchIshaYogaCenter) {
+      let { data: rides, error } = await supabase
+      .from('rides')
+      .select('*')
+      .eq('startingCity', searchStartingPoint)
+      .eq('ishaYogaCenter', searchIshaYogaCenter)
+
+      setRides(rides)
+    }
+  }
+
   return (
     <div className="min-h-screen">
       {/* Search Section */}
       <div className="container mx-auto px-4 py-8">
-        <div className="bg-white rounded-lg shadow-lg p-6 max-w-4xl mx-auto">
+        <div className="bg-white rounded-lg shadow-lg p-6 mx-auto border">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-black/50" />
-              <Input placeholder="From" className="pl-9 border-black/20" />
+              <Controller
+                name="searchStartingPoint"
+                control={control}
+                rules={{ required: "Starting point is required" }}
+                defaultValue=""
+                render={({ field }) => (
+                  <Autocomplete
+                    {...field}
+                    value={field.value}
+                    placeholder="Please enter a city"
+                    apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS}
+                    onPlaceSelected={(place) => {
+                      console.log(place)
+                      setSearchStartingPoint(place.address_components[0].long_name);
+                      field.onChange(place.address_components[0].long_name);
+                      clearErrors('searchStartingPoint');
+                    }}
+                    className='flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm'
+                    options={{
+                      types: ['administrative_area_level_3'],
+                    }}
+                  />
+                )}
+              />
             </div>
             <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-black/50" />
-              <Input placeholder="To" className="pl-9 border-black/20" />
+            <Controller
+                    name="searchIshaYogaCenter"
+                    control={control}
+                    defaultValue=""
+                    rules={{ required: "Isha Yoga Center is required" }}
+                    render={({ field }) => (
+                        <Select {...field} onValueChange={(e) => { field.onChange(e); setSearchIshaYogaCenter(e); clearErrors('searchIshaYogaCenter'); }}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select Isha Yoga Center" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {ishaYogaCenters.map((ishaYogaCenter, i) => (
+                                    <SelectItem key={i} value={ishaYogaCenter.name}>{ishaYogaCenter.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    )}
+                />
             </div>
-            <div className="relative">
-              <Calendar className="absolute left-3 top-3 h-4 w-4 text-black/50" />
-              <Input placeholder="When" className="pl-9 border-black/20" />
+            <div className="inline-grid">
+              <Controller
+                name="searchDeparture"
+                control={control}
+                defaultValue={null}
+                rules={{ required: "Departure date and time is required" }}
+                render={({ field }) => (
+                  <DatePicker
+                    id="searchDeparture"
+                    selected={field.value}
+                    showIcon
+                    icon={<Calendar className="h-4 w-4 text-black/50" />}
+                    onChange={(date) => { field.onChange(date); clearErrors('searchDeparture') }}
+                    showTimeSelect
+                    dateFormat="MMMM d, yyyy h:mm aa"
+                    minDate={new Date()}
+                    className="w-full p-2 border rounded-md flex h-10 border-input bg-background text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+                  />
+                )}
+              />
             </div>
           </div>
-          <Button className="mt-4 w-full bg-black text-white hover:bg-black/90">Search</Button>
+          <Button onClick={() => getRidesFiltered()} className="mt-4 w-full bg-black text-white hover:bg-black/90">Search</Button>
         </div>
 
         {/* Results */}
@@ -69,7 +170,7 @@ export default function Page() {
                   <div className="flex items-center gap-2 mb-2">
                     <h3 className="font-semibold">{ride.startingCity} to {ride.ishaYogaCenter}</h3>
                     <Badge variant="outline" className="border-black text-black">
-                      12:00pm
+                      {format(ride.departure, 'p')}
                     </Badge>
                   </div>
                   <div className="text-sm text-black/60">Pickup: {ride.startingPoint}</div>
@@ -86,4 +187,3 @@ export default function Page() {
     </div>
   )
 }
-
