@@ -54,131 +54,172 @@ export default function RideDetailsStep() {
     const [startingAddress, setStartingAddress] = useState(null)
     const [startingCoordinates, setStartingCoordinates] = useState(null)
 
+    // const handleIshaYogaCenterChange = (e) => {
+    //         switch (e) {
+    //             case 'Isha Yoga Center, Coimbatore':
+    //                 return { lat: 10.9763407, lng: 76.7342506 }
+    //                 break;
+    //             case 'Sadhguru Sannidhi, Bengaluru':
+    //                 return { lat: 13.4861346, lng: 77.7064053 }
+    //                 break;
+    //             case 'Sadhguru Sanndhi, Chattarpur':
+    //                 return { lat: 28.4813421, lng: 77.1517377 }
+    //                 break;
+    //             case 'Isha Institute of Inner-sciences (iii)':
+    //                 return { lat: 35.5649253, lng: -85.5729322 }
+    //                 break;
+    //             case 'Isha Yoga Center, California':
+    //                 return { lat: 34.1991773, lng: -118.6128837 }
+    //                 break;
+    //             default:
+    //                 return { lat: 10.9763407, lng: 76.7342506 }
+    //                 break;
+    //         }
+    // };
+
+
     const handleIshaYogaCenterChange = (e) => {
-            switch (e) {
-                case 'Isha Yoga Center, Coimbatore':
-                    return { lat: 10.9763407, lng: 76.7342506 }
-                    break;
-                case 'Sadhguru Sannidhi, Bengaluru':
-                    return { lat: 13.4861346, lng: 77.7064053 }
-                    break;
-                case 'Sadhguru Sanndhi, Chattarpur':
-                    return { lat: 28.4813421, lng: 77.1517377 }
-                    break;
-                case 'Isha Institute of Inner-sciences (iii)':
-                    return { lat: 35.5649253, lng: -85.5729322 }
-                    break;
-                case 'Isha Yoga Center, California':
-                    return { lat: 34.1991773, lng: -118.6128837 }
-                    break;
-                default:
-                    return { lat: 10.9763407, lng: 76.7342506 }
-                    break;
-            }
+        let coordinates;
+        switch (e) {
+            case 'Isha Yoga Center, Coimbatore':
+                coordinates = { lat: 10.9763407, lng: 76.7342506 };
+                break;
+            case 'Sadhguru Sannidhi, Bengaluru':
+                coordinates = { lat: 13.4861346, lng: 77.7064053 };
+                break;
+            case 'Sadhguru Sanndhi, Chattarpur':
+                coordinates = { lat: 28.4813421, lng: 77.1517377 };
+                break;
+            case 'Isha Institute of Inner-sciences (iii)':
+                coordinates = { lat: 35.5649253, lng: -85.5729322 };
+                break;
+            case 'Isha Yoga Center, California':
+                coordinates = { lat: 34.1991773, lng: -118.6128837 };
+                break;
+            default:
+                coordinates = { lat: 10.9763407, lng: 76.7342506 };
+        }
+        
+        setIshaYogaCenterSelectedCoordinates(coordinates);
+        console.log('Isha Yoga Center - Switch:', e);
+        
+        if (startingCoordinates && ishaYogaCenterSelectedCoordinates) {
+            getDirections(startingCoordinates, coordinates);
+        }
+        
+        return coordinates;
     };
 
     useEffect(() => {
-        switch (selectedIshaYogaCenter) {
-            case 'Isha Yoga Center, Coimbatore':
-                setIshaYogaCenterSelectedCoordinates({ lat: 10.9763407, lng: 76.7342506 });
-                if (startingCoordinates) {
-                    getDirections(startingCoordinates, { lat: 10.9763407, lng: 76.7342506 });
-                } else console.log('handle isha yoga center change - no origin')
-                break;
-            case 'Sadhguru Sannidhi, Bengaluru':
-                setIshaYogaCenterSelectedCoordinates({ lat: 13.4861346, lng: 77.7064053 });
-                if (startingCoordinates) {
-                    getDirections(startingCoordinates, { lat: 13.4861346, lng: 77.7064053 });
-                }  else console.log('handle isha yoga center change - no origin')
-                break;
-            case 'Sadhguru Sanndhi, Chattarpur':
-                setIshaYogaCenterSelectedCoordinates({ lat: 28.4813421, lng: 77.1517377 });
-                if (startingCoordinates) {
-                    getDirections(startingCoordinates, { lat: 28.4813421, lng: 77.1517377 });
-                }  else console.log('handle isha yoga center change - no origin')
-                break;
-            case 'Isha Institute of Inner-sciences (iii)':
-                setIshaYogaCenterSelectedCoordinates({ lat: 35.5649253, lng: -85.5729322 });
-                if (startingCoordinates) {
-                    getDirections(startingCoordinates, { lat: 35.5649253, lng: -85.5729322 });
-                } else console.log('handle isha yoga center change - no origin')
-                break;
-            case 'Isha Yoga Center, California':
-                setIshaYogaCenterSelectedCoordinates({ lat: 34.1991773, lng: -118.6128837 });
-                if (startingCoordinates) {
-                    getDirections(startingCoordinates, { lat: 34.1991773, lng: -118.6128837 });
-                }  else console.log('handle isha yoga center change - no origin')
-                break;
-            default:
-                setIshaYogaCenterSelectedCoordinates({ lat: 10.9763407, lng: 76.7342506 });
-                if (startingCoordinates) {
-                    getDirections(startingCoordinates, { lat: 10.9763407, lng: 76.7342506 });
-                }  else console.log('handle isha yoga center change - no origin')
-                break;
+        console.log('Starting coordinates:', startingCoordinates)
+        console.log('Selected Isha Yoga Center:', selectedIshaYogaCenter)
+        if (startingCoordinates && selectedIshaYogaCenter) {
+            getDirections(startingCoordinates, ishaYogaCenterSelectedCoordinates);
         }
-    }, [selectedIshaYogaCenter])
+    }, [startingCoordinates, selectedIshaYogaCenter]);
 
-    useEffect(() => {
-        if (startingAddress && selectedIshaYogaCenter) {
-            console.log(startingAddress.geometry.location.lat(), startingAddress.geometry.location.lng(), 'long, lat')
-            const lat = startingAddress.geometry.location.lat();
-            const lng = startingAddress.geometry.location.lng();
-            setStartingCoordinates({ lat: lat, lng: lng });
-            console.log('Starting coordinates:', startingCoordinates)
-            setValue('startingCity', startingAddress.address_components[3].long_name);
+    // useEffect(() => {
+    //     switch (selectedIshaYogaCenter) {
+    //         case 'Isha Yoga Center, Coimbatore':
+    //             setIshaYogaCenterSelectedCoordinates({ lat: 10.9763407, lng: 76.7342506 });
+    //             if (startingCoordinates) {
+    //                 getDirections(startingCoordinates, { lat: 10.9763407, lng: 76.7342506 });
+    //             } else console.log('handle isha yoga center change - no origin')
+    //             break;
+    //         case 'Sadhguru Sannidhi, Bengaluru':
+    //             setIshaYogaCenterSelectedCoordinates({ lat: 13.4861346, lng: 77.7064053 });
+    //             if (startingCoordinates) {
+    //                 getDirections(startingCoordinates, { lat: 13.4861346, lng: 77.7064053 });
+    //             }  else console.log('handle isha yoga center change - no origin')
+    //             break;
+    //         case 'Sadhguru Sanndhi, Chattarpur':
+    //             setIshaYogaCenterSelectedCoordinates({ lat: 28.4813421, lng: 77.1517377 });
+    //             if (startingCoordinates) {
+    //                 getDirections(startingCoordinates, { lat: 28.4813421, lng: 77.1517377 });
+    //             }  else console.log('handle isha yoga center change - no origin')
+    //             break;
+    //         case 'Isha Institute of Inner-sciences (iii)':
+    //             setIshaYogaCenterSelectedCoordinates({ lat: 35.5649253, lng: -85.5729322 });
+    //             if (startingCoordinates) {
+    //                 getDirections(startingCoordinates, { lat: 35.5649253, lng: -85.5729322 });
+    //             } else console.log('handle isha yoga center change - no origin')
+    //             break;
+    //         case 'Isha Yoga Center, California':
+    //             setIshaYogaCenterSelectedCoordinates({ lat: 34.1991773, lng: -118.6128837 });
+    //             if (startingCoordinates) {
+    //                 getDirections(startingCoordinates, { lat: 34.1991773, lng: -118.6128837 });
+    //             }  else console.log('handle isha yoga center change - no origin')
+    //             break;
+    //         default:
+    //             setIshaYogaCenterSelectedCoordinates({ lat: 10.9763407, lng: 76.7342506 });
+    //             if (startingCoordinates) {
+    //                 getDirections(startingCoordinates, { lat: 10.9763407, lng: 76.7342506 });
+    //             }  else console.log('handle isha yoga center change - no origin')
+    //             break;
+    //     }
+    // }, [selectedIshaYogaCenter])
+
+    // useEffect(() => {
+    //     if (startingAddress && selectedIshaYogaCenter) {
+    //         console.log(startingAddress.geometry.location.lat(), startingAddress.geometry.location.lng(), 'long, lat')
+    //         const lat = startingAddress.geometry.location.lat();
+    //         const lng = startingAddress.geometry.location.lng();
+    //         setStartingCoordinates({ lat: lat, lng: lng });
+    //         console.log('Starting coordinates:', startingCoordinates)
+    //         setValue('startingCity', startingAddress.address_components[3].long_name);
 
 
-            const destination = handleIshaYogaCenterChange(getValues('ishaYogaCenter'))
+    //         const destination = handleIshaYogaCenterChange(getValues('ishaYogaCenter'))
 
-            if (ishaYogaCenterSelectedCoordinates) {
-                console.log('coordinates set:', ishaYogaCenterSelectedCoordinates)
-                const directionsService = new window.google.maps.DirectionsService();
-                directionsService.route(
-                    {
-                        origin: startingCoordinates,
-                        destination: {
-                            lat: parseFloat(destination.lat),
-                            lng: parseFloat(destination.lng)
-                        },
-                        travelMode: 'DRIVING'
-                    },
-                    (result, status) => {
-                        if (status === window.google.maps.DirectionsStatus.OK) {
-                            setValue('rideDistance', result.routes[0].legs[0].distance.value);
-                            console.log('Directions result:',
-                                {
-                                    distance: result.routes[0].legs[0].distance,
-                                    duration: result.routes[0].legs[0].duration,
-                                    start: result.routes[0].legs[0].start_address,
-                                    destination: result.routes[0].legs[0].end_address
-                                });
-                            setValue('routeStatus', 'OK');
-                            console.log(getValues('routeStatus'));
-                            clearErrors('startingPoint');
-                        } else {
-                            setError('startingPoint', { type: "manual", message: "There is no valid route between your starting point and the selected isha yoga center" })
-                            console.log('Error fetching directions:', status);
-                            console.log('Error fetching results:', result);
-                            if (status == 'NOT_FOUND') {
-                                setValue('routeStatus', 'NOT_FOUND');
-                                console.log(getValues('routeStatus'));
-                                setError('root.serverError', {
-                                    type: status,
-                                })
-                            }
-                        }
-                    }
-                );
-            }
-        } else if (startingAddress) {
-            console.log(startingAddress.geometry.location.lat(), startingAddress.geometry.location.lng(), 'long, lat')
-            const lat = startingAddress.geometry.location.lat();
-            const lng = startingAddress.geometry.location.lng();
-            setStartingCoordinates({ lat: lat, lng: lng });
-            console.log('Starting coordinates:', startingCoordinates)
-            setValue('startingCity', startingAddress.address_components[3].long_name);
-        }
-    }, [startingAddress])
+    //         if (ishaYogaCenterSelectedCoordinates) {
+    //             console.log('coordinates set:', ishaYogaCenterSelectedCoordinates)
+    //             const directionsService = new window.google.maps.DirectionsService();
+    //             directionsService.route(
+    //                 {
+    //                     origin: startingCoordinates,
+    //                     destination: {
+    //                         lat: parseFloat(destination.lat),
+    //                         lng: parseFloat(destination.lng)
+    //                     },
+    //                     travelMode: 'DRIVING'
+    //                 },
+    //                 (result, status) => {
+    //                     if (status === window.google.maps.DirectionsStatus.OK) {
+    //                         setValue('rideDistance', result.routes[0].legs[0].distance.value);
+    //                         console.log('Directions result:',
+    //                             {
+    //                                 distance: result.routes[0].legs[0].distance,
+    //                                 duration: result.routes[0].legs[0].duration,
+    //                                 start: result.routes[0].legs[0].start_address,
+    //                                 destination: result.routes[0].legs[0].end_address
+    //                             });
+    //                         setValue('routeStatus', 'OK');
+    //                         console.log(getValues('routeStatus'));
+    //                         clearErrors('startingPoint');
+    //                     } else {
+    //                         setError('startingPoint', { type: "manual", message: "There is no valid route between your starting point and the selected isha yoga center" })
+    //                         console.log('Error fetching directions:', status);
+    //                         console.log('Error fetching results:', result);
+    //                         if (status == 'NOT_FOUND') {
+    //                             setValue('routeStatus', 'NOT_FOUND');
+    //                             console.log(getValues('routeStatus'));
+    //                             setError('root.serverError', {
+    //                                 type: status,
+    //                             })
+    //                         }
+    //                     }
+    //                 }
+    //             );
+    //         }
+    //     } else if (startingAddress) {
+    //         console.log(startingAddress.geometry.location.lat(), startingAddress.geometry.location.lng(), 'long, lat')
+    //         const lat = startingAddress.geometry.location.lat();
+    //         const lng = startingAddress.geometry.location.lng();
+    //         setStartingCoordinates({ lat: lat, lng: lng });
+    //         console.log('Starting coordinates:', startingCoordinates)
+    //         setValue('startingCity', startingAddress.address_components[3].long_name);
+    //     }
+    // }, [startingAddress])
 
     // const handleOriginSelected = (place) => {
 
@@ -238,16 +279,53 @@ export default function RideDetailsStep() {
     //     }
     // };
 
-    const getDirections = (origin, ishaYogaCenterSelectedCoordinates) => {
-        // console.log('coordinates set:', ishaYogaCenterSelectedCoordinates)
+    // const getDirections = (origin, ishaYogaCenterSelectedCoordinates) => {
+    //     // console.log('coordinates set:', ishaYogaCenterSelectedCoordinates)
+    //     const directionsService = new window.google.maps.DirectionsService();
+    //     directionsService.route(
+    //         {
+    //             origin: origin,
+    //             destination: {
+    //                 lat: parseFloat(ishaYogaCenterSelectedCoordinates.lat),
+    //                 lng: parseFloat(ishaYogaCenterSelectedCoordinates.lng)
+    //             },
+    //             travelMode: 'DRIVING'
+    //         },
+    //         (result, status) => {
+    //             if (status === window.google.maps.DirectionsStatus.OK) {
+    //                 setValue('rideDistance', result.routes[0].legs[0].distance.value);
+    //                 console.log('Directions result:',
+    //                     {
+    //                         distance: result.routes[0].legs[0].distance,
+    //                         duration: result.routes[0].legs[0].duration,
+    //                         start: result.routes[0].legs[0].start_address,
+    //                         destination: result.routes[0].legs[0].end_address
+    //                     });
+    //                 setValue('routeStatus', 'OK');
+    //                 console.log(getValues('routeStatus'));
+    //                 clearErrors('startingPoint');
+    //             } else {
+    //                 setError('startingPoint', { type: "manual", message: "There is no valid route between your starting point and the selected isha yoga center" })
+    //                 console.log('Error fetching directions:', status);
+    //                 console.log('Error fetching results:', result);
+    //                 if (status == 'NOT_FOUND') {
+    //                     setValue('routeStatus', 'NOT_FOUND');
+    //                     console.log(getValues('routeStatus'));
+    //                     setError('root.serverError', {
+    //                         type: status,
+    //                     })
+    //                 }
+    //             }
+    //         }
+    //     ); 
+    // }
+
+    const getDirections = (origin, destination) => {
         const directionsService = new window.google.maps.DirectionsService();
         directionsService.route(
             {
                 origin: origin,
-                destination: {
-                    lat: parseFloat(ishaYogaCenterSelectedCoordinates.lat),
-                    lng: parseFloat(ishaYogaCenterSelectedCoordinates.lng)
-                },
+                destination: destination,
                 travelMode: 'DRIVING'
             },
             (result, status) => {
@@ -276,8 +354,8 @@ export default function RideDetailsStep() {
                     }
                 }
             }
-        ); 
-    }
+        );
+    };
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -295,7 +373,11 @@ export default function RideDetailsStep() {
                             apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS}
                             onPlaceSelected={(place) => {
                                 field.onChange(place.formatted_address);
-                                setStartingAddress(place);
+                                const lat = place.geometry.location.lat();
+                                const lng = place.geometry.location.lng();
+                                const coordinates = { lat, lng };
+                                setStartingCoordinates(coordinates);
+                                setValue('startingCity', place.address_components[3].long_name);
                                 clearErrors('startingPoint');
                             }}
                             className='flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm'
@@ -317,7 +399,7 @@ export default function RideDetailsStep() {
                     defaultValue=""
                     // rules={{ required: "Isha Yoga Center is required" }}
                     render={({ field }) => (
-                        <Select {...field}  onValueChange={(e) => { field.onChange(e); setSelectedIshaYogaCenter(e); clearErrors('ishaYogaCenter') }}>
+                        <Select {...field}  onValueChange={(e) => { field.onChange(e); handleIshaYogaCenterChange(e); setSelectedIshaYogaCenter(e); clearErrors('ishaYogaCenter') }}>
                             <SelectTrigger>
                                 <SelectValue placeholder="Select Isha Yoga Center" />
                             </SelectTrigger>
