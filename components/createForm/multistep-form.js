@@ -22,12 +22,21 @@ export default function MultistepForm() {
     const schema = yup
         .object({
             // .test('Please choose a valid starting point', () => getDirections(methods.getValues('startingPoint'), methods.getValues('ishaYogaCenter'))),
-            startingPoint: yup.string().required(),
-            ishaYogaCenter: yup.string().required()
-            // .test((ctx) => {
-            //     getDirections(methods.getValues('startingPoint'), methods.getValues('ishaYogaCenter'));
-            //     setError('ishaYogaCenter', { type: "manual", message: "There is no valid route between your starting point and the selected isha yoga center" })
-            // }),
+            startingPoint: yup.string().required('Starting Point is required')
+            .test('routeStatus', 'There is no valid route between your starting point and the selected isha yoga center',() => {
+                console.log(getValues('routeStatus'), 'STARTING POINT TEST - ROUTE STATUS')
+                if (getValues('routeStatus') === 'OK') {
+                    return true
+                } else return false
+            }),
+            ishaYogaCenter: yup.string().required('Choosing an Isha Yoga Center is required')
+            .test('routeStatus', 'There is no valid route between the your starting point and the selected Isha Yoga Center',() => {
+                console.log(getValues('routeStatus'), 'ISHA YOGA CENTER TEST - ROUTE STATUS')
+
+                if (getValues('routeStatus') === 'OK') {
+                    return true
+                } else return false
+            }),
         })
         .required()
 
@@ -48,67 +57,13 @@ export default function MultistepForm() {
 
     const { setValue, getValues, setError, clearErrors } = methods
 
-    useEffect(() => {
-
-        console.log('Starting point:', methods.getValues('startingPoint'))
-        console.log('Isha Yoga Center:', methods.getValues('ishaYogaCenter'))
-
-    }, [methods.getValues('ishaYogaCenter'), methods.getValues('startingPoint')])
-
-
-
-    const getDirections = (origin, destination) => {
-        const directionsService = new window.google.maps.DirectionsService();
-        directionsService.route(
-            {
-                origin: origin,
-                destination: {
-                    lat: parseFloat(destination.lat),
-                    lng: parseFloat(destination.lng)
-                },
-                travelMode: 'DRIVING'
-            },
-            (result, status) => {
-                if (status === window.google.maps.DirectionsStatus.OK) {
-                    setValue('rideDistance', result.routes[0].legs[0].distance.value);
-                    console.log('Directions result:',
-                        {
-                            distance: result.routes[0].legs[0].distance,
-                            duration: result.routes[0].legs[0].duration,
-                            start: result.routes[0].legs[0].start_address,
-                            destination: result.routes[0].legs[0].end_address
-                        });
-                    setValue('routeStatus', 'OK');
-                    console.log(getValues('routeStatus'));
-                    clearErrors('startingPoint');
-                    return true
-                } else {
-                    setError('startingPoint', { type: "manual", message: "There is no valid route between your starting point and the selected isha yoga center" })
-                    console.log('Error fetching directions:', status);
-                    if (status == 'NOT_FOUND') {
-                        setValue('routeStatus', 'NOT_FOUND');
-                        console.log(getValues('routeStatus'));
-                        setError('root.serverError', {
-                            type: status,
-                        })
-                    }
-                    return false
-                }
-            }
-        );
-    }
-
-
-
     const nextStep = () => {
         methods.trigger().then((isValid) => {
             if (step > 1) {
-                if (isValid && methods.getValue('rideStatus') == 'OK') {
-                    console.log('Current form data:', methods.getValues())
+                if (isValid) {
                     setStep(step + 1)
                 }
             } else if (isValid) {
-                console.log('Current form data:', methods.getValues())
                 setStep(step + 1)
             }
         })

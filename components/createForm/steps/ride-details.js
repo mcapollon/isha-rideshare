@@ -51,7 +51,6 @@ export default function RideDetailsStep() {
 
     const [selectedIshaYogaCenter, setSelectedIshaYogaCenter] = useState(null)
     const [ishaYogaCenterSelectedCoordinates, setIshaYogaCenterSelectedCoordinates] = useState(null)
-    const [startingAddress, setStartingAddress] = useState(null)
     const [startingCoordinates, setStartingCoordinates] = useState(null)
 
     const handleIshaYogaCenterChange = (e) => {
@@ -77,7 +76,6 @@ export default function RideDetailsStep() {
         }
         
         setIshaYogaCenterSelectedCoordinates(coordinates);
-        console.log('Isha Yoga Center - Switch:', e);
         
         if (startingCoordinates && ishaYogaCenterSelectedCoordinates) {
             getDirections(startingCoordinates, coordinates);
@@ -87,8 +85,6 @@ export default function RideDetailsStep() {
     };
 
     useEffect(() => {
-        console.log('Starting coordinates:', startingCoordinates)
-        console.log('Selected Isha Yoga Center:', selectedIshaYogaCenter)
         if (startingCoordinates && selectedIshaYogaCenter) {
             getDirections(startingCoordinates, ishaYogaCenterSelectedCoordinates);
         }
@@ -113,7 +109,7 @@ export default function RideDetailsStep() {
                             destination: result.routes[0].legs[0].end_address
                         });
                     setValue('routeStatus', 'OK');
-                    console.log(getValues('routeStatus'));
+                    console.log(getValues('routeStatus'), 'ROUTE STATUS');
                     clearErrors('startingPoint');
                 } else {
                     setError('startingPoint', { type: "manual", message: "There is no valid route between your starting point and the selected isha yoga center" })
@@ -121,7 +117,7 @@ export default function RideDetailsStep() {
                     console.log('Error fetching results:', result);
                     if (status == 'NOT_FOUND') {
                         setValue('routeStatus', 'NOT_FOUND');
-                        console.log(getValues('routeStatus'));
+                        console.log(getValues('routeStatus'), 'ROUTE STATUS');
                         setError('root.serverError', {
                             type: status,
                         })
@@ -138,7 +134,6 @@ export default function RideDetailsStep() {
                 <Controller
                     name="startingPoint"
                     control={control}
-                    rules={{ required: "Starting point is required" }}
                     defaultValue=""
                     render={({ field }) => (
                         <Autocomplete
@@ -175,7 +170,7 @@ export default function RideDetailsStep() {
                     render={({ field }) => (
                         <Select {...field}  onValueChange={(e) => { field.onChange(e); handleIshaYogaCenterChange(e); setSelectedIshaYogaCenter(e); clearErrors('ishaYogaCenter') }}>
                             <SelectTrigger>
-                                <SelectValue placeholder="Select Isha Yoga Center" />
+                                <SelectValue placeholder="Please select Isha Yoga Center" />
                             </SelectTrigger>
                             <SelectContent>
                                 {ishaYogaCenters.map((ishaYogaCenter, i) => (
