@@ -39,7 +39,7 @@ export default function Navbar() {
           </a>
         </div>
 
-        {/* {session ? (
+        {session ? (
 
           <>
             <p>{session?.user.name}</p>
@@ -60,7 +60,7 @@ export default function Navbar() {
               </a>
             </div>
 
-      )} */}
+      )}
           
 
         <div className="flex lg:hidden">
