@@ -3,4 +3,5 @@ import GitHub from "next-auth/providers/github"
 
 export const { handlers, auth } = NextAuth({
   providers: [GitHub],
+  trustHost: true
 })

@@ -1,39 +1,38 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useForm, FormProvider, useFormContext } from 'react-hook-form'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import RideDetailsStep from './steps/ride-details'
 import PricingStep from './steps/pricing'
-import ContactDetailsStep from './steps/contact-details'
 import ReviewStep from './steps/review'
 import { Stepper } from './stepper'
 import { createClient } from '@/utils/supabase/client'
 import { yupResolver } from "@hookform/resolvers/yup"
 import * as yup from "yup"
+import useFormStore from './formStore'
 
 // const steps = ['Ride Details', 'Pricing', 'Contact Details', 'Review'];
 const steps = ['Ride Details', 'Pricing', 'Review'];
 
 export default function MultistepForm() {
     const [step, setStep] = useState(1)
+    const formStoreRouteStatus = useFormStore((state) => state.formStoreRouteStatus)
 
     const schema = yup
         .object({
-            // .test('Please choose a valid starting point', () => getDirections(methods.getValues('startingPoint'), methods.getValues('ishaYogaCenter'))),
-            startingPoint: yup.string().required('Starting Point is required')
+            startingPointAddress: yup.string().required('Starting Point is required')
             .test('routeStatus', 'There is no valid route between your starting point and the selected isha yoga center',() => {
-                console.log(getValues('routeStatus'), 'STARTING POINT TEST - ROUTE STATUS')
-                if (getValues('routeStatus') === 'OK') {
+                console.log(formStoreRouteStatus, '- STARTING POINT TEST - ROUTE STATUS')
+                if (formStoreRouteStatus === 'OK') {
                     return true
                 } else return false
             }),
             ishaYogaCenter: yup.string().required('Choosing an Isha Yoga Center is required')
             .test('routeStatus', 'There is no valid route between the your starting point and the selected Isha Yoga Center',() => {
-                console.log(getValues('routeStatus'), 'ISHA YOGA CENTER TEST - ROUTE STATUS')
-
-                if (getValues('routeStatus') === 'OK') {
+                console.log(formStoreRouteStatus, '- ISHA YOGA CENTER TEST - ROUTE STATUS')
+                if (formStoreRouteStatus === 'OK') {
                     return true
                 } else return false
             }),

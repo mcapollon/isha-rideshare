@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea"
 import DatePicker from "react-datepicker"
 import "react-datepicker/dist/react-datepicker.css"
 import Autocomplete from "react-google-autocomplete";
-import { set } from 'date-fns'
+import useFormStore from '../formStore'
 
 const ishaYogaCenters = [
     {
@@ -49,6 +49,15 @@ const luggageOptions = [
 export default function RideDetailsStep() {
     const { register, control, getValues, setValue, setError, formState: { errors }, clearErrors } = useFormContext()
 
+    const formStoreStartingCoordinates = useFormStore((state) => state.formStoreStartingCoordinates)
+    const formStoreIshaYogaCenterCoordinates = useFormStore((state) => state.formStoreIshaYogaCenterCoordinates)
+    const formStoreRouteStatus = useFormStore((state) => state.formStoreRouteStatus)
+
+    const updateFormStoreStartingCoordinates = useFormStore((state) => state.updateFormStoreStartingCoordinates)
+    const updateFormStoreIshaYogaCenterCoordinates = useFormStore((state) => state.updateFormStoreIshaYogaCenterCoordinates)
+    const updateFormStoreRouteStatus = useFormStore((state) => state.updateFormStoreRouteStatus)
+    const updateFormStoreRideDistance = useFormStore((state) => state.updateFormStoreRideDistance)
+
     const [selectedIshaYogaCenter, setSelectedIshaYogaCenter] = useState(null)
     const [ishaYogaCenterSelectedCoordinates, setIshaYogaCenterSelectedCoordinates] = useState(null)
     const [startingCoordinates, setStartingCoordinates] = useState(null)
@@ -78,6 +87,7 @@ export default function RideDetailsStep() {
         setIshaYogaCenterSelectedCoordinates(coordinates);
         
         if (startingCoordinates && ishaYogaCenterSelectedCoordinates) {
+            console.log(ishaYogaCenterSelectedCoordinates, 'handle Isha yoga function get direction trigger')
             getDirections(startingCoordinates, coordinates);
         }
         
@@ -85,12 +95,12 @@ export default function RideDetailsStep() {
     };
 
     useEffect(() => {
-        if (startingCoordinates && selectedIshaYogaCenter) {
-            getDirections(startingCoordinates, ishaYogaCenterSelectedCoordinates);
+        if (formStoreStartingCoordinates && formStoreIshaYogaCenterCoordinates) {
+            getDirections(formStoreStartingCoordinates, formStoreIshaYogaCenterCoordinates);
         }
-    }, [startingCoordinates, selectedIshaYogaCenter]);
+    }, [formStoreIshaYogaCenterCoordinates, formStoreStartingCoordinates]);
 
-    const getDirections = (origin, destination) => {
+    const getDirections = async (origin, destination) => {
         const directionsService = new window.google.maps.DirectionsService();
         directionsService.route(
             {
@@ -100,7 +110,7 @@ export default function RideDetailsStep() {
             },
             (result, status) => {
                 if (status === window.google.maps.DirectionsStatus.OK) {
-                    setValue('rideDistance', result.routes[0].legs[0].distance.value);
+                    updateFormStoreRideDistance(result.routes[0].legs[0].distance.value)
                     console.log('Directions result:',
                         {
                             distance: result.routes[0].legs[0].distance,
@@ -108,20 +118,13 @@ export default function RideDetailsStep() {
                             start: result.routes[0].legs[0].start_address,
                             destination: result.routes[0].legs[0].end_address
                         });
-                    setValue('routeStatus', 'OK');
-                    console.log(getValues('routeStatus'), 'ROUTE STATUS');
-                    clearErrors('startingPoint');
+                    updateFormStoreRouteStatus('OK')
+                    console.log(formStoreRouteStatus, 'ROUTE STATUS');
+                    clearErrors('startingPointAddress');
+                    clearErrors('ishaYogaCenter');
                 } else {
-                    setError('startingPoint', { type: "manual", message: "There is no valid route between your starting point and the selected isha yoga center" })
-                    console.log('Error fetching directions:', status);
-                    console.log('Error fetching results:', result);
-                    if (status == 'NOT_FOUND') {
-                        setValue('routeStatus', 'NOT_FOUND');
-                        console.log(getValues('routeStatus'), 'ROUTE STATUS');
-                        setError('root.serverError', {
-                            type: status,
-                        })
-                    }
+                    setError('startingPointAddress', { type: "manual", message: "There is no valid route between your starting point and the selected isha yoga center" })
+                    updateFormStoreRouteStatus('NO_ROUTE')
                 }
             }
         );
@@ -130,9 +133,9 @@ export default function RideDetailsStep() {
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-                <Label htmlFor="startingPoint">Starting Point</Label>
+                <Label htmlFor="startingPointAddress">Starting Point</Label>
                 <Controller
-                    name="startingPoint"
+                    name="startingPointAddress"
                     control={control}
                     defaultValue=""
                     render={({ field }) => (
@@ -146,8 +149,9 @@ export default function RideDetailsStep() {
                                 const lng = place.geometry.location.lng();
                                 const coordinates = { lat, lng };
                                 setStartingCoordinates(coordinates);
+                                updateFormStoreStartingCoordinates(coordinates)
                                 setValue('startingCity', place.address_components[3].long_name);
-                                clearErrors('startingPoint');
+                                clearErrors('startingPointAddress');
                             }}
                             className='flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm'
                             options={{
@@ -157,8 +161,8 @@ export default function RideDetailsStep() {
                         />
                     )}
                  />
-                
-                {errors.startingPoint && <span className="text-red-500">{errors.startingPoint.message}</span>}
+                {/* {startingPoint ? startingPoint.lat + ' ' + startingPoint.lng : ''} */}
+                {errors.startingPointAddress && <span className="text-red-500">{errors.startingPointAddress.message}</span>}
             </div>
             <div className="space-y-2">
                 <Label htmlFor="ishaYogaCenter">Isha Yoga Center</Label>
@@ -168,9 +172,10 @@ export default function RideDetailsStep() {
                     defaultValue=""
                     // rules={{ required: "Isha Yoga Center is required" }}
                     render={({ field }) => (
-                        <Select {...field}  onValueChange={(e) => { field.onChange(e); handleIshaYogaCenterChange(e); setSelectedIshaYogaCenter(e); clearErrors('ishaYogaCenter') }}>
+                        // setSelectedIshaYogaCenter(e);
+                        <Select {...field}  onValueChange={(e) => { field.onChange(e); updateFormStoreIshaYogaCenterCoordinates(e); clearErrors('ishaYogaCenter') }}>
                             <SelectTrigger>
-                                <SelectValue placeholder="Please select Isha Yoga Center" />
+                                <SelectValue onChange={(e) => console.log('select value changed', e)} placeholder="Please select Isha Yoga Center" />
                             </SelectTrigger>
                             <SelectContent>
                                 {ishaYogaCenters.map((ishaYogaCenter, i) => (

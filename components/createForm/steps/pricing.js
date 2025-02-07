@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
 import * as SliderPrimitive from "@radix-ui/react-slider"
+import useFormStore from "../formStore"
 
 // This is a placeholder function. In a real application, you'd implement
 // actual distance calculation logic or use an API.
@@ -25,6 +26,7 @@ const CustomPriceSlider = ({
     max={max}
     min={min}
     step={step}
+    disabled={disabled}
   >
     <SliderPrimitive.Track className="bg-slate-100 relative grow rounded-full h-2">
       <SliderPrimitive.Range className="absolute bg-primary rounded-full h-full" />
@@ -37,9 +39,13 @@ const CustomPriceSlider = ({
 
 export default function PricingStep() {
   const { watch, setValue, getValues, register, control } = useFormContext()
-  const [useCustomPrice, setUseCustomPrice] = useState()
+  const [useCustomPrice, setUseCustomPrice] = useState(false)
   
   const [recommendedPrice, setRecommendedPrice] = useState(5)
+
+  const formStoreRideDistance = useFormStore((state) => state.formStoreRideDistance)
+  const formStorePricePerSeat = useFormStore((state) => state.formStorePricePerSeat)
+  const updateFormStorePricePerSeat = useFormStore((state) => state.updateFormStorePricePerSeat)
 
   const calculateRecommendedPrice = (distance) => {
     const intercept = 4.65;
@@ -52,23 +58,27 @@ export default function PricingStep() {
       linearCoefficient * (distance / 1000) +
       intercept;
   
-    console.log(parseInt(price))
-  
     return parseInt(price)
   }
 
   useEffect(() => {
-    const rideDistance = getValues("rideDistance");
-    const recommendedPrice = calculateRecommendedPrice(rideDistance);
+    const recommendedPrice = calculateRecommendedPrice(formStoreRideDistance);
     setRecommendedPrice(recommendedPrice);
     setValue("pricePerSeat", recommendedPrice);
-  }, [getValues, setValue])
+    updateFormStorePricePerSeat(recommendedPrice)
+  }, [formStoreRideDistance])
 
   useEffect(() => {
     if (isNaN(watch("pricePerSeat"))) {
       setValue("pricePerSeat", 0)
-    }    
+    }
+
+    console.log(formStorePricePerSeat)
   }, [watch("pricePerSeat")])
+
+  useEffect(() => {
+    console.log(formStorePricePerSeat, 'use Effect trigger')
+  }, [formStorePricePerSeat])
 
 
   return (
@@ -78,7 +88,7 @@ export default function PricingStep() {
         <Controller
           name="pricePerSeat"
           control={control}
-          defaultValue={calculateRecommendedPrice(getValues("rideDistance"))}
+          defaultValue={calculateRecommendedPrice(formStoreRideDistance)}
           render={({ field }) => (
             <CustomPriceSlider
               min={0}
@@ -88,6 +98,7 @@ export default function PricingStep() {
               onChange={(value) => {
                 if (!isNaN(value)) {
                   field.onChange(value);
+                  updateFormStorePricePerSeat(value)
                 }
               }}
               disabled={!useCustomPrice}
