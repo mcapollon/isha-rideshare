@@ -30,10 +30,10 @@ export default function Navbar() {
         </div>
         <div className="flex lg:flex-1 justify-center">
           <a href="/" className="-m-1.5 p-1.5">
-            <span className="sr-only">Your Company</span>
+            <span className="sr-only">Isha Ride Share</span>
             <img
               alt=""
-              src="https://tailwindui.com/plus/img/logos/mark.svg?color=indigo&shade=600"
+              src="./logo.png"
               className="h-8 w-auto"
             />
           </a>
@@ -82,7 +82,7 @@ export default function Navbar() {
               <span className="sr-only">Your Company</span>
               <img
                 alt=""
-                src="https://tailwindui.com/plus/img/logos/mark.svg?color=indigo&shade=600"
+                src='/logo.png'
                 className="h-8 w-auto"
               />
             </a>
