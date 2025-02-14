@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Dialog, DialogPanel } from '@headlessui/react'
+import { Dialog, DialogPanel, MenuButton, MenuItems, MenuItem, Menu } from '@headlessui/react'
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline'
 import { createClient } from '@/utils/supabase/client'
 import { Button } from './catalyste/button'
@@ -21,7 +21,7 @@ export default function Navbar() {
   return (
     <header className="bg-[#d9cebc]">
       <nav aria-label="Global" className="mx-auto flex max-w-7xl items-center justify-between gap-x-6 p-6 lg:px-8 border-b border-white/25">
-        <div className="hidden lg:flex lg:gap-x-12">
+        <div className="hidden lg:flex lg:flex-shrink lg:gap-x-12">
           {navigation.map((item) => (
             <a key={item.name} href={item.href} className="text-sm/6 font-semibold text-gray-900">
               {item.name}
@@ -29,6 +29,7 @@ export default function Navbar() {
           ))}
         </div>
         <div className="flex lg:flex-1 justify-center">
+          {/* Isha logo */}
           <a href="/" className="-m-1.5 p-1.5">
             <span className="sr-only">Isha Ride Share</span>
             <img
@@ -42,8 +43,50 @@ export default function Navbar() {
         {session ? (
 
           <>
-            <p>{session?.user.name}</p>
-            <Button onClick={() => signOut()}>Sign Out</Button>
+            {/* <p>{session?.user.name}</p> */}
+            <Menu as="div" className="relative ml-3 lg:flex-none flex-1 flex justify-end">
+              <div>
+                <MenuButton className="relative flex rounded-full bg-gray-800 text-sm focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800 focus:outline-hidden">
+                  <span className="absolute -inset-1.5" />
+                  <span className="sr-only">Open user menu</span>
+                  <img
+                    alt=""
+                    src={session?.user.image || "./default-user-icon.png"}
+                    className="size-8 rounded-full"
+                  />
+                </MenuButton>
+              </div>
+              <MenuItems
+                transition
+                className="absolute right-0 z-10 mt-10 w-48 origin-top-right rounded-md bg-white py-1 ring-1 shadow-lg ring-black/5 transition focus:outline-hidden data-closed:scale-95 data-closed:transform data-closed:opacity-0 data-enter:duration-100 data-enter:ease-out data-leave:duration-75 data-leave:ease-in"
+              >
+                <MenuItem>
+                  <a
+                    href="/account"
+                    className="block px-4 py-2 text-sm text-gray-700 data-focus:bg-gray-100 data-focus:outline-hidden"
+                  >
+                    Your Profile
+                  </a>
+                </MenuItem>
+                <MenuItem>
+                  <a
+                    href="#"
+                    className="block px-4 py-2 text-sm text-gray-700 data-focus:bg-gray-100 data-focus:outline-hidden"
+                  >
+                    Settings
+                  </a>
+                </MenuItem>
+                <MenuItem>
+                  <a
+                    href="#"
+                    className="block px-4 py-2 text-sm text-red-700 data-focus:bg-gray-100 data-focus:outline-hidden"
+                    onClick={() => signOut()}
+                  >
+                    Sign out
+                  </a>
+                </MenuItem>
+              </MenuItems>
+            </Menu>
           </>
 
         ) : (
