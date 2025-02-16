@@ -48,10 +48,13 @@ export default function Page() {
 
   const { register, control, watch, getValues, setValue, setError, formState: { errors }, clearErrors } = useForm()
   const [rides, setRides] = useState([])
+  const [userPictures, setUserPictures] = useState({})
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     getAllRides().then((rides) => {
       setRides(rides)
+      fetchUserPictures(rides).then(() => setLoading(false))
       console.log(rides)
     })
   }, [])
@@ -62,6 +65,25 @@ export default function Page() {
       .select('*')
 
       return rides
+  }
+
+  async function fetchUserPictures(rides) {
+    const pictures = {}
+    for (const ride of rides) {
+      const picture = await getUserPicture(ride.createdByUser)
+      pictures[ride.createdByUser] = picture
+    }
+    setUserPictures(pictures)
+  }
+
+  async function getUserPicture(uid) {
+    let { data: user, error } = await supabase.schema('next_auth')
+      .from('users')
+      .select('*')
+      .eq('id', uid)
+      .single()
+
+      return user?.image || './default-user-icon.png'
   }
 
   const [searchStartingPoint, setSearchStartingPoint] = useState('')
@@ -167,29 +189,47 @@ export default function Page() {
 
         {/* Results */}
         <div className="mt-8 space-y-4">
-          {rides.map((ride, i) => (
-            <Card key={i} className="bg-white">
-              <CardContent className="flex items-center gap-4 p-6">
-                <Avatar className="h-16 w-16">
-                  <AvatarImage src="/placeholder.svg" />
-                  <AvatarFallback>DR</AvatarFallback>
-                </Avatar>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <h3 className="font-semibold">{ride.startingCity} to {ride.ishaYogaCenter}</h3>
-                    <Badge variant="outline" className="bg-[#d9cebc] text-black px-3 py-1 rounded-full text-sm">
-                      {format(ride.departure, 'p')}
-                    </Badge>
+        {loading ? (
+            <Card className="bg-gray-300 animate-pulse">
+            <CardContent className="flex items-center gap-4 p-6">
+              <Avatar className="h-16 w-16 bg-gray-400">
+                {/* <AvatarFallback>DR</AvatarFallback> */}
+              </Avatar>
+              <div className="flex-1 space-y-2">
+                <div className="h-4 bg-gray-400 rounded w-3/4"></div>
+                <div className="h-4 bg-gray-400 rounded w-1/2"></div>
+              </div>
+              <div className="text-right space-y-2">
+                <div className="h-4 bg-gray-400 rounded w-1/4"></div>
+                <div className="h-4 bg-gray-400 rounded w-1/4"></div>
+              </div>
+            </CardContent>
+          </Card>
+          ) : (
+            rides.map((ride, i) => (
+              <Card key={i} className="bg-white">
+                <CardContent className="flex items-center gap-4 p-6">
+                  <Avatar className="h-16 w-16">
+                    <AvatarImage src={userPictures[ride.createdByUser] || './default-user-icon.png'} />
+                    <AvatarFallback>DR</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h3 className="font-semibold">{ride.startingCity} to {ride.ishaYogaCenter}</h3>
+                      <Badge variant="outline" className="bg-[#d9cebc] text-black px-3 py-1 rounded-full text-sm">
+                        {format(new Date(ride.departure), 'p')}
+                      </Badge>
+                    </div>
+                    <div className="text-sm text-black/60">Pickup: {ride.startingPointAddress}</div>
                   </div>
-                  <div className="text-sm text-black/60">Pickup: {ride.startingPoint}</div>
-                </div>
-                <div className="text-right">
-                  <div className="text-2xl font-bold">${ride.pricePerSeat}</div>
-                  <div className="text-sm text-black/60">{ride.seats} seats left</div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                  <div className="text-right">
+                    <div className="text-2xl font-bold">${ride.pricePerSeat}</div>
+                    <div className="text-sm text-black/60">{ride.seats} seats left</div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
         </div>
       </div>
     </div>

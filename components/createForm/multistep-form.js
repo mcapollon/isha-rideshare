@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm, FormProvider, useFormContext } from 'react-hook-form'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -12,37 +12,45 @@ import { createClient } from '@/utils/supabase/client'
 import { yupResolver } from "@hookform/resolvers/yup"
 import * as yup from "yup"
 import useFormStore from './formStore'
+import { useSession } from 'next-auth/react'
 
 // const steps = ['Ride Details', 'Pricing', 'Contact Details', 'Review'];
 const steps = ['Ride Details', 'Pricing', 'Review'];
 
 export default function MultistepForm() {
     const [step, setStep] = useState(1)
+
     const formStoreRouteStatus = useFormStore((state) => state.formStoreRouteStatus)
+    const formStoreStartingCoordinates = useFormStore((state) => state.formStoreStartingCoordinates)
+
+    const {data: session} = useSession()
 
     const schema = yup
         .object({
             startingPointAddress: yup.string().required('Starting Point is required')
             .test('routeStatus', 'There is no valid route between your starting point and the selected isha yoga center',() => {
-                console.log(formStoreRouteStatus, '- STARTING POINT TEST - ROUTE STATUS')
                 if (formStoreRouteStatus === 'OK') {
                     return true
                 } else return false
             }),
             ishaYogaCenter: yup.string().required('Choosing an Isha Yoga Center is required')
-            .test('routeStatus', 'There is no valid route between the your starting point and the selected Isha Yoga Center',() => {
-                console.log(formStoreRouteStatus, '- ISHA YOGA CENTER TEST - ROUTE STATUS')
+            .test('routeStatus', 'There is no valid route between the your starting point and the selected Isha Yoga Center',() => {                
                 if (formStoreRouteStatus === 'OK') {
                     return true
                 } else return false
             }),
+            departure: yup.date().required('Departure date & time is required'),
+            seats: yup.string().required('Please choose the amount of available seats for your trip'),
+            luggage: yup.string().required('Please choose luggage'),
+            description: yup.string().required('Description is required')
+
         })
         .required()
 
     const methods = useForm({
         mode: 'onBlur',
         defaultValues: {
-            startingPoint: '',
+            startingPointAddress: '',
             startingCity: '',
             ishaYogaCenter: '',
             departure: null,
@@ -56,7 +64,7 @@ export default function MultistepForm() {
 
     const { setValue, getValues, setError, clearErrors } = methods
 
-    const nextStep = () => {
+    const nextStep = (data) => {
         methods.trigger().then((isValid) => {
             if (step > 1) {
                 if (isValid) {
@@ -67,17 +75,18 @@ export default function MultistepForm() {
             }
         })
 
+        console.log(getValues())
     }
     const prevStep = () => setStep(step - 1)
 
     const onSubmit = async (data) => {
-        console.log('Form submitted:', data)
 
         const supabase = createClient()
         const { error } = await supabase
             .from('rides')
             .insert({
-                startingPoint: data.startingPoint,
+                startingPointAddress: data.startingPointAddress,
+                startingPointCoordinates: formStoreStartingCoordinates,
                 startingCity: data.startingCity,
                 ishaYogaCenter: data.ishaYogaCenter,
                 departure: data.departure,
@@ -86,12 +95,12 @@ export default function MultistepForm() {
                 description: data.description,
                 rideDistance: data.rideDistance,
                 pricePerSeat: data.pricePerSeat,
+                createdByUser:  session.user.id
             })
         if (error) {
             console.log(error, 'form error')
         }
 
-        // Here you would typically send the form data to your backend
         setStep(3)
     }
 

@@ -73,13 +73,7 @@ export default function PricingStep() {
       setValue("pricePerSeat", 0)
     }
 
-    console.log(formStorePricePerSeat)
   }, [watch("pricePerSeat")])
-
-  useEffect(() => {
-    console.log(formStorePricePerSeat, 'use Effect trigger')
-  }, [formStorePricePerSeat])
-
 
   return (
     <div className="space-y-6">

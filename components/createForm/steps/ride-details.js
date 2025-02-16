@@ -47,7 +47,7 @@ const luggageOptions = [
 ]
 
 export default function RideDetailsStep() {
-    const { register, control, getValues, setValue, setError, formState: { errors }, clearErrors } = useFormContext()
+    const { register, control, setValue, setError, formState: { errors }, clearErrors } = useFormContext()
 
     const formStoreStartingCoordinates = useFormStore((state) => state.formStoreStartingCoordinates)
     const formStoreIshaYogaCenterCoordinates = useFormStore((state) => state.formStoreIshaYogaCenterCoordinates)
@@ -58,41 +58,7 @@ export default function RideDetailsStep() {
     const updateFormStoreRouteStatus = useFormStore((state) => state.updateFormStoreRouteStatus)
     const updateFormStoreRideDistance = useFormStore((state) => state.updateFormStoreRideDistance)
 
-    const [selectedIshaYogaCenter, setSelectedIshaYogaCenter] = useState(null)
-    const [ishaYogaCenterSelectedCoordinates, setIshaYogaCenterSelectedCoordinates] = useState(null)
     const [startingCoordinates, setStartingCoordinates] = useState(null)
-
-    const handleIshaYogaCenterChange = (e) => {
-        let coordinates;
-        switch (e) {
-            case 'Isha Yoga Center, Coimbatore':
-                coordinates = { lat: 10.9763407, lng: 76.7342506 };
-                break;
-            case 'Sadhguru Sannidhi, Bengaluru':
-                coordinates = { lat: 13.4861346, lng: 77.7064053 };
-                break;
-            case 'Sadhguru Sanndhi, Chattarpur':
-                coordinates = { lat: 28.4813421, lng: 77.1517377 };
-                break;
-            case 'Isha Institute of Inner-sciences (iii)':
-                coordinates = { lat: 35.5649253, lng: -85.5729322 };
-                break;
-            case 'Isha Yoga Center, California':
-                coordinates = { lat: 34.1991773, lng: -118.6128837 };
-                break;
-            default:
-                coordinates = { lat: 10.9763407, lng: 76.7342506 };
-        }
-        
-        setIshaYogaCenterSelectedCoordinates(coordinates);
-        
-        if (startingCoordinates && ishaYogaCenterSelectedCoordinates) {
-            console.log(ishaYogaCenterSelectedCoordinates, 'handle Isha yoga function get direction trigger')
-            getDirections(startingCoordinates, coordinates);
-        }
-        
-        return coordinates;
-    };
 
     useEffect(() => {
         if (formStoreStartingCoordinates && formStoreIshaYogaCenterCoordinates) {
@@ -111,15 +77,15 @@ export default function RideDetailsStep() {
             (result, status) => {
                 if (status === window.google.maps.DirectionsStatus.OK) {
                     updateFormStoreRideDistance(result.routes[0].legs[0].distance.value)
-                    console.log('Directions result:',
-                        {
-                            distance: result.routes[0].legs[0].distance,
-                            duration: result.routes[0].legs[0].duration,
-                            start: result.routes[0].legs[0].start_address,
-                            destination: result.routes[0].legs[0].end_address
-                        });
+                    setValue('rideDistance', result.routes[0].legs[0].distance.value)
+                    // console.log('Directions result:',
+                    //     {
+                    //         distance: result.routes[0].legs[0].distance,
+                    //         duration: result.routes[0].legs[0].duration,
+                    //         start: result.routes[0].legs[0].start_address,
+                    //         destination: result.routes[0].legs[0].end_address
+                    //     });
                     updateFormStoreRouteStatus('OK')
-                    console.log(formStoreRouteStatus, 'ROUTE STATUS');
                     clearErrors('startingPointAddress');
                     clearErrors('ishaYogaCenter');
                 } else {
@@ -160,8 +126,7 @@ export default function RideDetailsStep() {
                             onFocus={(e) => e.target.autocomplete = 'off'}
                         />
                     )}
-                 />
-                {/* {startingPoint ? startingPoint.lat + ' ' + startingPoint.lng : ''} */}
+                 />                
                 {errors.startingPointAddress && <span className="text-red-500">{errors.startingPointAddress.message}</span>}
             </div>
             <div className="space-y-2">
@@ -170,9 +135,7 @@ export default function RideDetailsStep() {
                     name="ishaYogaCenter"
                     control={control}
                     defaultValue=""
-                    // rules={{ required: "Isha Yoga Center is required" }}
-                    render={({ field }) => (
-                        // setSelectedIshaYogaCenter(e);
+                    render={({ field }) => (                        
                         <Select {...field}  onValueChange={(e) => { field.onChange(e); updateFormStoreIshaYogaCenterCoordinates(e); clearErrors('ishaYogaCenter') }}>
                             <SelectTrigger>
                                 <SelectValue onChange={(e) => console.log('select value changed', e)} placeholder="Please select Isha Yoga Center" />
@@ -193,7 +156,7 @@ export default function RideDetailsStep() {
                     name="departure"
                     control={control}
                     defaultValue={null}
-                    rules={{ required: "Departure date and time is required" }}
+                    onFocus={(e) => e.target.autocomplete = 'off'}
                     render={({ field }) => (
                         <DatePicker
                             id="departure"
@@ -213,7 +176,6 @@ export default function RideDetailsStep() {
                 <Controller 
                     name='seats'
                     control={control}
-                    rules={{ required: 'Number of seats is required' }}
                     render={({ field }) => (
                         <Select {...field} onValueChange={(e) => {field.onChange(e); clearErrors('seats')}}>
                             <SelectTrigger>
@@ -235,7 +197,6 @@ export default function RideDetailsStep() {
                 <Controller 
                     name='luggage'
                     control={control}
-                    rules={{ required: 'Luggage option is required' }}
                     render={({ field }) => (
                         <RadioGroup {...field} onValueChange={(e) => {field.onChange(e); clearErrors('luggage')}}>
                             {luggageOptions.map((option) => (
@@ -254,7 +215,7 @@ export default function RideDetailsStep() {
                 <Textarea
                     id="description"
                     {...register("description", { required: "Description is required" })}
-                    placeholder="Add any additional details about your ride"
+                    placeholder="Add any additional details about your ride and more information about pickup location."
                     onChange={() => clearErrors('description')}
                 />
                 {errors.description && <span className="text-red-500">{errors.description.message}</span>}
