@@ -56,7 +56,8 @@ export default function RideDetailsStep() {
     const updateFormStoreStartingCoordinates = useFormStore((state) => state.updateFormStoreStartingCoordinates)
     const updateFormStoreIshaYogaCenterCoordinates = useFormStore((state) => state.updateFormStoreIshaYogaCenterCoordinates)
     const updateFormStoreRouteStatus = useFormStore((state) => state.updateFormStoreRouteStatus)
-    const updateFormStoreRideDistance = useFormStore((state) => state.updateFormStoreRideDistance)
+    const updateFormStoreRideDistanceMeters = useFormStore((state) => state.updateFormStoreRideDistanceMeters)
+    const updateFormStoreRideDuration = useFormStore((state) => state.updateFormStoreRideDuration)
 
     const [startingCoordinates, setStartingCoordinates] = useState(null)
 
@@ -76,8 +77,9 @@ export default function RideDetailsStep() {
             },
             (result, status) => {
                 if (status === window.google.maps.DirectionsStatus.OK) {
-                    updateFormStoreRideDistance(result.routes[0].legs[0].distance.value)
-                    setValue('rideDistance', result.routes[0].legs[0].distance.value)
+                    updateFormStoreRideDistanceMeters(result.routes[0].legs[0].distance.value)
+                    setValue('rideDistanceMeters', result.routes[0].legs[0].distance.value)
+                    updateFormStoreRideDuration(result.routes[0].legs[0].duration)
                     // console.log('Directions result:',
                     //     {
                     //         distance: result.routes[0].legs[0].distance,

@@ -9,7 +9,8 @@ const useFormStore = create((set) => ({
     seats: '',
     luggage: '',
     description: '',
-    formStoreRideDistance: null,
+    formStoreRideDistanceMeters: null,
+    formStoreRideDuration: null,
     formStoreRouteStatus: null,
     formStorePricePerSeat: null,
     updateFormStoreStartingCoordinates: (startingCoordinates) => set(() => ({formStoreStartingCoordinates: startingCoordinates})),
@@ -38,9 +39,10 @@ const useFormStore = create((set) => ({
 
         set(() => ({formStoreIshaYogaCenterCoordinates: coordinates}))
     },
-    updateFormStoreRideDistance: (rideDistance) => set(() => ({formStoreRideDistance: rideDistance})),
+    updateFormStoreRideDistanceMeters: (rideDistanceMeters) => set(() => ({formStoreRideDistanceMeters: rideDistanceMeters})),
     updateFormStoreRouteStatus: (routeStatus) => set((state) => ({formStoreRouteStatus: routeStatus})),
     updateFormStorePricePerSeat: (pricePerSeat) => set(() => ({formStorePricePerSeat: pricePerSeat})),
+    updateFormStoreRideDuration: (rideDuration) => set(() => ({formStoreRideDuration: rideDuration})),
 }))
 
 export default useFormStore

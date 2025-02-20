@@ -14,6 +14,7 @@ import DatePicker from "react-datepicker"
 import "react-datepicker/dist/react-datepicker.css"
 import { Controller, useForm } from "react-hook-form";
 import Autocomplete from "react-google-autocomplete";
+import Link from "next/link"
 
 export default function Page() {
   const ishaYogaCenters = [
@@ -49,12 +50,14 @@ export default function Page() {
   const { register, control, watch, getValues, setValue, setError, formState: { errors }, clearErrors } = useForm()
   const [rides, setRides] = useState([])
   const [userPictures, setUserPictures] = useState({})
+  const [userNames, setUserNames] = useState({})
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     getAllRides().then((rides) => {
       setRides(rides)
       fetchUserPictures(rides).then(() => setLoading(false))
+      fetchUserNames(rides).then(() => setLoading(false))
       console.log(rides)
     })
   }, [])
@@ -68,22 +71,34 @@ export default function Page() {
   }
 
   async function fetchUserPictures(rides) {
+    setLoading(true)
     const pictures = {}
     for (const ride of rides) {
-      const picture = await getUserPicture(ride.createdByUser)
-      pictures[ride.createdByUser] = picture
+      const user = await getUserInfo(ride.createdByUser)
+      pictures[ride.createdByUser] = user?.image
     }
+    console.log(pictures)
     setUserPictures(pictures)
   }
 
-  async function getUserPicture(uid) {
+  async function fetchUserNames(rides) {
+    setLoading(true)
+    const names = {}
+    for (const ride of rides) {
+      const user = await getUserInfo(ride.createdByUser)
+      names[ride.createdByUser] = user?.name
+    }
+    setUserNames(names)
+  }
+
+  async function getUserInfo(uid) {
     let { data: user, error } = await supabase.schema('next_auth')
       .from('users')
-      .select('*')
+      .select('name, image')
       .eq('id', uid)
       .single()
 
-      return user?.image || './default-user-icon.png'
+      return user
   }
 
   const [searchStartingPoint, setSearchStartingPoint] = useState('')
@@ -208,11 +223,15 @@ export default function Page() {
           ) : (
             rides.map((ride, i) => (
               <Card key={i} className="bg-white">
+                <Link href={`book/${ride.id}`}>
                 <CardContent className="flex items-center gap-4 p-6">
-                  <Avatar className="h-16 w-16">
-                    <AvatarImage src={userPictures[ride.createdByUser] || './default-user-icon.png'} />
-                    <AvatarFallback>DR</AvatarFallback>
-                  </Avatar>
+                  <div className="border-r-2 p-4 border-slate-200 flex flex-col items-center">
+                    <Avatar className="h-16 w-16">
+                      <AvatarImage src={userPictures[ride.createdByUser] || './default-user-icon.png'} />
+                      <AvatarFallback>DR</AvatarFallback>
+                    </Avatar>
+                    <p className="font-sans text-center mt-2">{userNames[ride.createdByUser]}</p>
+                  </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       <h3 className="font-semibold">{ride.startingCity} to {ride.ishaYogaCenter}</h3>
@@ -227,6 +246,7 @@ export default function Page() {
                     <div className="text-sm text-black/60">{ride.seats} seats left</div>
                   </div>
                 </CardContent>
+                </Link>
               </Card>
             ))
           )}

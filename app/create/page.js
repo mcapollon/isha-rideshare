@@ -20,7 +20,7 @@ export default function Page() {
                     </div>
                 </div>
 
-                <section className='flex flex-col mx-4 md:mx-8 lg:mx-auto pt-4 md:pt-28 px-4 pb-4 max-w-7xl -mt-24 bg-white drop-shadow-md rounded-lg'>
+                <section className='flex flex-col mx-4 md:mx-8 lg:mx-auto pt-4 px-4 pb-4 max-w-7xl -mt-24 bg-white drop-shadow-md rounded-lg'>
                     <MultistepForm />
                 </section>
             </div>

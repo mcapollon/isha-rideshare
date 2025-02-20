@@ -43,7 +43,7 @@ export default function PricingStep() {
   
   const [recommendedPrice, setRecommendedPrice] = useState(5)
 
-  const formStoreRideDistance = useFormStore((state) => state.formStoreRideDistance)
+  const formStoreRideDistanceMeters = useFormStore((state) => state.formStoreRideDistanceMeters)
   const formStorePricePerSeat = useFormStore((state) => state.formStorePricePerSeat)
   const updateFormStorePricePerSeat = useFormStore((state) => state.updateFormStorePricePerSeat)
 
@@ -62,11 +62,11 @@ export default function PricingStep() {
   }
 
   useEffect(() => {
-    const recommendedPrice = calculateRecommendedPrice(formStoreRideDistance);
+    const recommendedPrice = calculateRecommendedPrice(formStoreRideDistanceMeters);
     setRecommendedPrice(recommendedPrice);
     setValue("pricePerSeat", recommendedPrice);
     updateFormStorePricePerSeat(recommendedPrice)
-  }, [formStoreRideDistance])
+  }, [formStoreRideDistanceMeters])
 
   useEffect(() => {
     if (isNaN(watch("pricePerSeat"))) {
@@ -82,7 +82,7 @@ export default function PricingStep() {
         <Controller
           name="pricePerSeat"
           control={control}
-          defaultValue={calculateRecommendedPrice(formStoreRideDistance)}
+          defaultValue={calculateRecommendedPrice(formStoreRideDistanceMeters)}
           render={({ field }) => (
             <CustomPriceSlider
               min={0}

@@ -22,6 +22,7 @@ export default function MultistepForm() {
 
     const formStoreRouteStatus = useFormStore((state) => state.formStoreRouteStatus)
     const formStoreStartingCoordinates = useFormStore((state) => state.formStoreStartingCoordinates)
+    const formStoreRideDuration = useFormStore((state) => state.formStoreRideDuration)
 
     const {data: session} = useSession()
 
@@ -57,7 +58,7 @@ export default function MultistepForm() {
             seats: '',
             luggage: '',
             description: '',
-            rideDistance: null
+            rideDistanceMeters: null
         },
         resolver: yupResolver(schema),
     })
@@ -93,7 +94,8 @@ export default function MultistepForm() {
                 seats: data.seats,
                 luggage: data.luggage,
                 description: data.description,
-                rideDistance: data.rideDistance,
+                rideDistanceMeters: data.rideDistanceMeters,
+                rideDuration: formStoreRideDuration,
                 pricePerSeat: data.pricePerSeat,
                 createdByUser:  session.user.id
             })
@@ -121,10 +123,7 @@ export default function MultistepForm() {
 
     return (
         <FormProvider {...methods}>
-            <Card className="w-full max-w-4xl mx-auto">
-                <CardHeader>
-                    <CardTitle className="text-2xl font-bold text-center">Ride Booking Form</CardTitle>
-                </CardHeader>
+            <Card className="w-full mx-aut border-none shadow-none">
                 <CardContent>
                     <div className="mb-8">
                         <Stepper currentStep={step} steps={steps} />

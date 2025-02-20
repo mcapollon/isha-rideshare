@@ -1,0 +1,10 @@
+[lcl-host]
+realm-apid = 'localhost'
+
+[org]
+apid = 'mcapollon'
+
+[service]
+apid = 'isha-rideshare'
+category = 'javascript'
+cert-style = 'acme'
