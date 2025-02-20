@@ -7,7 +7,7 @@ import { CheckCircle, Shield, Lock, CreditCard } from 'lucide-react';
 export default function PaymentSection({ totalPrice, onPaymentComplete, ref }) {
   const stripe = useStripe();
   const elements = useElements();
-  const [errorMessage, setErrorMessage] = useState()
+  const [errorMessage, setErrorMessage] = useState('')
   const [clientSecret, setClientSecret] = useState()
   const [paymentLoading, setPaymentLoading] = useState(false)
 
@@ -20,8 +20,9 @@ export default function PaymentSection({ totalPrice, onPaymentComplete, ref }) {
       body: JSON.stringify({ amount: totalPrice })
     })
       .then((res) => res.json())
-      .then((data) => setClientSecret(data.clientSecret))
+      .then((data) => {setClientSecret(data.clientSecret); console.log(data, 'paymennt intent data')})
       .catch((error) => setErrorMessage("Failed to initialize payment"));
+
   }, [totalPrice])
 
   const handlePayment = async () => {
@@ -30,14 +31,19 @@ export default function PaymentSection({ totalPrice, onPaymentComplete, ref }) {
       return;
     }
 
+    const {error, selectedPaymentMethod} = await elements.submit();
+
+    console.log(selectedPaymentMethod, 'selected Payment Method')
+    
     setPaymentLoading(true);
     setErrorMessage(null);
 
     try {
       const { error } = await stripe.confirmPayment({
         elements,
+        clientSecret,
         confirmParams: {
-          return_url: `${window.location.origin}/booking-confirmation`,
+          return_url: `${window.location.origin}/payment-success?amount=${totalPrice}`,
         },
       });
 
@@ -110,6 +116,7 @@ export default function PaymentSection({ totalPrice, onPaymentComplete, ref }) {
           </div>
         </div>
         <PaymentElement />
+        <div>{errorMessage}</div>
       </div>
     </div>
   );

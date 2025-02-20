@@ -6,6 +6,8 @@ import { Calendar, Clock, MapPin, Users, DollarSign, MessageCircle, Star, Car, S
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import PaymentSection from '@/components/book/paymentSection';
+import { useSession } from 'next-auth/react'
+import { redirect } from 'next/navigation'
 
 
 if (process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY === undefined) {
@@ -14,10 +16,14 @@ if (process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY === undefined) {
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY)
 
-function page({ params }) {
+function Page({ params }) {
+
+  const { data: session, status } = useSession()
 
   const ride = use(params)
   const supabase = createClient()
+  const paymentSectionRef = useRef();
+
   const [loading, setLoading] = useState(true)
   const [rideData, setRideData] = useState(null)
   const [userData, setUserData] = useState(null);
@@ -25,8 +31,6 @@ function page({ params }) {
   const [totalPrice, setTotalPrice] = useState(1)
   const [totalPriceSubUnit, setTotalPriceSubUnit] = useState(1)
   const [pricePerSeat, setPricePerSeat] = useState(1)
-
-  const paymentSectionRef = useRef();
 
   useEffect(() => {
     if (ride.ride) {
@@ -239,9 +243,13 @@ function page({ params }) {
 
 
   const handleBookNow = async () => {
-    if (paymentSectionRef.current) {
-      await paymentSectionRef.current.handlePayment();
-    }
+    if (!session || !session?.user) {
+      redirect("/api/auth/signin")
+    } else {
+      if (paymentSectionRef.current) {
+        await paymentSectionRef.current.handlePayment();
+      }
+    }    
   };
 
   return (
@@ -380,4 +388,4 @@ function page({ params }) {
   )
 }
 
-export default page
+export default Page
