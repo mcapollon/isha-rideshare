@@ -1,14 +1,12 @@
 "use client"
 
-import React, { useEffect, useState, use } from 'react'
+import React, { useEffect, useState, use, useImperativeHandle } from 'react'
 import { useStripe, useElements, PaymentElement } from '@stripe/react-stripe-js';
 import { CheckCircle, Shield, Lock, CreditCard } from 'lucide-react';
 
-export default function PaymentSection({ totalPrice, handleSubmit }) {
+export default function PaymentSection({ totalPrice, onPaymentComplete, ref }) {
   const stripe = useStripe();
   const elements = useElements();
-
-
   const [errorMessage, setErrorMessage] = useState()
   const [clientSecret, setClientSecret] = useState()
   const [paymentLoading, setPaymentLoading] = useState(false)
@@ -23,7 +21,41 @@ export default function PaymentSection({ totalPrice, handleSubmit }) {
     })
       .then((res) => res.json())
       .then((data) => setClientSecret(data.clientSecret))
+      .catch((error) => setErrorMessage("Failed to initialize payment"));
   }, [totalPrice])
+
+  const handlePayment = async () => {
+    if (!stripe || !elements) {
+      console.log("Stripe not initialized");
+      return;
+    }
+
+    setPaymentLoading(true);
+    setErrorMessage(null);
+
+    try {
+      const { error } = await stripe.confirmPayment({
+        elements,
+        confirmParams: {
+          return_url: `${window.location.origin}/booking-confirmation`,
+        },
+      });
+
+      if (error) {
+        setErrorMessage(error.message);
+      } else {
+        onPaymentComplete?.();
+      }
+    } catch (e) {
+      setErrorMessage("An unexpected error occurred");
+    } finally {
+      setPaymentLoading(false);
+    }
+  };
+
+  useImperativeHandle(ref, () => ({
+    handlePayment
+  }));
 
 
   return (

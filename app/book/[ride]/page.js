@@ -1,5 +1,5 @@
 "use client"
-import React, { useEffect, useState, use } from 'react'
+import React, { useEffect, useState, use, useRef } from 'react'
 import { createClient } from "@/utils/supabase/client"
 import { format } from 'date-fns';
 import { Calendar, Clock, MapPin, Users, DollarSign, MessageCircle, Star, Car, Shield, CreditCard, Lock, CheckCircle } from 'lucide-react';
@@ -9,7 +9,7 @@ import PaymentSection from '@/components/book/paymentSection';
 
 
 if (process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY === undefined) {
-  throw new Error("Strip Public Key is not defined")
+  throw new Error("Stripe Public Key is not defined")
 }
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY)
@@ -26,11 +26,21 @@ function page({ params }) {
   const [totalPriceSubUnit, setTotalPriceSubUnit] = useState(1)
   const [pricePerSeat, setPricePerSeat] = useState(1)
 
+  const paymentSectionRef = useRef();
+
   useEffect(() => {
     if (ride.ride) {
       fetchRideData(ride.ride)
     }
   }, [ride])
+
+  useEffect(() => {
+    if (rideData) {
+      const newTotal = (seatCount * pricePerSeat) + 3; // Add service fee
+      setTotalPrice(newTotal);
+      setTotalPriceSubUnit(newTotal * 100); // Convert to cents for Stripe
+    }
+  }, [seatCount, pricePerSeat, rideData]);
 
   async function fetchRideData(rideId) {
     let { data: ride, error } = await supabase
@@ -227,9 +237,12 @@ function page({ params }) {
     )
   }
 
-  const handleSubmit = () => {
-    console.log('triggered')
-  }
+
+  const handleBookNow = async () => {
+    if (paymentSectionRef.current) {
+      await paymentSectionRef.current.handlePayment();
+    }
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -310,7 +323,12 @@ function page({ params }) {
                   amount: totalPriceSubUnit,
                   currency: 'cad'
                 }}>
-                <PaymentSection totalPrice={totalPriceSubUnit} confirmPayment={handleSubmit} />
+                <PaymentSection 
+                  ref={paymentSectionRef} 
+                  totalPrice={totalPriceSubUnit} 
+                  onPaymentComplete={() => {
+                    console.log('Payment Completed')
+                  }} />
               </Elements>
             </div>
           </div>
@@ -347,7 +365,7 @@ function page({ params }) {
               </div>
             </div>
 
-            <button className="w-full bg-black text-white py-3 rounded-lg hover:bg-slate-800 font-medium transition-all duration-500">
+            <button onClick={handleBookNow} className="w-full bg-black text-white py-3 rounded-lg hover:bg-slate-800 font-medium transition-all duration-500">
               Book now
             </button>
 
