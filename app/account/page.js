@@ -467,7 +467,7 @@ function Page() {
                             <div className="bg-white rounded-lg shadow p-6">
                                 <h3 className="text-lg font-semibold mb-4">Active Listings</h3>
                                 <div className="space-y-4">
-                                    {userListings.map((listing, i) => (
+                                    {userListings.filter(listing => new Date(listing.departure) > new Date()).map((listing, i) => (
                                         <div key={i} className="border rounded-lg p-4">
                                             <div className="flex justify-between items-start mb-4">
                                                 <div>
@@ -519,19 +519,18 @@ function Page() {
                             </div>
                         }
 
-
                         <div className="bg-white rounded-lg shadow p-6">
                             <h3 className="text-lg font-semibold mb-4">Past Listings</h3>
                             <div className="space-y-4">
-                                {[1, 2, 3].map((i) => (
+                                {userListings.filter(listing => new Date(listing.departure) <= new Date()).map((listing, i) => (
                                     <div key={i} className="border rounded-lg p-4">
                                         <div className="flex justify-between items-start">
                                             <div>
-                                                <h4 className="font-medium">Calgary to Banff</h4>
+                                                <h4 className="font-medium">{listing.startingCity} to {listing.ishaYogaCenter}</h4>
                                                 <div className="flex items-center space-x-4 text-sm text-gray-500 mt-1">
                                                     <div className="flex items-center">
                                                         <Calendar className="w-4 h-4 mr-1" />
-                                                        March {1 + i}, 2024
+                                                        {format(new Date(listing.departure), 'MMMM d, yyyy')}
                                                     </div>
                                                     <div className="flex items-center">
                                                         <Users className="w-4 h-4 mr-1" />
@@ -540,7 +539,7 @@ function Page() {
                                                 </div>
                                             </div>
                                             <div className="text-sm">
-                                                <span className="font-medium text-gray-600">$75</span>
+                                                <span className="font-medium text-gray-600">${listing.pricePerSeat * 3}</span>
                                                 <span className="text-gray-500"> earned</span>
                                             </div>
                                         </div>
@@ -548,7 +547,6 @@ function Page() {
                                 ))}
                             </div>
                         </div>
-
                     </div>
                 );
 
