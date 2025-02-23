@@ -3,13 +3,16 @@
 import React, { useEffect, useState, use, useImperativeHandle } from 'react'
 import { useStripe, useElements, PaymentElement } from '@stripe/react-stripe-js';
 import { CheckCircle, Shield, Lock, CreditCard } from 'lucide-react';
+import usePaymentStore from '../../components/payment-form/paymentStore'
 
-export default function PaymentSection({ totalPrice, onPaymentComplete, ref }) {
+export default function PaymentSection({ totalPrice, tripSummary, seatsBooked,  onPaymentComplete, ref }) {
   const stripe = useStripe();
   const elements = useElements();
   const [errorMessage, setErrorMessage] = useState('')
   const [clientSecret, setClientSecret] = useState()
   const [paymentLoading, setPaymentLoading] = useState(false)
+
+  const paymentStoreSeatCount = usePaymentStore((state) => state.paymentStoreSeatCount)
 
   useEffect(() => {
     fetch("/api/create-payment-intent", {
@@ -22,6 +25,8 @@ export default function PaymentSection({ totalPrice, onPaymentComplete, ref }) {
       .then((res) => res.json())
       .then((data) => {setClientSecret(data.clientSecret); console.log(data, 'paymennt intent data')})
       .catch((error) => setErrorMessage("Failed to initialize payment"));
+
+      console.log(seatsBooked, 'seats booked')
 
   }, [totalPrice])
 
@@ -43,7 +48,7 @@ export default function PaymentSection({ totalPrice, onPaymentComplete, ref }) {
         elements,
         clientSecret,
         confirmParams: {
-          return_url: `${window.location.origin}/payment-success?amount=${totalPrice}`,
+          return_url: `${window.location.origin}/payment-success?amount=${totalPrice}&pricePerSeat=${tripSummary?.pricePerSeat}&startingCity=${tripSummary?.startingCity}&iyc=${tripSummary?.ishaYogaCenter}&departure=${tripSummary?.departure}&duration=${tripSummary.rideDuration}&distance=${tripSummary.rideDistanceKm}&seats=${paymentStoreSeatCount}`,
         },
       });
 

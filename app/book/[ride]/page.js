@@ -5,9 +5,10 @@ import { format } from 'date-fns';
 import { Calendar, Clock, MapPin, Users, DollarSign, MessageCircle, Star, Car, Shield, CreditCard, Lock, CheckCircle } from 'lucide-react';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
-import PaymentSection from '@/components/book/paymentSection';
+import PaymentSection from '@/components/payment-form/paymentSection';
 import { useSession } from 'next-auth/react'
 import { redirect } from 'next/navigation'
+import usePaymentStore from '../../../components/payment-form/paymentStore'
 
 
 if (process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY === undefined) {
@@ -24,13 +25,23 @@ function Page({ params }) {
   const supabase = createClient()
   const paymentSectionRef = useRef();
 
+  const paymentStoreAmount = usePaymentStore((state) => state.paymentStoreAmount)
+  const paymentStorePricePerSeat = usePaymentStore((state) => state.paymentStorePricePerSeat)
+  const paymentStoreAmountInCents = usePaymentStore((state) => state.paymentStoreAmountInCents)
+  const updatePaymentStorePricePerSeat = usePaymentStore((state) => state.updatePaymentStorePricePerSeat)
+  const updatePaymentStoreAmount = usePaymentStore((state) => state.updatePaymentStoreAmount)
+  const updatePaymentStoreAmountInCents = usePaymentStore((state) => state.updatePaymentStoreAmountInCents)
+  const updatePaymentStoreSeatCountIncrement = usePaymentStore((state) => state.updatePaymentStoreSeatCountIncrement)
+  const updatePaymentStoreSeatCountDecrement = usePaymentStore((state) => state.updatePaymentStoreSeatDecrement)
+  const updatePaymentStorePaymentStoreSeatLimit = usePaymentStore((state) => state.updatePaymentStorePaymentStoreSeatLimit)
+
   const [loading, setLoading] = useState(true)
   const [rideData, setRideData] = useState(null)
   const [userData, setUserData] = useState(null);
   const [seatCount, setSeatCount] = useState(1);
   const [totalPrice, setTotalPrice] = useState(1)
   const [totalPriceSubUnit, setTotalPriceSubUnit] = useState(1)
-  const [pricePerSeat, setPricePerSeat] = useState(1)
+  
 
   useEffect(() => {
     if (ride.ride) {
@@ -40,11 +51,10 @@ function Page({ params }) {
 
   useEffect(() => {
     if (rideData) {
-      const newTotal = (seatCount * pricePerSeat) + 3; // Add service fee
-      setTotalPrice(newTotal);
-      setTotalPriceSubUnit(newTotal * 100); // Convert to cents for Stripe
+      updatePaymentStoreAmount((seatCount * paymentStorePricePerSeat) + 3) // Add service fee
+      updatePaymentStoreAmountInCents((seatCount * paymentStorePricePerSeat) + 3) 
     }
-  }, [seatCount, pricePerSeat, rideData]);
+  }, [seatCount, paymentStorePricePerSeat, rideData]);
 
   async function fetchRideData(rideId) {
     let { data: ride, error } = await supabase
@@ -63,10 +73,11 @@ function Page({ params }) {
 
       setRideData(ride)
       fetchUserData(ride.createdByUser);
-      setPricePerSeat(ride.pricePerSeat)
-      setTotalPrice(ride.pricePerSeat)
-      setTotalPriceSubUnit(ride.pricePerSeat)
-      console.log(totalPriceSubUnit)
+      updatePaymentStorePricePerSeat(ride.pricePerSeat)
+      updatePaymentStoreAmount(ride.pricePerSeat)
+      updatePaymentStoreAmountInCents(ride.pricePerSeat)
+      updatePaymentStorePaymentStoreSeatLimit(ride.seats)
+      console.log(paymentStoreAmount)
       setLoading(false)
     }
   }
@@ -91,16 +102,20 @@ function Page({ params }) {
   const incrementSeatCount = () => {
     if (seatCount < rideData.seats) {
       setSeatCount(seatCount + 1);
-      setTotalPrice(seatCount * pricePerSeat)
-      console.log(totalPrice)
+      updatePaymentStoreAmount(seatCount * paymentStorePricePerSeat)
+      updatePaymentStoreAmountInCents(seatCount * paymentStorePricePerSeat)
+      updatePaymentStoreSeatCountIncrement()
+      console.log(paymentStoreAmount)
     }
   };
 
   const decrementSeatCount = () => {
     if (seatCount > 1) {
       setSeatCount(seatCount - 1);
-      setTotalPrice(seatCount * pricePerSeat)
-      console.log(totalPrice)
+      updatePaymentStoreAmount(seatCount * paymentStorePricePerSeat)
+      updatePaymentStoreAmountInCents(seatCount * paymentStorePricePerSeat)
+      updatePaymentStoreSeatCountDecrement()
+      console.log(paymentStoreAmount)
     }
   };
 
@@ -328,12 +343,14 @@ function Page({ params }) {
                 stripe={stripePromise}
                 options={{
                   mode: 'payment',
-                  amount: totalPriceSubUnit,
+                  amount: paymentStoreAmountInCents,
                   currency: 'cad'
                 }}>
                 <PaymentSection 
                   ref={paymentSectionRef} 
-                  totalPrice={totalPriceSubUnit} 
+                  totalPrice={paymentStoreAmountInCents}
+                  tripSummary={rideData}
+                  seats={seatCount}
                   onPaymentComplete={() => {
                     console.log('Payment Completed')
                   }} />
@@ -346,7 +363,7 @@ function Page({ params }) {
         <div className="lg:col-span-1 drop-shadow-md">
           <div className="bg-white rounded-xl shadow-sm p-6 sticky top-8">
             <div className="text-center mb-6">
-              <div className="text-3xl font-bold text-black">${rideData.pricePerSeat}</div>
+              <div className="text-3xl font-bold text-black">${paymentStorePricePerSeat}</div>
               <div className="text-gray-500">per seat</div>
             </div>
 
@@ -368,7 +385,7 @@ function Page({ params }) {
               <div className="border-t pt-4">
                 <div className="flex justify-between font-semibold">
                   <span>Total</span>
-                  <span>${totalPrice}</span>
+                  <span>${paymentStoreAmount}</span>
                 </div>
               </div>
             </div>

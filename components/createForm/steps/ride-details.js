@@ -184,7 +184,7 @@ export default function RideDetailsStep() {
                                 <SelectValue placeholder="Select seats" />
                             </SelectTrigger>
                             <SelectContent>
-                                {[1, 2, 3, 4, 5, 6, 7].map((num) => (
+                                {[1, 2, 3, 4, 5, 6].map((num) => (
                                     <SelectItem key={num} value={num.toString()}>{num}</SelectItem>
                                 ))}
                             </SelectContent>

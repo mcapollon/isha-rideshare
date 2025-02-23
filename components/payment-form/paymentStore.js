@@ -1,0 +1,16 @@
+import {create} from 'zustand';
+
+const usePaymentStore = create((set) => ({
+    paymentStorePricePerSeat: null,
+    paymentStoreSeatCount: 1,
+    paymentStoreSeatLimit: 1,
+    paymentStoreAmount: null,
+    paymentStoreAmountInCents: null,
+    updatePaymentStorePricePerSeat: (amount) => set(() => ({paymentStorePricePerSeat: amount})),
+    updatePaymentStoreSeatCountIncrement: (state) => set((state) => ({paymentStoreSeatCount: state.paymentStoreSeatCount <= state.paymentStoreSeatLimit ? state.paymentStoreSeatCount + 1 : state.paymentStoreSeatCount})),
+    updatePaymentStorePaymentStoreSeatLimit: (seats) => set(() => ({paymentStoreSeatLimit: seats})),
+    updatePaymentStoreAmount: (amount) => set(() => ({paymentStoreAmount: amount})),
+    updatePaymentStoreAmountInCents: (amount) => set(() => ({paymentStoreAmountInCents: amount * 100})),
+}))
+
+export default usePaymentStore
