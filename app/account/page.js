@@ -92,12 +92,12 @@ const DeleteModal = ({ isOpen, onClose, listing, getUserListings, setUserListing
     );
 };
 
-const EditModal = ({ isOpen, onClose, listing }) => {
+const EditModal = ({ isOpen, onClose, listing, getUserListings, setUserListings }) => {
     if (!isOpen) return null;
 
     const [formData, setFormData] = useState({
         id: listing.id,
-        departure: format(new Date(listing.departure), 'yyyy-MM-dd\'T\'HH:mm'),
+        departure: new Date(listing.departure),
         seats: listing.seats,
         pricePerSeat: listing.pricePerSeat,
     });
@@ -111,12 +111,15 @@ const EditModal = ({ isOpen, onClose, listing }) => {
         const { data, error } = await supabase
             .from('rides')
             .update({
-                departure: new Date(formData.departure).toISOString(),
+                departure: new Date(listing.departure),
                 seats: formData.seats,
                 pricePerSeat: formData.pricePerSeat
             })
             .eq('id', formData.id)
             .select()
+
+            const updatedListings = await getUserListings();
+            setUserListings(updatedListings);
 
         if (error) {
             console.error('Error updating listing:', error);
@@ -150,8 +153,8 @@ const EditModal = ({ isOpen, onClose, listing }) => {
                             </label>
                             <input
                                 type="datetime-local"
-                                value={formData.departure}
-                                onChange={(e) => setFormData({ ...formData, datetime: e.target.value })}
+                                value={formData.departure.toLocaleString('sv-SE').slice(0, 16)}
+                                onChange={(e) => setFormData({ ...formData, departure: new Date(e.target.value).toLocaleString('sv-SE').slice(0, 16) })}
                                 className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             />
                         </div>
@@ -177,9 +180,9 @@ const EditModal = ({ isOpen, onClose, listing }) => {
                             <input
                                 type="number"
                                 min="1"
-                                step="0.01"
+                                step="1"
                                 value={formData.pricePerSeat}
-                                onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) })}
+                                onChange={(e) => setFormData({ ...formData, pricePerSeat: parseInt(e.target.value) })}
                                 className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             />
                         </div>
@@ -484,7 +487,7 @@ function Page() {
                                                         <div className="flex items-center">
                                                             <Users className="w-4 h-4 mr-1" />
                                                             {/* TODO Logic remaining seats */}
-                                                            2 seats available
+                                                            {listing.seats} seats available
                                                         </div>
                                                     </div>
                                                 </div>
@@ -504,14 +507,14 @@ function Page() {
                                                         <span className="font-medium text-green-600">${listing.pricePerSeat}</span>
                                                         <span className="text-gray-500"> per seat</span>
                                                     </div>
-                                                    <div className="text-sm text-gray-500">
+                                                    {/* <div className="text-sm text-gray-500">
                                                         2 bookings pending
-                                                    </div>
+                                                    </div> */}
                                                 </div>
-                                                <button className="flex items-center text-blue-600 hover:text-blue-700">
+                                                {/* <button className="flex items-center text-blue-600 hover:text-blue-700">
                                                     <MessageCircle className="w-4 h-4 mr-1" />
                                                     <span className="text-sm">Messages (3)</span>
-                                                </button>
+                                                </button> */}
                                             </div>
                                         </div>
                                     ))}
@@ -652,6 +655,8 @@ function Page() {
                             setSelectedListing(null);
                         }}
                         listing={selectedListing}
+                        getUserListings={getUserListings}
+                        setUserListings={setUserListings}
                     />
                     <DeleteModal 
                         isOpen={isDeleteModalOpen} 
