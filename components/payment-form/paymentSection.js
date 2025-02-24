@@ -43,7 +43,7 @@ export default function PaymentSection({ totalPrice, tripSummary, ref }) {
         elements,
         clientSecret,
         confirmParams: {
-          return_url: `${window.location.origin}/payment-success?id=${tripSummary.id}&amount=${totalPrice}&pricePerSeat=${tripSummary?.pricePerSeat}&startingCity=${tripSummary?.startingCity}&iyc=${tripSummary?.ishaYogaCenter}&departure=${tripSummary?.departure}&duration=${tripSummary.rideDuration}&distance=${tripSummary.rideDistanceKm}&seats=${paymentStoreSeatCount}`,
+          return_url: `${window.location.origin}/payment-success?id=${tripSummary.id}&amount=${totalPrice}&pricePerSeat=${tripSummary?.pricePerSeat}&startingCity=${encodeURI(tripSummary?.startingCity)}&iyc=${encodeURI(tripSummary?.ishaYogaCenter)}&departure=${tripSummary?.departure}&duration=${tripSummary.rideDuration}&distance=${tripSummary.rideDistanceKm}&seats=${paymentStoreSeatCount}`,
         },
       });
 

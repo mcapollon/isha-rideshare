@@ -17,8 +17,8 @@ function Page() {
   const paymentIntent = searchParams.get('payment_intent')
   const amount = searchParams.get('amount') / 100
   const pricePerSeat = searchParams.get('pricePerSeat')
-  const startingCity = searchParams.get('startingCity')
-  const ishaYogaCenter = searchParams.get('iyc')
+  const startingCity = decodeURI(searchParams.get('startingCity'))
+  const ishaYogaCenter = decodeURI(searchParams.get('iyc'))
   const departure = format(searchParams.get('departure'), 'PPPPpppp')
   const rideDuration = searchParams.get('duration')
   const rideDistance = searchParams.get('distance')
