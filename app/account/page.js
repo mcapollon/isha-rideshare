@@ -397,48 +397,56 @@ function Page() {
                         <div className="bg-white rounded-lg shadow p-6">
                             <h3 className="text-lg font-semibold mb-4">Upcoming Rides</h3>
                             <div className="space-y-4">
-                                {userBookings.filter(booking => new Date(booking.rides.departure) > new Date()).map((booking, i) => (
-                                    <div key={i} className="p-4 border rounded-lg">
-                                        <div className="flex items-center justify-between mb-3">
-                                            <div className="font-medium">{booking.rides.startingCity} to {booking.rides.ishaYogaCenter}</div>
-                                            <div className="text-blue-600">${booking.rides.pricePerSeat}</div>
-                                        </div>
-                                        <div className="flex items-center space-x-4 text-sm text-gray-500">
-                                            <div className="flex items-center">
-                                                <Calendar className="w-4 h-4 mr-1" />
-                                                {format(new Date(booking.rides.departure), 'MMMM d, yyyy')}
+                                {userBookings.length === 0 ? (
+                                    <div className="text-center text-gray-500">No upcoming rides found.</div>
+                                ) : (
+                                    userBookings.filter(booking => new Date(booking.rides.departure) > new Date()).map((booking, i) => (
+                                        <div key={i} className="p-4 border rounded-lg">
+                                            <div className="flex items-center justify-between mb-3">
+                                                <div className="font-medium">{booking.rides.startingCity} to {booking.rides.ishaYogaCenter}</div>
+                                                <div className="text-blue-600">${booking.rides.pricePerSeat}</div>
                                             </div>
-                                            <div className="flex items-center">
-                                                <Clock className="w-4 h-4 mr-1" />
-                                                {format(new Date(booking.rides.departure), 'p')}
+                                            <div className="flex items-center space-x-4 text-sm text-gray-500">
+                                                <div className="flex items-center">
+                                                    <Calendar className="w-4 h-4 mr-1" />
+                                                    {format(new Date(booking.rides.departure), 'MMMM d, yyyy')}
+                                                </div>
+                                                <div className="flex items-center">
+                                                    <Clock className="w-4 h-4 mr-1" />
+                                                    {format(new Date(booking.rides.departure), 'p')}
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    ))
+                                )}
                             </div>
                         </div>
 
                         <div className="bg-white rounded-lg shadow p-6">
                             <h3 className="text-lg font-semibold mb-4">Past Rides</h3>
                             <div className="space-y-4">
-                                {userBookings.filter(booking => new Date(booking.rides.departure) <= new Date()).map((booking, i) => (
-                                    <div key={i} className="p-4 border rounded-lg">
-                                        <div className="flex items-center justify-between mb-3">
-                                            <div className="font-medium">{booking.rides.startingCity} to {booking.rides.ishaYogaCenter}</div>
-                                            <div className="text-gray-600">${booking.rides.pricePerSeat}</div>
-                                        </div>
-                                        <div className="flex items-center space-x-4 text-sm text-gray-500">
-                                            <div className="flex items-center">
-                                                <Calendar className="w-4 h-4 mr-1" />
-                                                {format(new Date(booking.rides.departure), 'MMMM d, yyyy')}
+                                {userBookings.length === 0 ? (
+                                    <div className="text-center text-gray-500">No past rides found.</div>
+                                ) : (
+                                    userBookings.filter(booking => new Date(booking.rides.departure) <= new Date()).map((booking, i) => (
+                                        <div key={i} className="p-4 border rounded-lg">
+                                            <div className="flex items-center justify-between mb-3">
+                                                <div className="font-medium">{booking.rides.startingCity} to {booking.rides.ishaYogaCenter}</div>
+                                                <div className="text-gray-600">${booking.rides.pricePerSeat}</div>
                                             </div>
-                                            <div className="flex items-center">
-                                                <Clock className="w-4 h-4 mr-1" />
-                                                {format(new Date(booking.rides.departure), 'p')}
+                                            <div className="flex items-center space-x-4 text-sm text-gray-500">
+                                                <div className="flex items-center">
+                                                    <Calendar className="w-4 h-4 mr-1" />
+                                                    {format(new Date(booking.rides.departure), 'MMMM d, yyyy')}
+                                                </div>
+                                                <div className="flex items-center">
+                                                    <Clock className="w-4 h-4 mr-1" />
+                                                    {format(new Date(booking.rides.departure), 'p')}
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    ))
+                                )}
                             </div>
                         </div>
                     </div>
@@ -489,54 +497,52 @@ function Page() {
                             <div className="bg-white rounded-lg shadow p-6">
                                 <h3 className="text-lg font-semibold mb-4">Active Listings</h3>
                                 <div className="space-y-4">
-                                    {userListings.filter(listing => new Date(listing.departure) > new Date()).map((listing, i) => (
-                                        <div key={i} className="border rounded-lg p-4">
-                                            <div className="flex justify-between items-start mb-4">
-                                                <div>
-                                                    <h4 className="font-medium text-lg">{listing.startingCity} to {listing.ishaYogaCenter}</h4>
-                                                    <div className="flex items-center space-x-4 text-sm text-gray-500 mt-1">
-                                                        <div className="flex items-center">
-                                                            <Calendar className="w-4 h-4 mr-1" />
-                                                            {format(new Date(listing.departure), 'MMMM d, yyyy')}
-                                                        </div>
-                                                        <div className="flex items-center">
-                                                            <Clock className="w-4 h-4 mr-1" />
-                                                            {format(new Date(listing.departure), 'p')}
-                                                        </div>
-                                                        <div className="flex items-center">
-                                                            <Users className="w-4 h-4 mr-1" />
-                                                            {/* TODO Logic remaining seats */}
-                                                            {listing.seats} seats available
+                                {userListings.length === 0 ? (
+                                    <div className="text-center text-gray-500">No active listings found.</div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        {userListings.filter(listing => new Date(listing.departure) > new Date()).map((listing, i) => (
+                                            <div key={i} className="border rounded-lg p-4">
+                                                <div className="flex justify-between items-start mb-4">
+                                                    <div>
+                                                        <h4 className="font-medium text-lg">{listing.startingCity} to {listing.ishaYogaCenter}</h4>
+                                                        <div className="flex items-center space-x-4 text-sm text-gray-500 mt-1">
+                                                            <div className="flex items-center">
+                                                                <Calendar className="w-4 h-4 mr-1" />
+                                                                {format(new Date(listing.departure), 'MMMM d, yyyy')}
+                                                            </div>
+                                                            <div className="flex items-center">
+                                                                <Clock className="w-4 h-4 mr-1" />
+                                                                {format(new Date(listing.departure), 'p')}
+                                                            </div>
+                                                            <div className="flex items-center">
+                                                                <Users className="w-4 h-4 mr-1" />
+                                                                {listing.seats} seats available
+                                                            </div>
                                                         </div>
                                                     </div>
+                                                    <div className="flex space-x-2">
+                                                        <button onClick={() => handleEditClick(listing)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg">
+                                                            <Edit className="w-5 h-5" />
+                                                        </button>
+                                                        <button onClick={() => handleDeleteClick(listing)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg">
+                                                            <Trash2 className="w-5 h-5" />
+                                                        </button>
+                                                    </div>
                                                 </div>
-                                                <div className="flex space-x-2">
-                                                    <button onClick={() => handleEditClick(listing)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg">
-                                                        <Edit className="w-5 h-5" />
-                                                    </button>
-                                                    <button onClick={() => handleDeleteClick(listing)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg">
-                                                        <Trash2 className="w-5 h-5" />
-                                                    </button>
-                                                </div>
-                                            </div>
 
-                                            <div className="flex items-center justify-between border-t pt-4">
-                                                <div className="flex items-center space-x-4">
-                                                    <div className="text-sm">
-                                                        <span className="font-medium text-green-600">${listing.pricePerSeat}</span>
-                                                        <span className="text-gray-500"> per seat</span>
+                                                <div className="flex items-center justify-between border-t pt-4">
+                                                    <div className="flex items-center space-x-4">
+                                                        <div className="text-sm">
+                                                            <span className="font-medium text-green-600">${listing.pricePerSeat}</span>
+                                                            <span className="text-gray-500"> per seat</span>
+                                                        </div>
                                                     </div>
-                                                    {/* <div className="text-sm text-gray-500">
-                                                        2 bookings pending
-                                                    </div> */}
                                                 </div>
-                                                {/* <button className="flex items-center text-blue-600 hover:text-blue-700">
-                                                    <MessageCircle className="w-4 h-4 mr-1" />
-                                                    <span className="text-sm">Messages (3)</span>
-                                                </button> */}
                                             </div>
-                                        </div>
-                                    ))}
+                                        ))}
+                                    </div>
+                                )}
                                 </div>
                             </div>
                         }
@@ -544,29 +550,35 @@ function Page() {
                         <div className="bg-white rounded-lg shadow p-6">
                             <h3 className="text-lg font-semibold mb-4">Past Listings</h3>
                             <div className="space-y-4">
-                                {userListings.filter(listing => new Date(listing.departure) <= new Date()).map((listing, i) => (
-                                    <div key={i} className="border rounded-lg p-4">
-                                        <div className="flex justify-between items-start">
-                                            <div>
-                                                <h4 className="font-medium">{listing.startingCity} to {listing.ishaYogaCenter}</h4>
-                                                <div className="flex items-center space-x-4 text-sm text-gray-500 mt-1">
-                                                    <div className="flex items-center">
-                                                        <Calendar className="w-4 h-4 mr-1" />
-                                                        {format(new Date(listing.departure), 'MMMM d, yyyy')}
+                            {userListings.length === 0 ? (
+                                    <div className="text-center text-gray-500">No past listings found.</div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        {userListings.filter(listing => new Date(listing.departure) <= new Date()).map((listing, i) => (
+                                            <div key={i} className="border rounded-lg p-4">
+                                                <div className="flex justify-between items-start">
+                                                    <div>
+                                                        <h4 className="font-medium">{listing.startingCity} to {listing.ishaYogaCenter}</h4>
+                                                        <div className="flex items-center space-x-4 text-sm text-gray-500 mt-1">
+                                                            <div className="flex items-center">
+                                                                <Calendar className="w-4 h-4 mr-1" />
+                                                                {format(new Date(listing.departure), 'MMMM d, yyyy')}
+                                                            </div>
+                                                            <div className="flex items-center">
+                                                                <Users className="w-4 h-4 mr-1" />
+                                                                3 seats filled
+                                                            </div>
+                                                        </div>
                                                     </div>
-                                                    <div className="flex items-center">
-                                                        <Users className="w-4 h-4 mr-1" />
-                                                        3 seats filled
+                                                    <div className="text-sm">
+                                                        <span className="font-medium text-gray-600">${listing.pricePerSeat * 3}</span>
+                                                        <span className="text-gray-500"> earned</span>
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div className="text-sm">
-                                                <span className="font-medium text-gray-600">${listing.pricePerSeat * 3}</span>
-                                                <span className="text-gray-500"> earned</span>
-                                            </div>
-                                        </div>
+                                        ))}
                                     </div>
-                                ))}
+                                )}
                             </div>
                         </div>
                     </div>
