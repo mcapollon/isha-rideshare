@@ -1,14 +1,20 @@
 "use client"
-import React from 'react'
+import React, { useEffect } from 'react'
 import Link from 'next/link';
 import { CheckCircle, Calendar, MapPin, Users, ArrowLeft } from 'lucide-react';
 import { useSearchParams } from 'next/navigation'
 import { format } from "date-fns";
+import { useSession } from 'next-auth/react';
+import { createClient } from '@/utils/supabase/client';
 
 function Page() {
 
   const searchParams = useSearchParams()
+  const session = useSession()
+  const supabase = createClient()
 
+  const id = searchParams.get('id')
+  const paymentIntent = searchParams.get('payment_intent')
   const amount = searchParams.get('amount') / 100
   const pricePerSeat = searchParams.get('pricePerSeat')
   const startingCity = searchParams.get('startingCity')
@@ -17,6 +23,55 @@ function Page() {
   const rideDuration = searchParams.get('duration')
   const rideDistance = searchParams.get('distance')
   const seatsBooked = searchParams.get('seats')
+
+  const handlePaymentComplete = async () => {
+    const { data: existingBooking, error: fetchError } = await supabase
+      .from('bookings')
+      .select('payment_intent')
+      .eq('payment_intent', paymentIntent)
+      .maybeSingle();
+
+    if (existingBooking) {
+      return
+    } 
+
+    if (fetchError) {
+      console.log(fetchError)
+      return
+    }
+
+    const { data, error } = await supabase
+    .from('bookings')
+    .insert([
+      { 
+        payment_intent: paymentIntent,
+        ride_id: id, 
+        userId: session.data.user.id,
+        seats_booked: seatsBooked,
+        totalPrice: amount,
+       },
+    ])
+    .select()  
+
+    if (error) {
+      console.error(error)
+      return
+    }
+
+    const { error: updateError } = await supabase
+      .rpc('decrement_remaining_seats', { ride_id: id, seats_booked: seatsBooked })
+      .single()
+
+    if (updateError) {
+      console.log(updateError)
+    }
+
+    console.log(data, 'booking data')
+  }
+
+  useEffect(() => {
+    handlePaymentComplete()
+  }, [])
   
 
   return (

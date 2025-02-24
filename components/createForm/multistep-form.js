@@ -97,7 +97,8 @@ export default function MultistepForm() {
                 rideDistanceMeters: data.rideDistanceMeters,
                 rideDuration: formStoreRideDuration,
                 pricePerSeat: data.pricePerSeat,
-                createdByUser:  session.user.id
+                createdByUser:  session.user.id,
+                seatsRemaining: data.seats
             })
         if (error) {
             console.log(error, 'form error')

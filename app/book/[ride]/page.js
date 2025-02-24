@@ -77,7 +77,6 @@ function Page({ params }) {
       updatePaymentStoreAmount(ride.pricePerSeat)
       updatePaymentStoreAmountInCents(ride.pricePerSeat)
       updatePaymentStorePaymentStoreSeatLimit(ride.seats)
-      console.log(paymentStoreAmount)
       setLoading(false)
     }
   }
@@ -105,7 +104,6 @@ function Page({ params }) {
       updatePaymentStoreAmount(seatCount * paymentStorePricePerSeat)
       updatePaymentStoreAmountInCents(seatCount * paymentStorePricePerSeat)
       updatePaymentStoreSeatCountIncrement()
-      console.log(paymentStoreAmount)
     }
   };
 
@@ -115,7 +113,6 @@ function Page({ params }) {
       updatePaymentStoreAmount(seatCount * paymentStorePricePerSeat)
       updatePaymentStoreAmountInCents(seatCount * paymentStorePricePerSeat)
       updatePaymentStoreSeatCountDecrement()
-      console.log(paymentStoreAmount)
     }
   };
 
@@ -313,7 +310,7 @@ function Page({ params }) {
 
               <div className="flex items-center space-x-3">
                 <Users className="w-6 h-6 text-gray-400" />
-                <div className="font-medium">{rideData.seats} seats available</div>
+                <div className="font-medium">{rideData.seatsRemaining} seats available</div>
               </div>
 
               {/* // TODO Need to collect vehicule information during ride creation */}
@@ -351,9 +348,7 @@ function Page({ params }) {
                   totalPrice={paymentStoreAmountInCents}
                   tripSummary={rideData}
                   seats={seatCount}
-                  onPaymentComplete={() => {
-                    console.log('Payment Completed')
-                  }} />
+                  />
               </Elements>
             </div>
           </div>

@@ -118,8 +118,8 @@ const EditModal = ({ isOpen, onClose, listing, getUserListings, setUserListings 
             .eq('id', formData.id)
             .select()
 
-            const updatedListings = await getUserListings();
-            setUserListings(updatedListings);
+        const updatedListings = await getUserListings();
+        setUserListings(updatedListings);
 
         if (error) {
             console.error('Error updating listing:', error);
@@ -220,7 +220,8 @@ function Page() {
     }, [session])
 
     const [activeTab, setActiveTab] = useState('profile');
-    const [userListings, setUserListings] = useState([])
+    const [userListings, setUserListings] = useState([]);
+    const [userBookings, setUserBookings] = useState([]);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [selectedListing, setSelectedListing] = useState(null);
@@ -231,6 +232,10 @@ function Page() {
             setLoading(true)
             getUserListings().then((listings) => { console.log(listings); setUserListings(listings); setLoading(false) })
         }
+
+        if (activeTab === 'rides') {
+            getUserBookings().then((bookings) => { console.log(bookings); setUserBookings(bookings); setLoading(false) }) // Fetch bookings
+        }
     }, [activeTab])
 
     async function getUserListings() {
@@ -240,6 +245,18 @@ function Page() {
             .eq('createdByUser', session.user?.id)
 
         return rides
+    }
+
+    async function getUserBookings() {
+        let { data: bookings, error } = await supabase
+            .from('bookings')
+            .select('*, rides(*)')
+            .eq('userId', session.user?.id)
+
+            console.log(bookings, 'bookings')
+            console.log(error, 'bookings fetch error')
+
+        return bookings
     }
 
     const handleEditClick = (listing, e) => {
@@ -380,42 +397,44 @@ function Page() {
                         <div className="bg-white rounded-lg shadow p-6">
                             <h3 className="text-lg font-semibold mb-4">Upcoming Rides</h3>
                             <div className="space-y-4">
-                                <div className="p-4 border rounded-lg">
-                                    <div className="flex items-center justify-between mb-3">
-                                        <div className="font-medium">Calgary to Banff</div>
-                                        <div className="text-blue-600">$28.00</div>
-                                    </div>
-                                    <div className="flex items-center space-x-4 text-sm text-gray-500">
-                                        <div className="flex items-center">
-                                            <Calendar className="w-4 h-4 mr-1" />
-                                            March 23, 2024
+                                {userBookings.filter(booking => new Date(booking.rides.departure) > new Date()).map((booking, i) => (
+                                    <div key={i} className="p-4 border rounded-lg">
+                                        <div className="flex items-center justify-between mb-3">
+                                            <div className="font-medium">{booking.rides.startingCity} to {booking.rides.ishaYogaCenter}</div>
+                                            <div className="text-blue-600">${booking.rides.pricePerSeat}</div>
                                         </div>
-                                        <div className="flex items-center">
-                                            <Clock className="w-4 h-4 mr-1" />
-                                            9:00 AM
+                                        <div className="flex items-center space-x-4 text-sm text-gray-500">
+                                            <div className="flex items-center">
+                                                <Calendar className="w-4 h-4 mr-1" />
+                                                {format(new Date(booking.rides.departure), 'MMMM d, yyyy')}
+                                            </div>
+                                            <div className="flex items-center">
+                                                <Clock className="w-4 h-4 mr-1" />
+                                                {format(new Date(booking.rides.departure), 'p')}
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
+                                ))}
                             </div>
                         </div>
 
                         <div className="bg-white rounded-lg shadow p-6">
                             <h3 className="text-lg font-semibold mb-4">Past Rides</h3>
                             <div className="space-y-4">
-                                {[1, 2, 3].map((i) => (
+                                {userBookings.filter(booking => new Date(booking.rides.departure) <= new Date()).map((booking, i) => (
                                     <div key={i} className="p-4 border rounded-lg">
                                         <div className="flex items-center justify-between mb-3">
-                                            <div className="font-medium">Calgary to Banff</div>
-                                            <div className="text-gray-600">$28.00</div>
+                                            <div className="font-medium">{booking.rides.startingCity} to {booking.rides.ishaYogaCenter}</div>
+                                            <div className="text-gray-600">${booking.rides.pricePerSeat}</div>
                                         </div>
                                         <div className="flex items-center space-x-4 text-sm text-gray-500">
                                             <div className="flex items-center">
                                                 <Calendar className="w-4 h-4 mr-1" />
-                                                March {1 + i}, 2024
+                                                {format(new Date(booking.rides.departure), 'MMMM d, yyyy')}
                                             </div>
                                             <div className="flex items-center">
                                                 <Clock className="w-4 h-4 mr-1" />
-                                                9:00 AM
+                                                {format(new Date(booking.rides.departure), 'p')}
                                             </div>
                                         </div>
                                     </div>
@@ -648,27 +667,27 @@ function Page() {
 
                 {selectedListing && (
                     <>
-                    <EditModal
-                        isOpen={isEditModalOpen}
-                        onClose={() => {
-                            setIsEditModalOpen(false);
-                            setSelectedListing(null);
-                        }}
-                        listing={selectedListing}
-                        getUserListings={getUserListings}
-                        setUserListings={setUserListings}
-                    />
-                    <DeleteModal 
-                        isOpen={isDeleteModalOpen} 
-                        onClose={() => {
-                            setIsDeleteModalOpen(false);
-                            setSelectedListing(null);
-                        }}
-                        listing={selectedListing}
-                        getUserListings={getUserListings}
-                        setUserListings={setUserListings} />
+                        <EditModal
+                            isOpen={isEditModalOpen}
+                            onClose={() => {
+                                setIsEditModalOpen(false);
+                                setSelectedListing(null);
+                            }}
+                            listing={selectedListing}
+                            getUserListings={getUserListings}
+                            setUserListings={setUserListings}
+                        />
+                        <DeleteModal
+                            isOpen={isDeleteModalOpen}
+                            onClose={() => {
+                                setIsDeleteModalOpen(false);
+                                setSelectedListing(null);
+                            }}
+                            listing={selectedListing}
+                            getUserListings={getUserListings}
+                            setUserListings={setUserListings} />
                     </>
-                    
+
                 )}
             </div>
         )

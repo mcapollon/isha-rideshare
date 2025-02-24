@@ -5,7 +5,7 @@ import { useStripe, useElements, PaymentElement } from '@stripe/react-stripe-js'
 import { CheckCircle, Shield, Lock, CreditCard } from 'lucide-react';
 import usePaymentStore from '../../components/payment-form/paymentStore'
 
-export default function PaymentSection({ totalPrice, tripSummary, seatsBooked,  onPaymentComplete, ref }) {
+export default function PaymentSection({ totalPrice, tripSummary, ref }) {
   const stripe = useStripe();
   const elements = useElements();
   const [errorMessage, setErrorMessage] = useState('')
@@ -26,19 +26,14 @@ export default function PaymentSection({ totalPrice, tripSummary, seatsBooked,  
       .then((data) => {setClientSecret(data.clientSecret); console.log(data, 'paymennt intent data')})
       .catch((error) => setErrorMessage("Failed to initialize payment"));
 
-      console.log(seatsBooked, 'seats booked')
-
   }, [totalPrice])
 
   const handlePayment = async () => {
     if (!stripe || !elements) {
-      console.log("Stripe not initialized");
       return;
     }
 
     const {error, selectedPaymentMethod} = await elements.submit();
-
-    console.log(selectedPaymentMethod, 'selected Payment Method')
     
     setPaymentLoading(true);
     setErrorMessage(null);
@@ -48,15 +43,14 @@ export default function PaymentSection({ totalPrice, tripSummary, seatsBooked,  
         elements,
         clientSecret,
         confirmParams: {
-          return_url: `${window.location.origin}/payment-success?amount=${totalPrice}&pricePerSeat=${tripSummary?.pricePerSeat}&startingCity=${tripSummary?.startingCity}&iyc=${tripSummary?.ishaYogaCenter}&departure=${tripSummary?.departure}&duration=${tripSummary.rideDuration}&distance=${tripSummary.rideDistanceKm}&seats=${paymentStoreSeatCount}`,
+          return_url: `${window.location.origin}/payment-success?id=${tripSummary.id}&amount=${totalPrice}&pricePerSeat=${tripSummary?.pricePerSeat}&startingCity=${tripSummary?.startingCity}&iyc=${tripSummary?.ishaYogaCenter}&departure=${tripSummary?.departure}&duration=${tripSummary.rideDuration}&distance=${tripSummary.rideDistanceKm}&seats=${paymentStoreSeatCount}`,
         },
       });
 
       if (error) {
         setErrorMessage(error.message);
-      } else {
-        onPaymentComplete?.();
-      }
+      } 
+
     } catch (e) {
       setErrorMessage("An unexpected error occurred");
     } finally {

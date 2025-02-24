@@ -1,10 +1,9 @@
 "use client"
 
-import { Search, Calendar } from "lucide-react"
+import { Search, Calendar, MapPin, Clock, Users, Star, Car, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
+import { Avatar } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { createClient } from "@/utils/supabase/client"
 import { useEffect, useState } from "react"
@@ -13,7 +12,7 @@ import DatePicker from "react-datepicker"
 import "react-datepicker/dist/react-datepicker.css"
 import { Controller, useForm } from "react-hook-form";
 import Autocomplete from "react-google-autocomplete";
-import Link from "next/link"
+import Link from "next/link";
 
 export default function Page() {
   const ishaYogaCenters = [
@@ -65,6 +64,7 @@ export default function Page() {
     let { data: rides, error } = await supabase
       .from('rides')
       .select('*')
+      .gt('seatsRemaining', 0) 
 
       return rides
   }
@@ -111,13 +111,12 @@ export default function Page() {
       .select('*')
       .ilike('startingCity', encodeURIComponent(searchStartingPoint))
       .ilike('ishaYogaCenter', encodeURIComponent(searchIshaYogaCenter))
+      .gt('seatsRemaining', 0) 
 
       setRides(rides)
       console.log(rides)
       if (error) () => console.log(error, 'error getting rides')
-    }
-
-    
+    }    
   }
 
   return (
@@ -220,33 +219,81 @@ export default function Page() {
             </CardContent>
           </Card>
           ) : (
-            rides.map((ride, i) => (
-              <Card key={i} className="bg-white">
-                <Link href={`book/${ride.id}`}>
-                <CardContent className="flex items-center gap-4 p-6">
-                  <div className="border-r-2 p-4 border-slate-200 flex flex-col items-center">
-                    <Avatar className="h-16 w-16">
-                      <AvatarImage src={userPictures[ride.createdByUser] || './default-user-icon.png'} />
-                      <AvatarFallback>DR</AvatarFallback>
-                    </Avatar>
-                    <p className="font-sans text-center mt-2">{userNames[ride.createdByUser]}</p>
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <h3 className="font-semibold">{ride.startingCity} to {ride.ishaYogaCenter}</h3>
-                      <Badge variant="outline" className="bg-[#d9cebc] text-black px-3 py-1 rounded-full text-sm">
-                        {format(new Date(ride.departure), 'p')}
-                      </Badge>
+            rides.map((ride) => (
+              <div key={ride.id} className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow drop-shadow-md">
+                <div className="p-6">
+                  {/* Driver Info */}
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center space-x-4">
+                      <img
+                        src={userPictures[ride.createdByUser]}
+                        alt={userNames[ride.createdByUser]}
+                        className="w-12 h-12 rounded-full object-cover"
+                      />
+                      <div>
+                        <h3 className="font-medium">{userNames[ride.createdByUser]}</h3>
+                        {/* TODO Review / Star Rating System & Number of User Rides */}
+                        {/* <div className="flex items-center space-x-2 text-sm">
+                          <div className="flex items-center text-yellow-400">
+                            <Star className="w-4 h-4 fill-current" />
+                            <span className="ml-1 text-gray-700">{listing.driver.rating}</span> 
+                          </div>
+                          <span className="text-gray-500">·</span>
+                          <span className="text-gray-500">{listing.driver.totalRides} rides</span>
+                        </div> */}
+                      </div>
                     </div>
-                    <div className="text-sm text-black/60">Pickup: {ride.startingPointAddress}</div>
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-slate-600">${ride.pricePerSeat}</div>
+                      <div className="text-sm text-gray-500">per seat</div>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold">${ride.pricePerSeat}</div>
-                    <div className="text-sm text-black/60">{ride.seats} seats left</div>
+  
+                  {/* Trip Details */}
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-3">
+                      <MapPin className="w-5 h-5 text-gray-400" />
+                      <div>
+                        <div className="font-medium">{ride.startingCity} to {ride.ishaYogaCenter}</div>
+                        <div className="text-sm text-gray-500">Pickup: {ride.startingPointAddress}</div>
+                      </div>
+                    </div>
+  
+                    <div className="flex items-center space-x-6">
+                      <div className="flex items-center space-x-2">
+                        <Calendar className="w-5 h-5 text-gray-400" />
+                        <span>{new Date(ride.departure).toLocaleDateString('en-US', { 
+                          weekday: 'long',
+                          month: 'long',
+                          day: 'numeric'
+                        })}</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Clock className="w-5 h-5 text-gray-400" />
+                        <span>{format(ride.departure, 'p')}</span>
+                      </div>
+                    </div>
+  
+                    <div className="flex items-center justify-between pt-4 border-t">
+                      <div className="flex items-center space-x-6">
+                        {/* <div className="flex items-center space-x-2">
+                          <Car className="w-5 h-5 text-gray-400" />
+                          <span className="text-gray-600">{listing.carInfo}</span>
+                        </div> */}
+                        <div className="flex items-center space-x-2">
+                          <Users className="w-5 h-5 text-gray-400" />
+                          <span className="text-gray-600">{ride.seatsRemaining} seats left</span>
+                        </div>
+                      </div>
+                      <Link href={`/book/${ride.id}`}>
+                        <button className="bg-slate-900 text-white px-6 py-2 rounded-lg hover:bg-slate-700">
+                          Book now
+                        </button>
+                      </Link>
+                    </div>
                   </div>
-                </CardContent>
-                </Link>
-              </Card>
+                </div>
+              </div>
             ))
           )}
         </div>
