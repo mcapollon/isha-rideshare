@@ -32,6 +32,7 @@ export default async function RootLayout({ children }) {
         <SessionProvider session={session}>
           <Navbar />
           {children}
+          <SpeedInsights />
         </SessionProvider>
 
       </body>
