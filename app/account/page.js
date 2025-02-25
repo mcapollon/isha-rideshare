@@ -308,7 +308,7 @@ function Page() {
                 phone: data.phone_number || '',
                 email: data.email || '',
                 location: data.location || '',
-                dateOfBirth: data.dateOfBirth || ''
+                dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null
             });
             setProfileLoading(false)
         }
@@ -382,7 +382,7 @@ function Page() {
                 phone_number: profileData.phone,
                 email: profileData.email,
                 location: profileData.location,
-                dateOfBirth: profileData.dateOfBirth,
+                dateOfBirth: profileData.dateOfBirth ? profileData.dateOfBirth.toISOString() : null,
                 image: profileData.image
             })
             .eq('id', session.user?.id)
@@ -572,7 +572,9 @@ function Page() {
                                                         className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                                     />
                                                 ) : (
-                                                    <div className="font-medium">{profileData.dateOfBirth}</div>
+                                                    <div className="font-medium">
+                                                        {profileData.dateOfBirth ? format(new Date(profileData.dateOfBirth), 'MMMM d, yyyy') : ''}
+                                                    </div>
                                                 )}
                                             </div>
                                         </div>
