@@ -3,10 +3,9 @@
 import React, { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { redirect } from 'next/navigation'
-import { format } from 'date-fns';
-import { PhotoIcon, UserCircleIcon } from '@heroicons/react/24/solid'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
+import { format, set } from 'date-fns';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 import {
     User,
     CreditCard,
@@ -217,6 +216,7 @@ function Page() {
             redirect("/api/auth/signin")
         }
 
+        console.log(session.user.created_at, 'session')
     }, [session])
 
     const [activeTab, setActiveTab] = useState('profile');
@@ -226,6 +226,19 @@ function Page() {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [selectedListing, setSelectedListing] = useState(null);
     const [loading, setLoading] = useState(false)
+    const [profileLoading, setProfileLoading] = useState(false)
+
+    const [isEditingProfile, setIsEditingProfile] = useState(false);
+    const [profileData, setProfileData] = useState({
+        phone: '+1 (403) 555-0123',
+        email: 'john.doe@example.com',
+        location: 'Calgary, AB',
+        dateOfBirth: 'April 15, 1999'
+    });
+
+    useEffect(() => {
+        checkProfile()
+    }, [])
 
     useEffect(() => {
         if (activeTab === 'listings') {
@@ -236,7 +249,27 @@ function Page() {
         if (activeTab === 'rides') {
             getUserBookings().then((bookings) => { console.log(bookings); setUserBookings(bookings); setLoading(false) }) // Fetch bookings
         }
+
+        if (activeTab === 'profile') {
+            fetchUserProfile();
+        }
     }, [activeTab])
+
+    const checkProfile = async () => {
+        setProfileLoading(true)
+        const { data, error } = await supabase.schema('next_auth')
+          .from('users')
+          .select('phone_number, location, dateOfBirth')
+          .eq('id', session.user?.id)
+          .single()
+    
+        if (data?.phone_number && data?.location && data?.dateOfBirth) {
+          // If profile is complete, redirect to home
+          setProfileLoading(false)
+        } else {
+            redirect('/auth/new-user')
+        }
+      }
 
     async function getUserListings() {
         let { data: rides, error } = await supabase
@@ -259,6 +292,27 @@ function Page() {
         return bookings
     }
 
+    async function fetchUserProfile() {
+        setProfileLoading(true)
+        const { data, error } = await supabase.schema('next_auth')
+            .from('users')
+            .select('*')
+            .eq('id', session.user?.id)
+            .single();
+
+        if (error) {
+            console.error('Error fetching user profile:', error);
+        } else {
+            setProfileData({
+                phone: data.phone_number || '',
+                email: data.email || '',
+                location: data.location || '',
+                dateOfBirth: data.dateOfBirth || ''
+            });
+            setProfileLoading(false)
+        }
+    }
+
     const handleEditClick = (listing, e) => {
         console.log(listing)
         setSelectedListing(listing);
@@ -268,6 +322,67 @@ function Page() {
     const handleDeleteClick = (listing) => {
         setSelectedListing(listing);
         setIsDeleteModalOpen(true);
+    };
+
+    const handleProfileEdit = () => {
+        setIsEditingProfile(true);
+    };
+
+    const uploadProfilePicture = async (file) => {
+        try {
+            const fileExt = file.name.split('.').pop()
+            const fileName = `${Math.random()}.${fileExt}`
+            const filePath = `${session.user.id}/${fileName}`
+    
+            // Upload the file to Supabase storage
+            const { data, error } = await supabase.storage
+                .from('profile-pictures')
+                .upload(filePath, file, {
+                    cacheControl: '3600',
+                    upsert: true
+                })
+    
+            if (error) {
+                console.error('Error uploading image:', error)
+                return
+            }
+    
+            // Get the public URL
+            const { data: publicURL } = supabase.storage
+                .from('profile-pictures')
+                .getPublicUrl(filePath)
+    
+            // Update profile data with new image URL
+            setProfileData({ ...profileData, image: publicURL.publicUrl })
+    
+        } catch (error) {
+            console.error('Error in upload:', error)
+        }
+    }
+
+    const handleProfileSave = async () => {
+        // Here you would typically make an API call to update the profile
+        console.log('Saving profile:', profileData);
+
+        const { data, error } = await supabase.schema('next_auth')
+            .from('users')
+            .update({
+                phone_number: profileData.phone,
+                email: profileData.email,
+                location: profileData.location,
+                dateOfBirth: profileData.dateOfBirth,
+                image: profileData.image
+            })
+            .eq('id', session.user?.id)
+            .select()
+
+        if (error) {
+            console.error('Error updating profile:', error);
+        } else {
+            console.log('Profile updated:', data);
+        }
+
+        setIsEditingProfile(false);
     };
 
     const tabs = [
@@ -283,64 +398,167 @@ function Page() {
             case 'profile':
                 return (
                     <div className="space-y-6">
-                        <div className="flex items-center space-x-4 mb-8">
-                            <img
-                                src={session.user?.image}
-                                alt="Profile"
-                                className="w-24 h-24 rounded-full object-cover"
-                            />
-                            <div>
-                                <h2 className="text-2xl font-bold">{session.user?.name}</h2>
-                                <p className="text-gray-600">Member since March 2024</p>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="space-y-4">
-                                <div className="flex items-center space-x-3">
-                                    <Phone className="w-5 h-5 text-gray-400" />
+                        {profileLoading ? (
+                            <div className="animate-pulse">
+                                <div className="flex items-center space-x-4 mb-8">
+                                    <div className="w-24 h-24 bg-gray-300 rounded-full"></div>
                                     <div>
-                                        <div className="text-sm text-gray-500">Phone</div>
-                                        <div className="font-medium">+1 (403) 555-0123</div>
+                                        <div className="h-6 bg-gray-300 rounded w-32 mb-2"></div>
+                                        <div className="h-4 bg-gray-300 rounded w-48"></div>
                                     </div>
                                 </div>
-                                <div className="flex items-center space-x-3">
-                                    <Mail className="w-5 h-5 text-gray-400" />
-                                    <div>
-                                        <div className="text-sm text-gray-500">Email</div>
-                                        <div className="font-medium">john.doe@example.com</div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="space-y-4">
+                                        <div className="flex items-center space-x-3">
+                                            <div className="w-5 h-5 bg-gray-300 rounded"></div>
+                                            <div className="w-full">
+                                                <div className="h-4 bg-gray-300 rounded w-24 mb-2"></div>
+                                                <div className="h-4 bg-gray-300 rounded w-full"></div>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center space-x-3">
+                                            <div className="w-5 h-5 bg-gray-300 rounded"></div>
+                                            <div className="w-full">
+                                                <div className="h-4 bg-gray-300 rounded w-24 mb-2"></div>
+                                                <div className="h-4 bg-gray-300 rounded w-full"></div>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center space-x-3">
+                                            <div className="w-5 h-5 bg-gray-300 rounded"></div>
+                                            <div className="w-full">
+                                                <div className="h-4 bg-gray-300 rounded w-24 mb-2"></div>
+                                                <div className="h-4 bg-gray-300 rounded w-full"></div>
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                                <div className="flex items-center space-x-3">
-                                    <MapPin className="w-5 h-5 text-gray-400" />
-                                    <div>
-                                        <div className="text-sm text-gray-500">Location</div>
-                                        <div className="font-medium">Calgary, AB</div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="space-y-4">
-                                <div className="flex items-center space-x-3">
-                                    <Calendar className="w-5 h-5 text-gray-400" />
-                                    <div>
-                                        <div className="text-sm text-gray-500">Date of Birth</div>
-                                        <div className="font-medium">April 15, 1990</div>
-                                    </div>
-                                </div>
-                                <div className="flex items-center space-x-3">
-                                    <Bell className="w-5 h-5 text-gray-400" />
-                                    <div>
-                                        <div className="text-sm text-gray-500">Notifications</div>
-                                        <div className="font-medium">Email, Push</div>
+                                    <div className="space-y-4">
+                                        <div className="flex items-center space-x-3">
+                                            <div className="w-5 h-5 bg-gray-300 rounded"></div>
+                                            <div className="w-full">
+                                                <div className="h-4 bg-gray-300 rounded w-24 mb-2"></div>
+                                                <div className="h-4 bg-gray-300 rounded w-full"></div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        ) : (
+                            <>
+                                <div className="flex items-center space-x-4 mb-8">
+                                    {isEditingProfile ? (
+                                        <div className="relative">
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={(e) => {uploadProfilePicture(e.target.files[0])}}
+                                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer rounded-full"
+                                            />
+                                            <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center cursor-pointer">
+                                                <span className="text-gray-500">Change</span>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <img
+                                            src={profileData.image || session.user?.image}
+                                            alt="Profile"
+                                            className="w-24 h-24 rounded-full object-cover"
+                                        />
+                                    )}
+                                    <div>
+                                        <h2 className="text-2xl font-bold">{session.user?.name}</h2>
+                                        <p className="text-gray-600">Member since {session.user?.created_at ? format(new Date(session.user.created_at), 'PPP') : ''}</p>
+                                    </div>
+                                </div>
 
-                        <button className="mt-6 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                            Edit Profile
-                        </button>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="space-y-4">
+                                        <div className="flex items-center space-x-3">
+                                            <Phone className="w-5 h-5 text-gray-400" />
+                                            <div>
+                                                <div className="text-sm text-gray-500">Phone</div>
+                                                {isEditingProfile ? (
+                                                    <input
+                                                        type="text"
+                                                        value={profileData.phone}
+                                                        onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
+                                                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                    />
+                                                ) : (
+                                                    <div className="font-medium">{profileData.phone}</div>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center space-x-3">
+                                            <Mail className="w-5 h-5 text-gray-400" />
+                                            <div>
+                                                <div className="text-sm text-gray-500">Email</div>
+                                                {isEditingProfile ? (
+                                                    <input
+                                                        type="email"
+                                                        value={profileData.email}
+                                                        onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
+                                                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                    />
+                                                ) : (
+                                                    <div className="font-medium">{profileData.email}</div>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center space-x-3">
+                                            <MapPin className="w-5 h-5 text-gray-400" />
+                                            <div>
+                                                <div className="text-sm text-gray-500">Location</div>
+                                                {isEditingProfile ? (
+                                                    <input
+                                                        type="text"
+                                                        value={profileData.location}
+                                                        onChange={(e) => setProfileData({ ...profileData, location: e.target.value })}
+                                                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                    />
+                                                ) : (
+                                                    <div className="font-medium">{profileData.location}</div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <div className="flex items-center space-x-3">
+                                            <Calendar className="w-5 h-5 text-gray-400" />
+                                            <div>
+                                                <div className="text-sm text-gray-500">Date of Birth</div>
+                                                {isEditingProfile ? (
+                                                    <DatePicker
+                                                        selected={profileData.dateOfBirth}
+                                                        onChange={(date) => setProfileData({ ...profileData, dateOfBirth: date })}
+                                                        dateFormat="MMMM d, yyyy"
+                                                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                    />
+                                                ) : (
+                                                    <div className="font-medium">{profileData.dateOfBirth}</div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {isEditingProfile ? (
+                                    <button
+                                        onClick={handleProfileSave}
+                                        className="mt-6 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                                    >
+                                        Save
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={handleProfileEdit}
+                                        className="mt-6 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-500"
+                                    >
+                                        Edit Profile
+                                    </button>
+                                )}
+                            </>
+                        )}
                     </div>
                 );
 
@@ -457,7 +675,7 @@ function Page() {
                     <div className="space-y-6">
                         <div className="flex justify-between items-center mb-6">
                             <h2 className="text-xl font-semibold">My Posted Rides</h2>
-                            <button onClick={() => redirect('/create')} className="px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-600">
+                            <button onClick={() => redirect('/create')} className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-500">
                                 Post New Ride
                             </button>
                         </div>
@@ -654,8 +872,8 @@ function Page() {
                                             <button
                                                 key={tab.id}
                                                 className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left ${activeTab === tab.id
-                                                    ? 'bg-blue-50 text-blue-600'
-                                                    : 'text-gray-700 hover:bg-gray-50'
+                                                    ? 'bg-amber-50 text-amber-600'
+                                                    : 'text-slate-700 hover:bg-amber-50'
                                                     }`}
                                                 onClick={() => setActiveTab(tab.id)}
                                             >

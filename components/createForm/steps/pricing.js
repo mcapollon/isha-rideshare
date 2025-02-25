@@ -28,7 +28,7 @@ const CustomPriceSlider = ({
     step={step}
     disabled={disabled}
   >
-    <SliderPrimitive.Track className="bg-slate-100 relative grow rounded-full h-2">
+    <SliderPrimitive.Track className="bg-amber-100 relative grow rounded-full h-2">
       <SliderPrimitive.Range className="absolute bg-primary rounded-full h-full" />
     </SliderPrimitive.Track>
     <SliderPrimitive.Thumb className="block w-20 h-12 bg-primary shadow-lg rounded-full focus:outline-none focus-visible:ring focus-visible:ring-primary focus-visible:ring-opacity-75">

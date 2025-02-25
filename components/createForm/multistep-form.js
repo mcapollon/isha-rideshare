@@ -124,10 +124,10 @@ export default function MultistepForm() {
 
     return (
         <FormProvider {...methods}>
-            <Card className="w-full mx-aut border-none shadow-none">
+            <Card className="w-full mx-auto border-none shadow-none">
                 <CardContent>
                     <div className="mb-8">
-                        <Stepper currentStep={step} steps={steps} />
+                        <Stepper className='bg-amber-600' currentStep={step} steps={steps} />
                     </div>
                     <div className="mt-8">
                         <form>
@@ -137,16 +137,16 @@ export default function MultistepForm() {
                 </CardContent>
                 <CardFooter className="flex justify-between">
                     {step > 1 && (
-                        <Button type="button" variant="outline" onClick={prevStep}>
+                        <Button className="bg-amber-600 hover:bg-amber-500" type="button" variant="outline" onClick={prevStep}>
                             Previous
                         </Button>
                     )}
                     {step < steps.length ? (
-                        <Button type="button" onClick={nextStep}>
+                        <Button className="bg-amber-600 hover:bg-amber-500" type="button" onClick={nextStep}>
                             Next
                         </Button>
                     ) : (
-                        <Button type="submit" onClick={methods.handleSubmit(onSubmit)}>Submit</Button>
+                        <Button className="bg-amber-600 hover:bg-amber-500"  type="submit" onClick={methods.handleSubmit(onSubmit)}>Submit</Button>
                     )}
                 </CardFooter>
             </Card>

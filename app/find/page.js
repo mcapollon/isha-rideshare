@@ -197,7 +197,7 @@ export default function Page() {
               />
             </div>
           </div>
-          <Button onClick={() => getRidesFiltered()} className="mt-4 w-full bg-black text-white hover:bg-black/90">Search</Button>
+          <Button onClick={() => getRidesFiltered()} className="mt-4 w-full bg-amber-600 text-white hover:bg-amber-500">Search</Button>
         </div>
 
         {/* Results */}
@@ -244,7 +244,7 @@ export default function Page() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-2xl font-bold text-slate-600">${ride.pricePerSeat}</div>
+                      <div className="text-2xl font-bold text-amber-600">${ride.pricePerSeat}</div>
                       <div className="text-sm text-gray-500">per seat</div>
                     </div>
                   </div>
@@ -286,7 +286,7 @@ export default function Page() {
                         </div>
                       </div>
                       <Link href={`/book/${ride.id}`}>
-                        <button className="bg-slate-900 text-white px-6 py-2 rounded-lg hover:bg-slate-700">
+                        <button className="bg-amber-600 text-white px-6 py-2 rounded-lg hover:bg-amber-500">
                           Book now
                         </button>
                       </Link>

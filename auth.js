@@ -9,11 +9,14 @@ export const { handlers, auth } = NextAuth({
       clientId: process.env.AUTH_GITHUB_ID,
       clientSecret: process.env.AUTH_GITHUB_SECRET,
     }),
-  Google
-],
-    adapter: SupabaseAdapter({
-      url: process.env.NEXT_PUBLIC_SUPABASE_URL,
-      secret: process.env.SUPABASE_SERVICE_ROLE_KEY
-    }),
+    Google
+  ],
+  adapter: SupabaseAdapter({
+    url: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    secret: process.env.SUPABASE_SERVICE_ROLE_KEY
+  }),
+  pages: {
+    newUser: '/auth/new-user'
+  },
   trustHost: true
 })
