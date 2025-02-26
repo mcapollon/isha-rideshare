@@ -1,6 +1,8 @@
 "use client"
 import { useSession } from 'next-auth/react'
 import { redirect } from 'next/navigation'
+import { createClient } from "@/utils/supabase/client"
+import { useEffect } from 'react'
 
 // import { DirectionsService } from '@react-google-maps/api';
 import MultistepForm from '@/components/createForm/multistep-form'
@@ -8,6 +10,26 @@ import MultistepForm from '@/components/createForm/multistep-form'
 export default function Page() {
 
     const { data: session, status } = useSession()
+
+    const supabase = createClient()
+
+    useEffect(() => {
+        checkProfile()
+    }, [session])
+
+    const checkProfile = async () => {
+        const { data, error } = await supabase.schema('next_auth')
+            .from('users')
+            .select('phone_number, location, dateOfBirth, name')
+            .eq('id', session.user?.id)
+            .single()
+
+        if (!data?.phone_number || !data?.location || !data?.dateOfBirth || !data?.name) {
+            // If profile is incomplete, redirect to new-user page to complete profile
+            redirect('/auth/new-user')
+        }
+
+    }
 
     if (!session || !session?.user) {
         redirect("/api/auth/signin")

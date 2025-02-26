@@ -21,7 +21,7 @@ export default function page() {
   const checkProfile = async () => {
     const { data, error } = await supabase.schema('next_auth')
       .from('users')
-      .select('phone_number, location, dateOfBirth')
+      .select('phone_number, location, dateOfBirth, name')
       .eq('id', session.user?.id)
       .single()
 
