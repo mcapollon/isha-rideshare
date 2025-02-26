@@ -25,7 +25,7 @@ export default function page() {
       .eq('id', session.user?.id)
       .single()
 
-    if (data?.phone_number && data?.location && data?.dateOfBirth) {
+    if (data?.phone_number && data?.location && data?.dateOfBirth && data?.name) {
       // If profile is complete, redirect to home
       redirect('/')
     }
@@ -41,7 +41,8 @@ export default function page() {
       .update({
         phone_number: formData.get('phone'),
         location: formData.get('location'),
-        dateOfBirth: formData.get('dateOfBirth')
+        dateOfBirth: formData.get('dateOfBirth'),
+        name: formData.get('name')
       })
       .eq('id', session.user?.id)
 
@@ -65,6 +66,22 @@ export default function page() {
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
           <form className="space-y-6" onSubmit={handleProfileSubmit}>
+
+          <div>
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+               Full Name
+              </label>
+              <div className="mt-1">
+                <input
+                  id="name"
+                  name="name"
+                  type="text"
+                  required
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                />
+              </div>
+            </div>
+
             <div>
               <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
                 Phone Number
