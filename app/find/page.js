@@ -226,7 +226,7 @@ export default function Page() {
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center space-x-4">
                       <img
-                        src={userPictures[ride.createdByUser]}
+                        src={userPictures[ride.createdByUser] || '/default-user-icon.png'}
                         alt={userNames[ride.createdByUser]}
                         className="w-12 h-12 rounded-full object-cover"
                       />

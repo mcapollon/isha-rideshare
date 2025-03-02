@@ -10,7 +10,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@auth/supabase-adapter": "^1.7.4",
+    "@auth/supabase-adapter": "^1.8.0",
     "@headlessui/react": "^2.2.0",
     "@heroicons/react": "^2.2.0",
     "@hookform/resolvers": "^3.10.0",
@@ -32,6 +32,7 @@
     "air-datepicker": "^3.5.3",
     "anchor-pki": "^0.3.2",
     "axios": "^1.7.9",
+    "bcryptjs": "^3.0.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
@@ -44,6 +45,7 @@
     "react-dom": "^19.0.0",
     "react-google-autocomplete": "^2.7.3",
     "react-hook-form": "^7.54.2",
+    "resend": "^4.1.2",
     "stripe": "^17.6.0",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",

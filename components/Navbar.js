@@ -84,12 +84,12 @@ export default function Navbar() {
         ) : (
           
             <div className="flex flex-1 md:flex-auto lg:flex-none items-center justify-end gap-x-6">
-              <a href="/api/auth/signin" className="hidden text-sm/6 font-semibold text-gray-900 lg:block">
+              <a href="/auth/sign-in" className="hidden text-sm/6 font-semibold text-gray-900 lg:block">
                 Log in
               </a>
               <a
-                href="#"
-                className="rounded-md bg-[#36312b] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[#36312b]/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                href="/auth/sign-up"
+                className="rounded-md bg-amber-600 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-amber-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
               >
                 Sign up
               </a>

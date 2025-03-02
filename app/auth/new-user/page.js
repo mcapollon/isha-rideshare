@@ -8,11 +8,18 @@ import { createClient } from "@/utils/supabase/client"
 export default function page() {
   const { data: session } = useSession()
   const [loading, setLoading] = useState(true)
+  const [uploadStatus, setUploadStatus] = useState('');
+  const [profileData, setProfileData] = useState({
+    phone: '+1 (403) 555-0123',
+    email: 'john.doe@example.com',
+    location: 'Calgary, AB',
+    dateOfBirth: 'April 15, 1999'
+  });
   const supabase = createClient()
 
   useEffect(() => {
     if (!session) {
-      redirect("/api/auth/signin")
+      redirect("/api/auth/sign-in")
     }
 
     checkProfile()
@@ -39,17 +46,61 @@ export default function page() {
     const { error } = await supabase.schema('next_auth')
       .from('users')
       .update({
-        phone_number: formData.get('phone'),
-        location: formData.get('location'),
-        dateOfBirth: formData.get('dateOfBirth'),
-        name: formData.get('name')
-      })
+        phone_number: profileData.phone,
+        email: profileData.email,
+        location: profileData.location,
+        dateOfBirth: profileData.dateOfBirth,
+        image: profileData.image
+    })
       .eq('id', session.user?.id)
 
     if (!error) {
       redirect('/')
     }
   }
+
+  const uploadProfilePicture = async (file) => {
+    try {
+        const fileExt = file.name.split('.').pop()
+        const fileName = `${crypto.randomUUID()}.${fileExt}`
+        const filePath = `public/${fileName}`
+
+        console.log(filePath, 'file path')
+
+        // Upload the file to Supabase storage
+        const { data, error } = await supabase.storage
+            .from('profile-pictures')
+            .upload(filePath, file, {
+                cacheControl: '3600',
+            })
+
+            if (error) {
+                console.error('Error uploading image:', error)
+                setUploadStatus('error'); // Set status to error
+                return
+            }
+
+        console.log(data.path, 'image data')
+        // Get the public URL
+        const { data: publicURL } = supabase
+            .storage
+            .from('profile-pictures')
+            .getPublicUrl(data.path)
+
+        // Update profile data with new image URL
+        setProfileData({ ...profileData, image: publicURL.publicUrl })
+        setUploadStatus('success');
+        console.log(publicURL, '    profile image')
+
+        setTimeout(() => {
+            setUploadStatus('');
+        }, 3000);
+
+    } catch (error) {
+        console.error('Error in upload:', error)
+        setUploadStatus('error');
+    }
+}
 
   if (loading) {
     return <div>Loading...</div>
@@ -68,6 +119,50 @@ export default function page() {
           <form className="space-y-6" onSubmit={handleProfileSubmit}>
 
           <div>
+              {!profileData.image ? (
+                <>
+                  <div className="w-24 h-24 my-6 rounded-full bg-gray-200 flex items-center justify-center cursor-pointer relative">
+                    {uploadStatus === 'uploading' ? (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full">
+                        <svg className="animate-spin h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                      </div>
+                    ) : uploadStatus === 'success' ? (
+                      <div className="absolute inset-0 flex items-center justify-center bg-green-500 bg-opacity-50 rounded-full">
+                        <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                      </div>
+                    ) : uploadStatus === 'error' ? (
+                      <div className="absolute inset-0 flex items-center justify-center bg-red-500 bg-opacity-50 rounded-full">
+                        <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                      </div>
+                    ) : (
+                      <div className="relative">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => { uploadProfilePicture(e.target.files[0]) }}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer rounded-full"
+                        />
+                        <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center cursor-pointer">
+                          <span className="text-gray-500">Picture</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <img
+                  src={profileData.image || session.user?.image}
+                  alt="Profile"
+                  className="w-24 h-24 rounded-full object-cover"
+                />
+              )}
               <label htmlFor="name" className="block text-sm font-medium text-gray-700">
                Full Name
               </label>
