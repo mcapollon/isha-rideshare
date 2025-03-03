@@ -4,30 +4,54 @@ import { useSession } from "next-auth/react"
 import { redirect } from "next/navigation"
 import { useEffect, useState } from "react"
 import { createClient } from "@/utils/supabase/client"
-import { addYears, isBefore } from 'date-fns';
+import { addYears } from 'date-fns'
+import { useForm } from "react-hook-form"
+import * as yup from "yup"
+import { yupResolver } from "@hookform/resolvers/yup"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Label } from "@radix-ui/react-label"
 
-export default function page() {
+export default function Page() {
   const { data: session } = useSession()
   const [loading, setLoading] = useState(true)
-  const [uploadStatus, setUploadStatus] = useState('');
-  const [profileData, setProfileData] = useState({
-    phone: '+1 (403) 555-0123',
-    email: 'john.doe@example.com',
-    location: 'Calgary, AB',
-    dateOfBirth: 'April 15, 1999'
-  });
+  const [uploadStatus, setUploadStatus] = useState('')
   const supabase = createClient()
 
-  // Calculate the minimum allowed date (16 years ago)
-  const minDate = addYears(new Date(), -16);
+  // Calculate the maximum allowed date (16 years ago from today)
+  const maxDate = new Date()
+  maxDate.setFullYear(maxDate.getFullYear() - 16)
+  const formattedMaxDate = maxDate.toISOString().split('T')[0]
+
+  const schema = yup.object().shape({
+    name: yup.string().required('Name is required'),
+    phone: yup.string().required('Phone number is required'),
+    email: yup.string().email('Must be a valid email').required('Email is required'),
+    location: yup.string().required('Location is required'),
+    dateOfBirth: yup.date()
+      .max(maxDate, 'You must be at least 16 years old')
+      .required('Date of birth is required'),
+    image: yup.string()
+  })
+
+  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm({
+    resolver: yupResolver(schema),
+    defaultValues: {
+      phone: '',
+      email: '',
+      location: '',
+      dateOfBirth: '',
+      name: '',
+      image: ''
+    }
+  })
 
   useEffect(() => {
     if (!session) {
       redirect("/api/auth/sign-in")
     }
-
     checkProfile()
-
   }, [session])
 
   const checkProfile = async () => {
@@ -38,78 +62,74 @@ export default function page() {
       .single()
 
     if (data?.phone_number && data?.location && data?.dateOfBirth && data?.name) {
-      // If profile is complete, redirect to home
       redirect('/')
     }
 
-    setProfileData(data)
+    if (data) {
+      setValue('phone', data.phone_number)
+      setValue('email', data.email)
+      setValue('location', data.location)
+      setValue('dateOfBirth', data.dateOfBirth)
+      setValue('name', data.name)
+      setValue('image', data.image)
+    }
+
     setLoading(false)
   }
 
-  const handleProfileSubmit = async (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const dateOfBirth = new Date(formData.get('dateOfBirth'));
-
-    // Check if user is at least 16 years old
-    if (!isBefore(dateOfBirth, minDate)) {
-      alert('You must be at least 16 years old to sign up');
-      return;
-    }
-
+  const onSubmit = async (formData) => {
     const { error } = await supabase.schema('next_auth')
       .from('users')
       .update({
-        phone_number: profileData.phone,
-        email: profileData.email,
-        location: profileData.location,
-        dateOfBirth: profileData.dateOfBirth,
-        name: profileData.name,
-        image: profileData.image
+        phone_number: formData.phone,
+        email: formData.email,
+        location: formData.location,
+        dateOfBirth: formData.dateOfBirth,
+        name: formData.name,
+        image: formData.image
       })
-      .eq('id', session.user?.id);
+      .eq('id', session.user?.id)
 
     if (!error) {
-      redirect('/');
+      redirect('/')
     }
   }
 
   const uploadProfilePicture = async (file) => {
     try {
-        const fileExt = file.name.split('.').pop()
-        const fileName = `${crypto.randomUUID()}.${fileExt}`
-        const filePath = `public/${fileName}`
+      setUploadStatus('uploading')
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${crypto.randomUUID()}.${fileExt}`
+      const filePath = `public/${fileName}`
 
-        // Upload the file to Supabase storage
-        const { data, error } = await supabase.storage
-            .from('profile-pictures')
-            .upload(filePath, file, {
-                cacheControl: '3600',
-            })
+      const { data, error } = await supabase.storage
+        .from('profile-pictures')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+        })
 
-            if (error) {
-                console.error('Error uploading image:', error)
-                setUploadStatus('error'); // Set status to error
-                return
-            }
-        // Get the public URL
-        const { data: publicURL } = supabase
-            .storage
-            .from('profile-pictures')
-            .getPublicUrl(data.path)
+      if (error) {
+        console.error('Error uploading image:', error)
+        setUploadStatus('error')
+        return
+      }
 
-        // Update profile data with new image URL
-        setProfileData({ ...profileData, image: publicURL.publicUrl })
-        setUploadStatus('success');
+      const { data: publicURL } = supabase
+        .storage
+        .from('profile-pictures')
+        .getPublicUrl(data.path)
 
-        setTimeout(() => {
-            setUploadStatus('');
-        }, 3000);
+      setValue('image', publicURL.publicUrl)
+      setUploadStatus('success')
+
+      setTimeout(() => {
+        setUploadStatus('')
+      }, 3000)
 
     } catch (error) {
-        setUploadStatus('error');
+      setUploadStatus('error')
     }
-}
+  }
 
   if (loading) {
     return <div>Loading...</div>
@@ -124,166 +144,129 @@ export default function page() {
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <form className="space-y-6" onSubmit={handleProfileSubmit} autoComplete="off">
-
-          <div>
-              {!profileData?.image || !session.user?.image ? (
-                <>
+        <Card>
+          <CardContent className="pt-6">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+              <div>
+                {!watch('image') && !session.user?.image ? (
                   <div className="w-24 h-24 my-6 rounded-full bg-gray-200 flex items-center justify-center cursor-pointer relative mx-auto">
-                    {uploadStatus === 'uploading' ? (
-                      <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full">
-                        <svg className="animate-spin h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                      </div>
-                    ) : uploadStatus === 'success' ? (
-                      <div className="absolute inset-0 flex items-center justify-center bg-green-500 bg-opacity-50 rounded-full">
-                        <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                        </svg>
-                      </div>
-                    ) : uploadStatus === 'error' ? (
-                      <div className="absolute inset-0 flex items-center justify-center bg-red-500 bg-opacity-50 rounded-full">
-                        <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                      </div>
-                    ) : (
-                      <div className="relative">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => { uploadProfilePicture(e.target.files[0]) }}
-                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer rounded-full"
-                        />
-                        <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center cursor-pointer">
-                          <span className="text-gray-500">Picture</span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </>
-              ) : (
-                <div className="relative w-24 h-24 mx-auto my-6 group">
-                  <img
-                    src={profileData?.image || session.user?.image}
-                    alt="Profile"
-                    className="w-24 h-24 rounded-full object-cover"
-                  />
-                  {/* Hover overlay */}
-                  <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity">
                     <input
                       type="file"
                       accept="image/*"
-                      onChange={(e) => { uploadProfilePicture(e.target.files[0]) }}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      onChange={(e) => uploadProfilePicture(e.target.files[0])}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer rounded-full"
                     />
-                    <span className="text-white text-sm">Change</span>
+                    <span className="text-gray-500">Picture</span>
                   </div>
-                  {/* Upload status overlays */}
-                  {uploadStatus === 'uploading' && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full">
-                      <svg className="animate-spin h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
+                ) : (
+                  <div className="relative w-24 h-24 mx-auto my-6 group">
+                    <img
+                      src={watch('image') || session.user?.image}
+                      alt="Profile"
+                      className="w-24 h-24 rounded-full object-cover"
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => uploadProfilePicture(e.target.files[0])}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      />
+                      <span className="text-white text-sm">Change</span>
                     </div>
-                  )}
-                  {uploadStatus === 'success' && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-green-500 bg-opacity-50 rounded-full">
-                      <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                      </svg>
-                    </div>
-                  )}
-                  {uploadStatus === 'error' && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-red-500 bg-opacity-50 rounded-full">
-                      <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
-                      </svg>
-                    </div>
-                  )}
-                </div>
-              )}
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-               Full Name
-              </label>
-              <div className="mt-1">
-                <input
+                  </div>
+                )}
+                {uploadStatus && (
+                  <div className={`text-center mt-2 ${
+                    uploadStatus === 'error' ? 'text-red-500' : 
+                    uploadStatus === 'success' ? 'text-green-500' : 
+                    'text-gray-500'
+                  }`}>
+                    {uploadStatus === 'uploading' && 'Uploading...'}
+                    {uploadStatus === 'success' && 'Upload successful!'}
+                    {uploadStatus === 'error' && 'Upload failed'}
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="name">Name</Label>
+                <Input
                   id="name"
-                  name="name"
+                  {...register('name')}
                   type="text"
-                  required
                   autoComplete="off"
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
+                {errors.name && (
+                  <p className="text-sm text-red-600">{errors.name.message}</p>
+                )}
               </div>
-            </div>
 
-            <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-                Phone Number
-              </label>
-              <div className="mt-1">
-                <input
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone Number</Label>
+                <Input
                   id="phone"
-                  name="phone"
+                  {...register('phone')}
                   type="tel"
-                  required
                   autoComplete="off"
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
+                {errors.phone && (
+                  <p className="text-sm text-red-600">{errors.phone.message}</p>
+                )}
               </div>
-            </div>
 
-            <div>
-              <label htmlFor="location" className="block text-sm font-medium text-gray-700">
-                Location
-              </label>
-              <div className="mt-1">
-                <input
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  {...register('email')}
+                  type="email"
+                  autoComplete="off"
+                />
+                {errors.email && (
+                  <p className="text-sm text-red-600">{errors.email.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="location">Location</Label>
+                <Input
                   id="location"
-                  name="location"
+                  {...register('location')}
                   type="text"
-                  required
                   autoComplete="off"
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
+                {errors.location && (
+                  <p className="text-sm text-red-600">{errors.location.message}</p>
+                )}
               </div>
-            </div>
 
-            <div>
-              <label htmlFor="dateOfBirth" className="block text-sm font-medium text-gray-700">
-                Date of Birth
-              </label>
-              <div className="mt-1">
-                <input
+              <div className="space-y-2">
+                <Label htmlFor="dateOfBirth">
+                  Date of Birth
+                  <span className="text-sm text-gray-500 ml-2">(Must be at least 16 years old)</span>
+                </Label>
+                <Input
                   id="dateOfBirth"
-                  name="dateOfBirth"
+                  {...register('dateOfBirth')}
                   type="date"
-                  required
+                  max={formattedMaxDate}
                   autoComplete="off"
-                  max={minDate.toISOString().split('T')[0]}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
+                {errors.dateOfBirth && (
+                  <p className="text-sm text-red-600">{errors.dateOfBirth.message}</p>
+                )}
               </div>
-              <p className="mt-1 text-sm text-gray-500">
-                You must be at least 16 years old to sign up
-              </p>
-            </div>
 
-            <div>
-              <button
-                type="submit"
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-amber-600 hover:bg-amber-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              <Button 
+                type="submit" 
+                className="w-full bg-amber-600 hover:bg-amber-500"
               >
                 Complete Profile
-              </button>
-            </div>
-          </form>
-        </div>
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )
