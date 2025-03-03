@@ -108,12 +108,26 @@ export default function Navbar() {
           </button>
         </div>
       </nav>
-      <Dialog open={mobileMenuOpen} onClose={setMobileMenuOpen} className="lg:hidden">
-        <div className="fixed inset-0 z-10" />
-        <DialogPanel className="fixed inset-y-0 right-0 z-10 w-full overflow-y-auto bg-white px-6 py-6 sm:max-w-sm sm:ring-1 sm:ring-gray-900/10">
+      <Dialog 
+        as="div"
+        open={mobileMenuOpen} 
+        onClose={setMobileMenuOpen} 
+        className="lg:hidden"
+      >
+        {/* Add a backdrop with transition */}
+        <div 
+          className="fixed inset-0 z-10 bg-black/30 backdrop-blur-sm transition-opacity duration-300 ease-in-out"
+          aria-hidden="true"
+          data-headlessui-state={mobileMenuOpen ? "open" : "closed"}
+          style={{ opacity: mobileMenuOpen ? 1 : 0 }}
+        />
+        
+        <DialogPanel 
+          className="fixed inset-y-0 right-0 z-10 w-full overflow-y-auto bg-white px-6 py-6 sm:max-w-sm sm:ring-1 sm:ring-gray-900/10 transform transition-transform duration-300 ease-in-out"
+          style={{ transform: mobileMenuOpen ? 'translateX(0)' : 'translateX(100%)' }}
+        >
           <div className="flex items-center gap-x-6">
             <a href="#" className="-m-1.5 p-1.5">
-              <span className="sr-only">Your Company</span>
               <img
                 alt=""
                 src='/logo.png'
@@ -122,7 +136,7 @@ export default function Navbar() {
             </a>
             <a
               href="/auth/sign-up"
-              className="ml-auto rounded-md bg-[#36312b] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[#36312b]/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+              className="ml-auto rounded-md bg-amber-600 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-amber-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
             >
               Sign up
             </a>
