@@ -33,28 +33,82 @@ function Page() {
 
     if (existingBooking) {
       return
-    } 
+    }
 
     if (fetchError) {
       return
     }
 
+    // Get ride details to find the driver
+    const { data: ride, error: rideError } = await supabase
+      .from('rides')
+      .select('createdByUser')
+      .eq('id', id)
+      .single();
+
+    if (rideError) {
+      console.error('Error fetching ride:', rideError);
+      return;
+    }
+
+    // Get driver's name
+    const { data: driver, error: driverError } = await supabase
+      .schema('next_auth')
+      .from('users')
+      .select('name')
+      .eq('id', ride.createdByUser)
+      .single();
+
+    if (driverError) {
+      console.error('Error fetching driver:', driverError);
+      return;
+    }
+    
+    console.log(driver)
+
+    const response = await fetch('/api/send-ride-receipt', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: session?.data.user.email, // Make sure to get user's email from session
+        tripDetails: {
+          startingCity: startingCity,
+          ishaYogaCenter: ishaYogaCenter,
+          rideDate: format(searchParams.get('departure'), 'PP'),
+          rideTime: format(searchParams.get('departure'), 'p'),
+          rideDuration: rideDuration,
+          rideDistanceKm: rideDistance,
+          seatsBooked: seatsBooked,
+          pricePerSeat: pricePerSeat,
+          totalAmount: amount,
+          paymentIntent: paymentIntent,
+          driverName: driver.name,
+          userName: session?.data.user.name,
+        }
+      })
+    });
+
+    if (!response.ok) {
+      console.error('Failed to send receipt email');
+    }
+
     const { data, error } = await supabase
-    .from('bookings')
-    .insert([
-      { 
-        payment_intent: paymentIntent,
-        ride_id: id, 
-        userId: session.data.user.id,
-        seats_booked: seatsBooked,
-        totalPrice: amount,
-       },
-    ])
-    .select()  
+      .from('bookings')
+      .insert([
+        {
+          payment_intent: paymentIntent,
+          ride_id: id,
+          userId: session.data.user.id,
+          seats_booked: seatsBooked,
+          totalPrice: amount,
+        },
+      ])
+      .select()
 
     if (error) {
       console.error(error)
-      return
     }
 
     const { error: updateError } = await supabase
@@ -66,7 +120,7 @@ function Page() {
   useEffect(() => {
     handlePaymentComplete()
   }, [])
-  
+
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -125,7 +179,7 @@ function Page() {
           </div>
 
           {/* Next Steps */}
-          <div className="bg-blue-50 rounded-lg p-6 mb-8">
+          <div className="bg-amber-50 rounded-lg p-6 mb-8">
             <h2 className="font-semibold text-lg mb-4">Next Steps</h2>
             <ul className="space-y-2 text-gray-700">
               <li>• Check your email for booking confirmation</li>
@@ -136,9 +190,9 @@ function Page() {
 
           {/* Back Button */}
           <div className="text-center">
-            <Link 
-              href="/" 
-              className="inline-flex items-center text-blue-600 hover:text-blue-700"
+            <Link
+              href="/"
+              className="inline-flex items-center text-amber-600 hover:text-amber-500"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Home

@@ -67,6 +67,7 @@ export default function Page() {
       .select('*')
       .gt('seatsRemaining', 0) 
 
+      setNoResults(rides?.length === 0)
       return rides
   }
 
