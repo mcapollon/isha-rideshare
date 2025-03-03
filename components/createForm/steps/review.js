@@ -39,7 +39,7 @@ export default function ReviewStep() {
                     <Calendar className="w-5 h-5 text-gray-500 mr-3 mt-0.5 flex-shrink-0" />
                     <div>
                       <p className="text-sm text-gray-500">Departure</p>
-                      {/* <p className="font-medium">{format(formData.departure) || "Not specified"}</p> */}
+                      <p className="font-medium">{format(formData.departure, 'PP') || "Not specified"} at {format(formData.departure, 'p') || "Not specified"}</p>
                     </div>
                   </div>
                   

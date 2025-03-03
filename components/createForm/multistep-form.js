@@ -131,7 +131,7 @@ export default function MultistepForm() {
                         <Stepper className='bg-amber-600' currentStep={step} steps={steps} />
                     </div>
                     <div className="mt-8">
-                        <form>
+                        <form autoComplete="off">
                             {renderStep()}
                         </form>
                     </div>

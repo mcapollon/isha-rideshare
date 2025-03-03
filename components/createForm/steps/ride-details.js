@@ -118,7 +118,7 @@ export default function RideDetailsStep() {
                             options={{
                                 types: ['address'],
                             }}
-                            onFocus={(e) => e.target.autocomplete = 'off'}
+                            autoComplete="off"
                         />
                     )}
                  />                
@@ -131,8 +131,11 @@ export default function RideDetailsStep() {
                     control={control}
                     defaultValue=""
                     render={({ field }) => (                        
-                        <Select {...field}  onValueChange={(e) => { field.onChange(e); updateFormStoreIshaYogaCenterCoordinates(e); clearErrors('ishaYogaCenter') }}>
-                            <SelectTrigger>
+                        <Select 
+                            {...field}  
+                            onValueChange={(e) => { field.onChange(e); updateFormStoreIshaYogaCenterCoordinates(e); clearErrors('ishaYogaCenter') }}
+                        >
+                            <SelectTrigger autoComplete="off">
                                 <SelectValue placeholder="Please select Isha Yoga Center" />
                             </SelectTrigger>
                             <SelectContent>
@@ -151,7 +154,6 @@ export default function RideDetailsStep() {
                     name="departure"
                     control={control}
                     defaultValue={null}
-                    onFocus={(e) => e.target.autocomplete = 'off'}
                     render={({ field }) => (
                         <DatePicker
                             id="departure"
@@ -161,6 +163,7 @@ export default function RideDetailsStep() {
                             dateFormat="MMMM d, yyyy h:mm aa"
                             minDate={new Date()}
                             className="w-full p-2 border rounded-md"
+                            autoComplete="off"
                         />
                     )}
                 />
@@ -173,7 +176,7 @@ export default function RideDetailsStep() {
                     control={control}
                     render={({ field }) => (
                         <Select {...field} onValueChange={(e) => {field.onChange(e); clearErrors('seats')}}>
-                            <SelectTrigger>
+                            <SelectTrigger autoComplete="off">
                                 <SelectValue placeholder="Select seats" />
                             </SelectTrigger>
                             <SelectContent>
@@ -183,8 +186,7 @@ export default function RideDetailsStep() {
                             </SelectContent>
                         </Select>
                     )}
-                    />
-                
+                />
                 {errors.seats && <span className="text-red-500">{errors.seats.message}</span>}
             </div>
             <div className="space-y-2 col-span-full">
@@ -196,7 +198,7 @@ export default function RideDetailsStep() {
                         <RadioGroup {...field} onValueChange={(e) => {field.onChange(e); clearErrors('luggage')}}>
                             {luggageOptions.map((option) => (
                                 <div key={option.value} className="flex items-center space-x-2">
-                                    <RadioGroupItem value={option.value} id={option.value} />
+                                    <RadioGroupItem value={option.value} id={option.value} autoComplete="off" />
                                     <Label htmlFor={option.value}>{option.label}</Label>
                                 </div>
                             ))}
@@ -212,6 +214,7 @@ export default function RideDetailsStep() {
                     {...register("description", { required: "Description is required" })}
                     placeholder="Add any additional details about your ride and more information about pickup location."
                     onChange={() => clearErrors('description')}
+                    autoComplete="off"
                 />
                 {errors.description && <span className="text-red-500">{errors.description.message}</span>}
             </div>

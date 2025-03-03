@@ -236,7 +236,6 @@ function Page() {
     }, [])
 
     useEffect(() => {
-
         if (activeTab === 'listings') {
             setLoading(true)
             getUserListings().then((listings) => { setUserListings(listings); setLoading(false) })
@@ -244,6 +243,14 @@ function Page() {
 
         if (activeTab === 'rides') {
             getUserBookings().then((bookings) => { setUserBookings(bookings); setLoading(false) }) // Fetch bookings
+        }
+
+        if (activeTab === 'payments') {
+            setLoading(true);
+            getUserBookings().then((bookings) => {
+                setUserBookings(bookings);
+                setLoading(false);
+            });
         }
 
         if (activeTab === 'profile') {
@@ -622,18 +629,49 @@ function Page() {
                         <div className="bg-white rounded-lg shadow p-6">
                             <h3 className="text-lg font-semibold mb-4">Recent Transactions</h3>
                             <div className="space-y-4">
-                                {[1, 2, 3].map((i) => (
-                                    <div key={i} className="flex items-center justify-between p-4 border rounded-lg">
-                                        <div className="flex items-center space-x-4">
-                                            <Car className="w-6 h-6 text-gray-400" />
-                                            <div>
-                                                <div className="font-medium">Calgary to Banff</div>
-                                                <div className="text-sm text-gray-500">March {10 + i}, 2024</div>
+                                {loading ? (
+                                    // Loading state
+                                    Array(3).fill(0).map((_, i) => (
+                                        <div key={i} className="flex items-center justify-between p-4 border rounded-lg animate-pulse">
+                                            <div className="flex items-center space-x-4">
+                                                <div className="w-6 h-6 bg-gray-200 rounded-full"></div>
+                                                <div>
+                                                    <div className="h-4 w-48 bg-gray-200 rounded"></div>
+                                                    <div className="h-3 w-32 bg-gray-200 rounded mt-2"></div>
+                                                </div>
+                                            </div>
+                                            <div className="h-4 w-16 bg-gray-200 rounded"></div>
+                                        </div>
+                                    ))
+                                ) : !userBookings || userBookings.length === 0 ? (
+                                    <div className="text-center text-gray-500 py-4">
+                                        No transactions found
+                                    </div>
+                                ) : (
+                                    userBookings.map((booking, i) => (
+                                        <div key={i} className="flex items-center justify-between p-4 border rounded-lg">
+                                            <div className="flex items-center space-x-4">
+                                                <Car className="w-6 h-6 text-gray-400" />
+                                                <div>
+                                                    <div className="font-medium">
+                                                        {booking.rides?.startingCity} to {booking.rides?.ishaYogaCenter}
+                                                    </div>
+                                                    <div className="text-sm text-gray-500">
+                                                        {booking.rides?.departure && 
+                                                            format(new Date(booking.rides.departure), 'MMMM d, yyyy p')}
+                                                    </div>
+                                                    <div className="text-xs text-slate-900 pt-2">
+                                                        {booking.payment_intent &&
+                                                            'Payment ID: ' + booking.payment_intent}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="font-medium text-green-600">
+                                                ${booking.totalPrice}
                                             </div>
                                         </div>
-                                        <div className="font-medium text-green-600">$28.00</div>
-                                    </div>
-                                ))}
+                                    ))
+                                )}
                             </div>
                         </div>
                     </div>
