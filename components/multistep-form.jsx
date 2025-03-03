@@ -19,7 +19,6 @@ export default function MultistepForm() {
   const prevStep = () => setStep(step - 1)
 
   const onSubmit = (data) => {
-    console.log('Form submitted:', data)
     // Here you would typically send the form data to your backend
     setStep(4)
   }

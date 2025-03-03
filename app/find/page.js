@@ -56,7 +56,6 @@ export default function Page() {
       setRides(rides)
       fetchUserPictures(rides).then(() => setLoading(false))
       fetchUserNames(rides).then(() => setLoading(false))
-      console.log(rides)
     })
   }, [])
 
@@ -76,7 +75,7 @@ export default function Page() {
       const user = await getUserInfo(ride.createdByUser)
       pictures[ride.createdByUser] = user?.image
     }
-    console.log(pictures)
+    
     setUserPictures(pictures)
   }
 
@@ -114,7 +113,7 @@ export default function Page() {
       .gt('seatsRemaining', 0) 
 
       setRides(rides)
-      console.log(rides)
+      
       if (error) () => console.log(error, 'error getting rides')
     }    
   }
@@ -140,7 +139,6 @@ export default function Page() {
                     placeholder="Please enter a city"
                     apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS}
                     onPlaceSelected={(place) => {
-                      console.log(place)
                       setSearchStartingPoint(place.address_components[0].long_name);
                       field.onChange(place.address_components[0].long_name);
                       clearErrors('searchStartingPoint');

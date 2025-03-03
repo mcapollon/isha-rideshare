@@ -7,12 +7,14 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import RideDetailsStep from './steps/ride-details'
 import PricingStep from './steps/pricing'
 import ReviewStep from './steps/review'
+import RideCreationSuccessStep from './steps/creation-success'
 import { Stepper } from './stepper'
 import { createClient } from '@/utils/supabase/client'
 import { yupResolver } from "@hookform/resolvers/yup"
 import * as yup from "yup"
 import useFormStore from './formStore'
 import { useSession } from 'next-auth/react'
+import {redirect} from 'next/navigation'
 
 // const steps = ['Ride Details', 'Pricing', 'Contact Details', 'Review'];
 const steps = ['Ride Details', 'Pricing', 'Review'];
@@ -76,7 +78,6 @@ export default function MultistepForm() {
             }
         })
 
-        console.log(getValues())
     }
     const prevStep = () => setStep(step - 1)
 
@@ -104,7 +105,7 @@ export default function MultistepForm() {
             console.log(error, 'form error')
         }
 
-        setStep(3)
+        setStep(4)
     }
 
     const renderStep = () => {
@@ -113,10 +114,10 @@ export default function MultistepForm() {
                 return <RideDetailsStep />
             case 2:
                 return <PricingStep />
-            // case 3:
-            //     return <ContactDetailsStep />
             case 3:
                 return <ReviewStep />
+            case 4:
+                return <RideCreationSuccessStep />
             default:
                 return null
         }
@@ -135,18 +136,57 @@ export default function MultistepForm() {
                         </form>
                     </div>
                 </CardContent>
-                <CardFooter className="flex justify-between">
-                    {step > 1 && (
-                        <Button className="bg-amber-600 hover:bg-amber-500" type="button" variant="outline" onClick={prevStep}>
-                            Previous
-                        </Button>
-                    )}
-                    {step < steps.length ? (
-                        <Button className="bg-amber-600 hover:bg-amber-500" type="button" onClick={nextStep}>
-                            Next
-                        </Button>
+                <CardFooter className={`flex ${step === 4 ? 'justify-center gap-4' : 'justify-between'}`}>
+                    {step === 4 ? (
+                        <>
+                            <Button 
+                                className="bg-white hover:bg-amber-600 hover:text-white border border-amber-600 text-amber-600 px-6 py-2 rounded" 
+                                type="button" 
+                                onClick={() => {
+                                    setStep(1);
+                                    methods.reset();
+                                }}
+                            >
+                                Create Another Ride
+                            </Button>
+                            <Button 
+                                className="bg-amber-600 hover:bg-amber-500" 
+                                type="button"
+                                onClick={() => redirect('/account?tab=listings')}
+                            >
+                                View My Listings
+                            </Button>
+                        </>
                     ) : (
-                        <Button className="bg-amber-600 hover:bg-amber-500"  type="submit" onClick={methods.handleSubmit(onSubmit)}>Submit</Button>
+                        <>
+                            {step > 1 && (
+                                <Button 
+                                    className="bg-amber-600 hover:bg-amber-500" 
+                                    type="button" 
+                                    variant="outline" 
+                                    onClick={prevStep}
+                                >
+                                    Previous
+                                </Button>
+                            )}
+                            {step < steps.length ? (
+                                <Button 
+                                    className="bg-amber-600 hover:bg-amber-500" 
+                                    type="button" 
+                                    onClick={nextStep}
+                                >
+                                    Next
+                                </Button>
+                            ) : (
+                                <Button 
+                                    className="bg-amber-600 hover:bg-amber-500"  
+                                    type="submit" 
+                                    onClick={methods.handleSubmit(onSubmit)}
+                                >
+                                    Submit
+                                </Button>
+                            )}
+                        </>
                     )}
                 </CardFooter>
             </Card>

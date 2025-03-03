@@ -1,6 +1,5 @@
 'use client'
 import React, { useState } from 'react';
-import { redirect } from 'next/navigation';
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import {signIn} from 'next-auth/react';
@@ -11,12 +10,10 @@ const page = () => {
   const {
     register,
     handleSubmit,
-    watch,
     formState: { errors },
   } = useForm()
 
   const onSubmit = (data) => {
-    console.log(data)
     signIn("resend", data)
   }
 
@@ -67,31 +64,6 @@ const page = () => {
               </svg>
               Continue with Facebook
             </button>
-            
-            <button
-              type="button"
-              onClick={() => signIn('apple')}
-              className="w-full flex items-center justify-center py-2.5 px-4 border border-gray-300 rounded-lg hover:bg-gray-50"
-            >
-              <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="black">
-                <path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701z" />
-              </svg>
-              Continue with Apple
-            </button>
-            
-            <button
-              type="button"
-              onClick={() => signIn('microsoft')}
-              className="w-full flex items-center justify-center py-2.5 px-4 border border-gray-300 rounded-lg hover:bg-gray-50"
-            >
-              <svg className="w-5 h-5 mr-2" viewBox="0 0 23 23">
-                <path fill="#f25022" d="M1 1h10v10H1z" />
-                <path fill="#00a4ef" d="M1 12h10v10H1z" />
-                <path fill="#7fba00" d="M12 1h10v10H12z" />
-                <path fill="#ffb900" d="M12 12h10v10H12z" />
-              </svg>
-              Continue with Microsoft
-            </button>
           </div>
 
           <div className="relative flex items-center justify-center my-6">
@@ -116,37 +88,6 @@ const page = () => {
               </div>
             </div>
 
-            {/* <div>
-              <div className="flex justify-between items-center mb-1">
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                  Password
-                </label>
-                <Link href="/forgot-password" className="text-sm text-amber-600 hover:text-amber-500">
-                  Forgot password?
-                </Link>
-              </div>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? "text" : "password"}
-                  required
-                  value={formData.password}
-                  onChange={handleChange}
-                  className="w-full pl-10 pr-12 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Enter your password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
-              </div> 
-            </div> */}
-
             <div className="pt-2">
               <button
                 type="submit"
@@ -161,7 +102,7 @@ const page = () => {
           <div className="mt-8 text-center">
             <p className="text-gray-600">
               Don't have an account?{' '}
-              <Link href="/signup" className="text-amber-600 hover:text-amber-500 font-medium">
+              <Link href="/auth/sign-up" className="text-amber-600 hover:text-amber-500 font-medium">
                 Sign up
               </Link>
             </p>

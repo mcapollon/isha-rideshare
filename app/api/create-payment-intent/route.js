@@ -14,8 +14,7 @@ export async function POST(request) {
 
         return NextResponse.json({clientSecret: paymentIntent.client_secret})
     } catch (error) {
-        console.log(error, 'api payment error')
-
+        
         return NextResponse.json(
             {error: error},
             {status: 500}

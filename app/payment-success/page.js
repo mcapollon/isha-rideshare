@@ -36,7 +36,6 @@ function Page() {
     } 
 
     if (fetchError) {
-      console.log(fetchError)
       return
     }
 
@@ -62,11 +61,6 @@ function Page() {
       .rpc('decrement_remaining_seats', { ride_id: id, seats_booked: seatsBooked })
       .single()
 
-    if (updateError) {
-      console.log(updateError)
-    }
-
-    console.log(data, 'booking data')
   }
 
   useEffect(() => {

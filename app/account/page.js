@@ -27,6 +27,7 @@ import {
     AlertTriangle
 } from 'lucide-react';
 import { createClient } from "@/utils/supabase/client"
+import { useSearchParams } from 'next/navigation'
 
 const supabase = createClient()
 
@@ -35,7 +36,6 @@ const DeleteModal = ({ isOpen, onClose, listing, getUserListings, setUserListing
 
     const handleDeleteConfirm = async () => {
         // Here you would typically make an API call to delete the listing
-        console.log('Deleting listing:', listing);
 
         const { error } = await supabase
             .from('rides')
@@ -104,8 +104,6 @@ const EditModal = ({ isOpen, onClose, listing, getUserListings, setUserListings 
     const handleSubmit = async (e) => {
         e.preventDefault();
         // Here you would typically make an API call to update the listing
-        console.log('Updated listing:', formData);
-
 
         const { data, error } = await supabase
             .from('rides')
@@ -122,8 +120,6 @@ const EditModal = ({ isOpen, onClose, listing, getUserListings, setUserListings 
 
         if (error) {
             console.error('Error updating listing:', error);
-        } else {
-            console.log('Listing updated:', data);
         }
 
         onClose();
@@ -216,7 +212,6 @@ function Page() {
             redirect("/api/auth/signin")
         }
 
-        console.log(session.user.created_at, 'session')
     }, [session])
 
     const [activeTab, setActiveTab] = useState('profile');
@@ -231,31 +226,39 @@ function Page() {
     const [uploadStatus, setUploadStatus] = useState('');
 
     const [isEditingProfile, setIsEditingProfile] = useState(false);
-    const [profileData, setProfileData] = useState({
-        phone: '+1 (403) 555-0123',
-        email: 'john.doe@example.com',
-        location: 'Calgary, AB',
-        dateOfBirth: 'April 15, 1999'
-    });
+    const [profileData, setProfileData] = useState(null);
+
+    const searchParams = useSearchParams()
 
     useEffect(() => {
         checkProfile()
+        checkUrlTab()
     }, [])
 
     useEffect(() => {
+
         if (activeTab === 'listings') {
             setLoading(true)
-            getUserListings().then((listings) => { console.log(listings); setUserListings(listings); setLoading(false) })
+            getUserListings().then((listings) => { setUserListings(listings); setLoading(false) })
         }
 
         if (activeTab === 'rides') {
-            getUserBookings().then((bookings) => { console.log(bookings); setUserBookings(bookings); setLoading(false) }) // Fetch bookings
+            getUserBookings().then((bookings) => { setUserBookings(bookings); setLoading(false) }) // Fetch bookings
         }
 
         if (activeTab === 'profile') {
             fetchUserProfile();
         }
     }, [activeTab])
+
+    const checkUrlTab = () => {
+        
+        const urlTab = searchParams.get('tab')
+        
+        if (urlTab) {
+            setActiveTab(urlTab)
+        }
+    }
 
     const checkProfile = async () => {
         setProfileLoading(true)
@@ -288,9 +291,6 @@ function Page() {
             .select('*, rides(*)')
             .eq('userId', session.user?.id)
 
-            console.log(bookings, 'bookings')
-            console.log(error, 'bookings fetch error')
-
         return bookings
     }
 
@@ -316,7 +316,6 @@ function Page() {
     }
 
     const handleEditClick = (listing, e) => {
-        console.log(listing)
         setSelectedListing(listing);
         setIsEditModalOpen(true);
     };
@@ -332,11 +331,10 @@ function Page() {
 
     const uploadProfilePicture = async (file) => {
         try {
+            setUploadStatus('uploading');
             const fileExt = file.name.split('.').pop()
             const fileName = `${crypto.randomUUID()}.${fileExt}`
             const filePath = `public/${fileName}`
-
-            console.log(filePath, 'file path')
     
             // Upload the file to Supabase storage
             const { data, error } = await supabase.storage
@@ -351,7 +349,6 @@ function Page() {
                     return
                 }
     
-            console.log(data.path, 'image data')
             // Get the public URL
             const { data: publicURL } = supabase
                 .storage
@@ -361,21 +358,18 @@ function Page() {
             // Update profile data with new image URL
             setProfileData({ ...profileData, image: publicURL.publicUrl })
             setUploadStatus('success');
-            console.log(publicURL, '    profile image')
 
             setTimeout(() => {
                 setUploadStatus('');
             }, 3000);
     
         } catch (error) {
-            console.error('Error in upload:', error)
             setUploadStatus('error');
         }
     }
 
     const handleProfileSave = async () => {
         // Here you would typically make an API call to update the profile
-        console.log('Saving profile:', profileData);
 
         const { data, error } = await supabase.schema('next_auth')
             .from('users')
@@ -391,10 +385,7 @@ function Page() {
 
         if (error) {
             console.error('Error updating profile:', error);
-        } else {
-            console.log('Profile updated:', data);
-        }
-
+        } 
         setIsEditingProfile(false);
     };
 
@@ -496,7 +487,7 @@ function Page() {
                                             </>
                                     ) : (
                                         <img
-                                            src={profileData.image || session.user?.image}
+                                            src={profileData?.image  ? profileData.image : session.user?.image || '/default-user-icon.png'}
                                             alt="Profile"
                                             className="w-24 h-24 rounded-full object-cover"
                                         />
@@ -521,7 +512,7 @@ function Page() {
                                                         className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                                     />
                                                 ) : (
-                                                    <div className="font-medium">{profileData.phone}</div>
+                                                    <div className="font-medium">{profileData?.phone}</div>
                                                 )}
                                             </div>
                                         </div>
@@ -537,7 +528,7 @@ function Page() {
                                                         className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                                     />
                                                 ) : (
-                                                    <div className="font-medium">{profileData.email}</div>
+                                                    <div className="font-medium">{profileData?.email}</div>
                                                 )}
                                             </div>
                                         </div>
@@ -553,7 +544,7 @@ function Page() {
                                                         className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                                     />
                                                 ) : (
-                                                    <div className="font-medium">{profileData.location}</div>
+                                                    <div className="font-medium">{profileData?.location}</div>
                                                 )}
                                             </div>
                                         </div>
@@ -573,7 +564,7 @@ function Page() {
                                                     />
                                                 ) : (
                                                     <div className="font-medium">
-                                                        {profileData.dateOfBirth ? format(new Date(profileData.dateOfBirth), 'MMMM d, yyyy') : ''}
+                                                        {profileData?.dateOfBirth ? format(new Date(profileData.dateOfBirth), 'MMMM d, yyyy') : ''}
                                                     </div>
                                                 )}
                                             </div>

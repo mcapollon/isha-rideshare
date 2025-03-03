@@ -23,7 +23,7 @@ export default function PaymentSection({ totalPrice, tripSummary, ref }) {
       body: JSON.stringify({ amount: totalPrice })
     })
       .then((res) => res.json())
-      .then((data) => {setClientSecret(data.clientSecret); console.log(data, 'paymennt intent data')})
+      .then((data) => {setClientSecret(data.clientSecret)})
       .catch((error) => setErrorMessage("Failed to initialize payment"));
 
   }, [totalPrice])

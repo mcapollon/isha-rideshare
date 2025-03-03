@@ -4,6 +4,7 @@ import { useSession } from "next-auth/react"
 import { redirect } from "next/navigation"
 import { useEffect, useState } from "react"
 import { createClient } from "@/utils/supabase/client"
+import { addYears, isBefore } from 'date-fns';
 
 export default function page() {
   const { data: session } = useSession()
@@ -17,18 +18,22 @@ export default function page() {
   });
   const supabase = createClient()
 
+  // Calculate the minimum allowed date (16 years ago)
+  const minDate = addYears(new Date(), -16);
+
   useEffect(() => {
     if (!session) {
       redirect("/api/auth/sign-in")
     }
 
     checkProfile()
+
   }, [session])
 
   const checkProfile = async () => {
     const { data, error } = await supabase.schema('next_auth')
       .from('users')
-      .select('phone_number, location, dateOfBirth, name')
+      .select('*')
       .eq('id', session.user?.id)
       .single()
 
@@ -36,12 +41,21 @@ export default function page() {
       // If profile is complete, redirect to home
       redirect('/')
     }
+
+    setProfileData(data)
     setLoading(false)
   }
 
   const handleProfileSubmit = async (e) => {
-    e.preventDefault()
-    const formData = new FormData(e.target)
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const dateOfBirth = new Date(formData.get('dateOfBirth'));
+
+    // Check if user is at least 16 years old
+    if (!isBefore(dateOfBirth, minDate)) {
+      alert('You must be at least 16 years old to sign up');
+      return;
+    }
 
     const { error } = await supabase.schema('next_auth')
       .from('users')
@@ -50,12 +64,13 @@ export default function page() {
         email: profileData.email,
         location: profileData.location,
         dateOfBirth: profileData.dateOfBirth,
+        name: profileData.name,
         image: profileData.image
-    })
-      .eq('id', session.user?.id)
+      })
+      .eq('id', session.user?.id);
 
     if (!error) {
-      redirect('/')
+      redirect('/');
     }
   }
 
@@ -64,8 +79,6 @@ export default function page() {
         const fileExt = file.name.split('.').pop()
         const fileName = `${crypto.randomUUID()}.${fileExt}`
         const filePath = `public/${fileName}`
-
-        console.log(filePath, 'file path')
 
         // Upload the file to Supabase storage
         const { data, error } = await supabase.storage
@@ -79,8 +92,6 @@ export default function page() {
                 setUploadStatus('error'); // Set status to error
                 return
             }
-
-        console.log(data.path, 'image data')
         // Get the public URL
         const { data: publicURL } = supabase
             .storage
@@ -90,14 +101,12 @@ export default function page() {
         // Update profile data with new image URL
         setProfileData({ ...profileData, image: publicURL.publicUrl })
         setUploadStatus('success');
-        console.log(publicURL, '    profile image')
 
         setTimeout(() => {
             setUploadStatus('');
         }, 3000);
 
     } catch (error) {
-        console.error('Error in upload:', error)
         setUploadStatus('error');
     }
 }
@@ -116,12 +125,12 @@ export default function page() {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <form className="space-y-6" onSubmit={handleProfileSubmit}>
+          <form className="space-y-6" onSubmit={handleProfileSubmit} autoComplete="off">
 
           <div>
-              {!profileData.image ? (
+              {!profileData?.image || !session.user?.image ? (
                 <>
-                  <div className="w-24 h-24 my-6 rounded-full bg-gray-200 flex items-center justify-center cursor-pointer relative">
+                  <div className="w-24 h-24 my-6 rounded-full bg-gray-200 flex items-center justify-center cursor-pointer relative mx-auto">
                     {uploadStatus === 'uploading' ? (
                       <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full">
                         <svg className="animate-spin h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -157,11 +166,46 @@ export default function page() {
                   </div>
                 </>
               ) : (
-                <img
-                  src={profileData.image || session.user?.image}
-                  alt="Profile"
-                  className="w-24 h-24 rounded-full object-cover"
-                />
+                <div className="relative w-24 h-24 mx-auto my-6 group">
+                  <img
+                    src={profileData?.image || session.user?.image}
+                    alt="Profile"
+                    className="w-24 h-24 rounded-full object-cover"
+                  />
+                  {/* Hover overlay */}
+                  <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => { uploadProfilePicture(e.target.files[0]) }}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    />
+                    <span className="text-white text-sm">Change</span>
+                  </div>
+                  {/* Upload status overlays */}
+                  {uploadStatus === 'uploading' && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full">
+                      <svg className="animate-spin h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    </div>
+                  )}
+                  {uploadStatus === 'success' && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-green-500 bg-opacity-50 rounded-full">
+                      <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                      </svg>
+                    </div>
+                  )}
+                  {uploadStatus === 'error' && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-red-500 bg-opacity-50 rounded-full">
+                      <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                      </svg>
+                    </div>
+                  )}
+                </div>
               )}
               <label htmlFor="name" className="block text-sm font-medium text-gray-700">
                Full Name
@@ -172,6 +216,7 @@ export default function page() {
                   name="name"
                   type="text"
                   required
+                  autoComplete="off"
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
               </div>
@@ -187,6 +232,7 @@ export default function page() {
                   name="phone"
                   type="tel"
                   required
+                  autoComplete="off"
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
               </div>
@@ -202,6 +248,7 @@ export default function page() {
                   name="location"
                   type="text"
                   required
+                  autoComplete="off"
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
               </div>
@@ -215,12 +262,16 @@ export default function page() {
                 <input
                   id="dateOfBirth"
                   name="dateOfBirth"
-                  min={new Date(new Date().setFullYear(new Date().getFullYear() - 16)).toISOString().split('T')[0]}
                   type="date"
                   required
+                  autoComplete="off"
+                  max={minDate.toISOString().split('T')[0]}
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
               </div>
+              <p className="mt-1 text-sm text-gray-500">
+                You must be at least 16 years old to sign up
+              </p>
             </div>
 
             <div>

@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import { Dialog, DialogPanel, MenuButton, MenuItems, MenuItem, Menu } from '@headlessui/react'
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline'
 import { createClient } from '@/utils/supabase/client'
-import { Button } from './catalyste/button'
 import { signIn, signOut, useSession } from 'next-auth/react'
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
@@ -122,7 +121,7 @@ export default function Navbar() {
               />
             </a>
             <a
-              href="#"
+              href="/auth/sign-up"
               className="ml-auto rounded-md bg-[#36312b] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[#36312b]/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
             >
               Sign up
@@ -151,7 +150,7 @@ export default function Navbar() {
               </div>
               <div className="py-6">
                 <a
-                  href="#"
+                  href="/auth/sign-in"
                   className="-mx-3 block rounded-lg px-3 py-2.5 text-base/7 font-semibold text-gray-900 hover:bg-gray-50"
                 >
                   Log in

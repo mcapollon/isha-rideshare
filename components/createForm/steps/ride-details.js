@@ -80,13 +80,6 @@ export default function RideDetailsStep() {
                     updateFormStoreRideDistanceMeters(result.routes[0].legs[0].distance.value)
                     setValue('rideDistanceMeters', result.routes[0].legs[0].distance.value)
                     updateFormStoreRideDuration(result.routes[0].legs[0].duration)
-                    // console.log('Directions result:',
-                    //     {
-                    //         distance: result.routes[0].legs[0].distance,
-                    //         duration: result.routes[0].legs[0].duration,
-                    //         start: result.routes[0].legs[0].start_address,
-                    //         destination: result.routes[0].legs[0].end_address
-                    //     });
                     updateFormStoreRouteStatus('OK')
                     clearErrors('startingPointAddress');
                     clearErrors('ishaYogaCenter');
@@ -140,7 +133,7 @@ export default function RideDetailsStep() {
                     render={({ field }) => (                        
                         <Select {...field}  onValueChange={(e) => { field.onChange(e); updateFormStoreIshaYogaCenterCoordinates(e); clearErrors('ishaYogaCenter') }}>
                             <SelectTrigger>
-                                <SelectValue onChange={(e) => console.log('select value changed', e)} placeholder="Please select Isha Yoga Center" />
+                                <SelectValue placeholder="Please select Isha Yoga Center" />
                             </SelectTrigger>
                             <SelectContent>
                                 {ishaYogaCenters.map((ishaYogaCenter, i) => (

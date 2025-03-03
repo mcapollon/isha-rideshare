@@ -32,7 +32,7 @@ export default function Page() {
     }
 
     if (!session || !session?.user) {
-        redirect("/api/auth/signin")
+        redirect("/auth/sign-in")
     } else {
         return (
             <div className='pb-4'>
