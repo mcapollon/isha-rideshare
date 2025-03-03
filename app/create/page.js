@@ -3,8 +3,6 @@ import { useSession } from 'next-auth/react'
 import { redirect } from 'next/navigation'
 import { createClient } from "@/utils/supabase/client"
 import { useEffect } from 'react'
-
-// import { DirectionsService } from '@react-google-maps/api';
 import MultistepForm from '@/components/createForm/multistep-form'
 
 export default function Page() {

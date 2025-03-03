@@ -7,7 +7,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "email-dev": "email dev"
   },
   "dependencies": {
     "@auth/supabase-adapter": "^1.8.0",
@@ -23,6 +24,7 @@
     "@radix-ui/react-slider": "^1.2.2",
     "@radix-ui/react-slot": "^1.1.1",
     "@radix-ui/react-switch": "^1.1.2",
+    "@react-email/components": "0.0.33",
     "@react-google-maps/api": "^2.20.5",
     "@stripe/react-stripe-js": "^3.1.1",
     "@stripe/stripe-js": "^5.6.0",
@@ -40,9 +42,10 @@
     "lucide-react": "^0.473.0",
     "next": "^15.2.0",
     "next-auth": "^5.0.0-beta.25",
-    "react": "^19.0.0",
+    "react": "19.0.0",
     "react-datepicker": "^7.6.0",
-    "react-dom": "^19.0.0",
+    "react-dom": "19.0.0",
+    "react-email": "^3.0.7",
     "react-google-autocomplete": "^2.7.3",
     "react-hook-form": "^7.54.2",
     "resend": "^4.1.2",
