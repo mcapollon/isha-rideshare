@@ -1,6 +1,6 @@
 "use client"
 
-import { Search, Calendar, MapPin, Clock, Users, Star, Car, ChevronDown } from "lucide-react"
+import { Search, Calendar, MapPin, Clock, Users, Star, Car, ChevronDown, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Avatar } from "@/components/ui/avatar"
@@ -50,6 +50,8 @@ export default function Page() {
   const [userPictures, setUserPictures] = useState({})
   const [userNames, setUserNames] = useState({})
   const [loading, setLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [noResults, setNoResults] = useState(false)
 
   useEffect(() => {
     getAllRides().then((rides) => {
@@ -103,19 +105,33 @@ export default function Page() {
   const [searchIshaYogaCenter, setSearchIshaYogaCenter] = useState('')
 
   async function getRidesFiltered() {    
-
     if (searchStartingPoint && searchIshaYogaCenter) {
       let { data: rides, error } = await supabase
-      .from('rides')
-      .select('*')
-      .ilike('startingCity', encodeURIComponent(searchStartingPoint))
-      .ilike('ishaYogaCenter', encodeURIComponent(searchIshaYogaCenter))
-      .gt('seatsRemaining', 0) 
+        .from('rides')
+        .select('*')
+        .ilike('startingCity', encodeURIComponent(searchStartingPoint))
+        .ilike('ishaYogaCenter', encodeURIComponent(searchIshaYogaCenter))
+        .gt('seatsRemaining', 0) 
 
-      setRides(rides)
-      
-      if (error) () => console.log(error, 'error getting rides')
+      if (error) {
+        console.log(error, 'error getting rides')
+        return
+      }
+
+      setRides(rides || [])
+      setNoResults(rides?.length === 0)
+      setSearchTerm(searchStartingPoint)
     }    
+  }
+
+  const handleReset = () => {
+    setSearchStartingPoint('')
+    setSearchIshaYogaCenter('')
+    setNoResults(false)
+    setValue('searchStartingPoint', '')
+    setValue('searchIshaYogaCenter', '')
+    setValue('searchDeparture', null)
+    getAllRides().then(rides => setRides(rides))
   }
 
   return (
@@ -216,6 +232,61 @@ export default function Page() {
               </div>
             </CardContent>
           </Card>
+          ) : noResults ? (
+            <div className="flex flex-col items-center justify-center py-16 px-4">
+              <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-6">
+                <Search className="w-10 h-10 text-gray-400" />
+              </div>
+              
+              <h3 className="text-xl font-semibold text-gray-800 mb-2">No rides found</h3>
+              
+              <p className="text-gray-600 text-center max-w-md mb-6">
+                {searchTerm 
+                  ? `We couldn't find any rides from "${searchTerm}" to "${searchIshaYogaCenter}"`
+                  : "We couldn't find any rides matching your search criteria"}
+              </p>
+              
+              <div className="bg-gray-50 rounded-lg p-4 mb-8 w-full max-w-md">
+                <p className="text-sm text-gray-500 mb-3">You searched for:</p>
+                
+                <div className="flex items-center mb-2">
+                  <MapPin className="w-4 h-4 text-gray-400 mr-2" />
+                  <span className="text-gray-700">From: {searchStartingPoint}</span>
+                </div>
+                
+                <div className="flex items-center">
+                  <MapPin className="w-4 h-4 text-gray-400 mr-2" />
+                  <span className="text-gray-700">To: {searchIshaYogaCenter}</span>
+                </div>
+              </div>
+              
+              <div className="space-y-4 text-gray-600 mb-8">
+                <p className="font-medium">Suggestions:</p>
+                <ul className="list-disc pl-5 space-y-2">
+                  <li>Try different locations</li>
+                  <li>Check back later as new rides are added frequently</li>
+                  <li>Consider posting your own ride</li>
+                </ul>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row gap-4">
+                <button 
+                  onClick={handleReset}
+                  className="flex items-center justify-center px-6 py-3 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                >
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Reset search
+                </button>
+                
+                <Link href="/create">
+                  <button 
+                    className="flex items-center justify-center px-6 py-3 bg-amber-600 rounded-lg text-white hover:bg-amber-500"
+                  >
+                    Post a ride instead
+                  </button>
+                </Link>
+              </div>
+            </div>
           ) : (
             rides.map((ride) => (
               <div key={ride.id} className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow drop-shadow-md">
