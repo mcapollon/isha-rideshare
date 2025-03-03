@@ -80,9 +80,9 @@ const page = () => {
           <div className="mt-6 border-t pt-6">
             <p className="text-xs text-gray-500 text-center">
               By creating an account, you agree to our{' '}
-              <a href="#" className="text-blue-600 hover:underline">Terms of Service</a>{' '}
+              <a href="/terms-of-service" className="text-blue-600 hover:underline">Terms of Service</a>{' '}
               and{' '}
-              <a href="#" className="text-amber-600 hover:underline">Privacy Policy</a>
+              <a href="/privacy-policy" className="text-amber-600 hover:underline">Privacy Policy</a>
             </p>
           </div>
         </div>
