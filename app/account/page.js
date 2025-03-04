@@ -209,7 +209,7 @@ function Page() {
 
     useEffect(() => {
         if (!session) {
-            redirect("/api/auth/signin")
+            redirect("/api/auth/sign-in")
         }
 
     }, [session])
@@ -876,7 +876,7 @@ function Page() {
     };
 
     if (!session || !session?.user) {
-        redirect("/api/auth/signin")
+        redirect("/api/auth/sign-in")
     } else {
         return (
             <div className="min-h-screen bg-gray-50">
