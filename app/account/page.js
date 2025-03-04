@@ -59,7 +59,7 @@ const DeleteModal = ({ isOpen, onClose, listing, getUserListings, setUserListing
 
                     <h2 className="text-xl font-semibold text-center mb-2">Delete Listing</h2>
                     <p className="text-gray-600 text-center mb-4">
-                        Are you sure you want to delete your trip from {listing.from} to {listing.to}?
+                        Are you sure you want to delete your trip from {listing.startingPointAddress} to {listing.ishaYogaCenter}?
                     </p>
 
                     <div className="bg-yellow-50 border border-yellow-100 rounded-lg p-4 mb-6">
