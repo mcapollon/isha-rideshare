@@ -5,13 +5,27 @@ import { CheckCircle, Calendar, MapPin, Users, ArrowLeft } from 'lucide-react';
 import { useSearchParams } from 'next/navigation'
 import { format } from "date-fns";
 import { useSession } from 'next-auth/react';
+import { redirect } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 
 function Page() {
-
   const searchParams = useSearchParams()
-  const session = useSession()
+  const { data: session, status } = useSession()
   const supabase = createClient()
+
+  useEffect(() => {
+    if (status !== 'loading' && !session) {
+      redirect('/auth/sign-in')
+    }
+  }, [session, status])
+
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+      </div>
+    )
+  }
 
   const id = searchParams.get('id')
   const paymentIntent = searchParams.get('payment_intent')

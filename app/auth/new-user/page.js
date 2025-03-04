@@ -14,10 +14,27 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Label } from "@radix-ui/react-label"
 
 export default function Page() {
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
   const [loading, setLoading] = useState(true)
   const [uploadStatus, setUploadStatus] = useState('')
   const supabase = createClient()
+
+  useEffect(() => {
+    if (status !== 'loading' && !session) {
+      redirect('/auth/sign-in')
+    }
+    if (session) {
+      checkProfile()
+    }
+  }, [session, status])
+
+  if (status === 'loading' || loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+      </div>
+    )
+  }
 
   // Calculate the maximum allowed date (16 years ago from today)
   const maxDate = new Date()
@@ -46,13 +63,6 @@ export default function Page() {
       image: ''
     }
   })
-
-  useEffect(() => {
-    if (!session) {
-      redirect("/api/auth/sign-in")
-    }
-    checkProfile()
-  }, [session])
 
   const checkProfile = async () => {
     const { data, error } = await supabase.schema('next_auth')
@@ -129,10 +139,6 @@ export default function Page() {
     } catch (error) {
       setUploadStatus('error')
     }
-  }
-
-  if (loading) {
-    return <div>Loading...</div>
   }
 
   return (
