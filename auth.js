@@ -3,16 +3,15 @@ import NextAuth from "next-auth"
 import Google from "next-auth/providers/google"
 import Facebook from "next-auth/providers/facebook"
 import {sendVerificationRequest} from "./lib/authSendRequest"
+import Resend from "next-auth/providers/resend"
 
 export const { handlers, auth, signIn, signOut, useSession } = NextAuth({
   providers: [
     Google,
     Facebook,
-    { 
-      id: "resend",
-      type: "email",
+    Resend({
       sendVerificationRequest,
-    },
+    }),
   ],
   adapter: SupabaseAdapter({
     url: process.env.NEXT_PUBLIC_SUPABASE_URL,
