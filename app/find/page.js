@@ -66,6 +66,7 @@ export default function Page() {
       .from('rides')
       .select('*')
       .gt('seatsRemaining', 0) 
+      .neq('cancelled', true)
 
       setNoResults(rides?.length === 0)
       return rides
@@ -112,7 +113,8 @@ export default function Page() {
         .select('*')
         .ilike('startingCity', encodeURIComponent(searchStartingPoint))
         .ilike('ishaYogaCenter', encodeURIComponent(searchIshaYogaCenter))
-        .gt('seatsRemaining', 0) 
+        .gt('seatsRemaining', 0)
+        .neq('cancelled', true) 
 
       if (error) {
         console.log(error, 'error getting rides')

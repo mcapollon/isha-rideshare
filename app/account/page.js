@@ -39,7 +39,7 @@ const DeleteModal = ({ isOpen, onClose, listing, getUserListings, setUserListing
 
         const { error } = await supabase
             .from('rides')
-            .delete()
+            .update({'cancelled': true})
             .eq('id', listing.id)
 
         // After successful deletion, you would refresh the listings
@@ -288,6 +288,7 @@ function Page() {
             .from('rides')
             .select('*')
             .eq('createdByUser', session.user?.id)
+            .neq('cancelled', true)
 
         return rides
     }
