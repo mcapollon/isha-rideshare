@@ -52,6 +52,9 @@ export default function Page() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [noResults, setNoResults] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
+  const [totalItems, setTotalItems] = useState(0)
 
   useEffect(() => {
     getAllRides().then((rides) => {
@@ -61,15 +64,30 @@ export default function Page() {
     })
   }, [])
 
-  async function getAllRides() {
+  async function getAllRides(page = currentPage, items = itemsPerPage) {
+    const from = (page - 1) * items
+    const to = from + items - 1
+
+    // First get total count
+    const { count } = await supabase
+      .from('rides')
+      .select('*', { count: 'exact' })
+      .gt('seatsRemaining', 0)
+      .neq('cancelled', true)
+
+    setTotalItems(count)
+
+    // Then get paginated data
     let { data: rides, error } = await supabase
       .from('rides')
       .select('*')
-      .gt('seatsRemaining', 0) 
+      .gt('seatsRemaining', 0)
       .neq('cancelled', true)
+      .range(from, to)
+      .order('created_at', { ascending: false })
 
-      setNoResults(rides?.length === 0)
-      return rides
+    setNoResults(rides?.length === 0)
+    return rides
   }
 
   async function fetchUserPictures(rides) {
@@ -106,15 +124,32 @@ export default function Page() {
   const [searchStartingPoint, setSearchStartingPoint] = useState('')
   const [searchIshaYogaCenter, setSearchIshaYogaCenter] = useState('')
 
-  async function getRidesFiltered() {    
+  async function getRidesFiltered(page = currentPage, items = itemsPerPage) {    
     if (searchStartingPoint && searchIshaYogaCenter) {
+      const from = (page - 1) * items
+      const to = from + items - 1
+
+      // Get total count for filtered results
+      const { count } = await supabase
+        .from('rides')
+        .select('*', { count: 'exact' })
+        .ilike('startingCity', encodeURIComponent(searchStartingPoint))
+        .ilike('ishaYogaCenter', encodeURIComponent(searchIshaYogaCenter))
+        .gt('seatsRemaining', 0)
+        .neq('cancelled', true)
+
+      setTotalItems(count)
+
+      // Get paginated filtered results
       let { data: rides, error } = await supabase
         .from('rides')
         .select('*')
         .ilike('startingCity', encodeURIComponent(searchStartingPoint))
         .ilike('ishaYogaCenter', encodeURIComponent(searchIshaYogaCenter))
         .gt('seatsRemaining', 0)
-        .neq('cancelled', true) 
+        .neq('cancelled', true)
+        .range(from, to)
+        .order('created_at', { ascending: false })
 
       if (error) {
         console.log(error, 'error getting rides')
@@ -134,6 +169,8 @@ export default function Page() {
     setValue('searchStartingPoint', '')
     setValue('searchIshaYogaCenter', '')
     setValue('searchDeparture', null)
+    setCurrentPage(1)
+    setItemsPerPage(10)
     getAllRides().then(rides => setRides(rides))
   }
 
@@ -367,6 +404,81 @@ export default function Page() {
                 </div>
               </div>
             ))
+          )}
+          {!loading && !noResults && rides.length > 0 && (
+            <div className="mt-6 flex flex-col sm:flex-row justify-between items-center gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">Show</span>
+                <Select
+                  value={itemsPerPage.toString()}
+                  onValueChange={async (value) => {
+                    const newItemsPerPage = Number(value)
+                    setItemsPerPage(newItemsPerPage)
+                    setCurrentPage(1)
+                    
+                    const newRides = searchStartingPoint && searchIshaYogaCenter
+                        ? await getRidesFiltered(1, newItemsPerPage)
+                        : await getAllRides(1, newItemsPerPage)
+                    
+                    setRides(newRides)
+                  }}
+                >
+                  <SelectTrigger className="w-[100px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[5, 10, 15, 20, 25, 30].map((value) => (
+                      <SelectItem key={value} value={value.toString()}>
+                        {value} rides
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <span className="text-sm text-gray-600">per page</span>
+              </div>
+      
+              <div className="flex items-center gap-2">
+                <div className="text-sm text-gray-600">
+                  Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} rides
+                </div>
+                <div className="flex gap-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={currentPage === 1}
+                    onClick={async () => {
+                        const newPage = currentPage - 1
+                        setCurrentPage(newPage)
+                        
+                        const newRides = searchStartingPoint && searchIshaYogaCenter
+                            ? await getRidesFiltered(newPage, itemsPerPage)
+                            : await getAllRides(newPage, itemsPerPage)
+                        
+                        setRides(newRides)
+                    }}
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={currentPage * itemsPerPage >= totalItems}
+                    onClick={async () => {
+                        const newPage = currentPage + 1
+                        setCurrentPage(newPage)
+                        
+                        const newRides = searchStartingPoint && searchIshaYogaCenter
+                            ? await getRidesFiltered(newPage, itemsPerPage)
+                            : await getAllRides(newPage, itemsPerPage)
+                        
+                        setRides(newRides)
+                    }}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            </div>
           )}
         </div>
       </div>
