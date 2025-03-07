@@ -19,6 +19,29 @@ export default function Page() {
   const [uploadStatus, setUploadStatus] = useState('')
   const supabase = createClient()
 
+  const checkProfile = async () => {
+    const { data, error } = await supabase.schema('next_auth')
+      .from('users')
+      .select('*')
+      .eq('id', session.user?.id)
+      .single()
+
+    if (data?.phone_number && data?.location && data?.dateOfBirth && data?.name) {
+      redirect('/')
+    }
+
+    if (data) {
+      setValue('phone', data.phone_number)
+      setValue('email', data.email)
+      setValue('location', data.location)
+      setValue('dateOfBirth', data.dateOfBirth)
+      setValue('name', data.name)
+      setValue('image', data.image)
+    }
+
+    setLoading(false)
+  }
+
   useEffect(() => {
     if (status !== 'loading' && !session) {
       redirect('/auth/sign-in')
@@ -64,28 +87,7 @@ export default function Page() {
     }
   })
 
-  const checkProfile = async () => {
-    const { data, error } = await supabase.schema('next_auth')
-      .from('users')
-      .select('*')
-      .eq('id', session.user?.id)
-      .single()
-
-    if (data?.phone_number && data?.location && data?.dateOfBirth && data?.name) {
-      redirect('/')
-    }
-
-    if (data) {
-      setValue('phone', data.phone_number)
-      setValue('email', data.email)
-      setValue('location', data.location)
-      setValue('dateOfBirth', data.dateOfBirth)
-      setValue('name', data.name)
-      setValue('image', data.image)
-    }
-
-    setLoading(false)
-  }
+  
 
   const onSubmit = async (formData) => {
     const { error } = await supabase.schema('next_auth')

@@ -86,7 +86,7 @@ function Page() {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        email: session?.data.user.email, // Make sure to get user's email from session
+        email: session?.user.email, // Make sure to get user's email from session
         tripDetails: {
           startingCity: startingCity,
           ishaYogaCenter: ishaYogaCenter,
@@ -99,7 +99,7 @@ function Page() {
           totalAmount: amount,
           paymentIntent: paymentIntent,
           driverName: driver.name,
-          userName: session?.data.user.name,
+          userName: session?.user.name,
         }
       })
     });
@@ -114,7 +114,7 @@ function Page() {
         {
           payment_intent: paymentIntent,
           ride_id: id,
-          userId: session.data.user.id,
+          userId: session.user.id,
           seats_booked: seatsBooked,
           totalPrice: amount,
         },

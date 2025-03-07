@@ -10,206 +10,31 @@ import {
     User,
     CreditCard,
     Car,
-    Shield,
     Phone,
     Mail,
     MapPin,
     Calendar,
-    Bell,
-    Key,
     Wallet,
     Clock,
     Users,
     Edit,
     Trash2,
-    X,
-    MessageCircle,
-    AlertTriangle
 } from 'lucide-react';
 import { createClient } from "@/utils/supabase/client"
 import { useSearchParams } from 'next/navigation'
+import { BookingDetailsModal } from '@/components/account/bookingDetailsModal';
+import { DeleteModal } from '@/components/account/listingDeleteModal';
+import { EditModal } from '@/components/account/listingEditModal';
 
 const supabase = createClient()
 
-const DeleteModal = ({ isOpen, onClose, listing, getUserListings, setUserListings }) => {
-    if (!isOpen) return null;
-
-    const handleDeleteConfirm = async () => {
-        // Here you would typically make an API call to delete the listing
-
-        const { error } = await supabase
-            .from('rides')
-            .update({'cancelled': true})
-            .eq('id', listing.id)
-
-        // After successful deletion, you would refresh the listings
-        const updatedListings = await getUserListings();
-        setUserListings(updatedListings);
-    };
-
-    return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl max-w-lg w-full mx-4 relative">
-                <div className="p-6">
-                    <div className="flex items-center justify-center mb-4">
-                        <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
-                            <AlertTriangle className="w-6 h-6 text-red-600" />
-                        </div>
-                    </div>
-
-                    <h2 className="text-xl font-semibold text-center mb-2">Delete Listing</h2>
-                    <p className="text-gray-600 text-center mb-4">
-                        Are you sure you want to delete your trip from {listing.startingPointAddress} to {listing.ishaYogaCenter}?
-                    </p>
-
-                    <div className="bg-yellow-50 border border-yellow-100 rounded-lg p-4 mb-6">
-                        <p className="text-sm text-yellow-800">
-                            All users who have booked this trip will be automatically reimbursed the full amount of their payment.
-                        </p>
-                    </div>
-
-                    <div className="flex space-x-3">
-                        <button
-                            onClick={onClose}
-                            className="flex-1 bg-gray-100 text-gray-700 py-2 rounded-lg hover:bg-gray-200"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            onClick={() => {
-                                handleDeleteConfirm();
-                                onClose();
-                            }}
-                            className="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700"
-                        >
-                            Delete Listing
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-};
-
-const EditModal = ({ isOpen, onClose, listing, getUserListings, setUserListings }) => {
-    if (!isOpen) return null;
-
-    const [formData, setFormData] = useState({
-        id: listing.id,
-        departure: new Date(listing.departure),
-        seats: listing.seats,
-        pricePerSeat: listing.pricePerSeat,
-    });
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        // Here you would typically make an API call to update the listing
-
-        const { data, error } = await supabase
-            .from('rides')
-            .update({
-                departure: new Date(listing.departure),
-                seats: formData.seats,
-                pricePerSeat: formData.pricePerSeat
-            })
-            .eq('id', formData.id)
-            .select()
-
-        const updatedListings = await getUserListings();
-        setUserListings(updatedListings);
-
-        if (error) {
-            console.error('Error updating listing:', error);
-        }
-
-        onClose();
-    };
-
-    return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl max-w-lg w-full mx-4 relative">
-                <button
-                    onClick={onClose}
-                    className="absolute right-4 top-4 text-gray-400 hover:text-gray-600"
-                >
-                    <X className="w-5 h-5" />
-                </button>
-
-                <div className="p-6">
-                    <h2 className="text-xl font-semibold mb-4">Edit Listing</h2>
-                    <div className="mb-4">
-                        <div className="font-medium text-gray-800">{listing.startingCity} to {listing.ishaYogaCenter}</div>
-                    </div>
-
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Date and Time
-                            </label>
-                            <input
-                                type="datetime-local"
-                                value={formData.departure.toLocaleString('sv-SE').slice(0, 16)}
-                                onChange={(e) => setFormData({ ...formData, departure: new Date(e.target.value).toLocaleString('sv-SE').slice(0, 16) })}
-                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Available Seats
-                            </label>
-                            <input
-                                type="number"
-                                min="1"
-                                max="6"
-                                value={formData.seats}
-                                onChange={(e) => setFormData({ ...formData, seats: parseInt(e.target.value) })}
-                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Price per Seat ($)
-                            </label>
-                            <input
-                                type="number"
-                                min="1"
-                                step="1"
-                                value={formData.pricePerSeat}
-                                onChange={(e) => setFormData({ ...formData, pricePerSeat: parseInt(e.target.value) })}
-                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            />
-                        </div>
-
-                        <div className="flex space-x-3 pt-4">
-                            <button
-                                type="submit"
-                                className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700"
-                            >
-                                Save Changes
-                            </button>
-                            <button
-                                type="button"
-                                onClick={onClose}
-                                className="flex-1 bg-gray-100 text-gray-700 py-2 rounded-lg hover:bg-gray-200"
-                            >
-                                Cancel
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    );
-};
 
 function Page() {
     const { data: session } = useSession()
 
     useEffect(() => {
         if (!session) {
-            redirect("/api/auth/sign-in")
+            redirect("/auth/sign-in")
         }
 
     }, [session])
@@ -219,6 +44,7 @@ function Page() {
     const [userBookings, setUserBookings] = useState([]);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [isBookingDetailsModalOpen, setIsBookingDetailsModalOpen] = useState(false);
     const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
     const [selectedListing, setSelectedListing] = useState(null);
     const [loading, setLoading] = useState(false)
@@ -290,7 +116,52 @@ function Page() {
             .eq('createdByUser', session.user?.id)
             .neq('cancelled', true)
 
-        return rides
+        if (error) {
+            console.error('Error fetching rides:', error)
+            return []
+        }
+        
+        // Get booking information for each ride
+        const ridesWithBookings = await Promise.all(rides.map(async (ride) => {
+            // Use a simpler approach - fetch bookings first, then users separately
+            const { data: bookings, error: bookingError } = await supabase
+                .from('bookings')
+                .select('*')
+                .eq('ride_id', ride.id)
+            
+            if (bookingError) {
+                console.error('Error fetching bookings for ride:', bookingError)
+                return {...ride, bookings: [], bookedSeats: 0}
+            }
+            
+            // For each booking, fetch user details
+            const bookingsWithUsers = await Promise.all(bookings.map(async (booking) => {
+                if (!booking.userId) return booking;
+                
+                const { data: user } = await supabase.schema('next_auth')
+                    .from('users')
+                    .select('name, email, phone_number, image')
+                    .eq('id', booking.userId)
+                    .single()
+                    
+                return {
+                    ...booking,
+                    user: user || null
+                }
+            }))
+            
+            // Calculate total booked seats
+            const bookedSeats = bookings?.reduce((total, booking) => 
+                total + (booking.seats_booked || 0), 0) || 0
+            
+            return {
+                ...ride,
+                bookings: bookingsWithUsers || [],
+                bookedSeats: bookedSeats
+            }
+        }))
+        
+        return ridesWithBookings
     }
 
     async function getUserBookings() {
@@ -784,50 +655,75 @@ function Page() {
                             <div className="bg-white rounded-lg shadow p-6">
                                 <h3 className="text-lg font-semibold mb-4">Active Listings</h3>
                                 <div className="space-y-4">
-                                {userListings && userListings.length === 0 ? (
-                                    <div className="text-center text-gray-500">No active listings found.</div>
-                                ) : (
-                                    <div className="space-y-4">
-                                        {userListings.filter(listing => new Date(listing.departure) > new Date()).map((listing, i) => (
-                                            <div key={i} className="border rounded-lg p-4">
-                                                <div className="flex justify-between items-start mb-4">
-                                                    <div>
-                                                        <h4 className="font-medium text-lg">{listing.startingCity} to {listing.ishaYogaCenter}</h4>
-                                                        <div className="flex items-center space-x-4 text-sm text-gray-500 mt-1">
-                                                            <div className="flex items-center">
-                                                                <Calendar className="w-4 h-4 mr-1" />
-                                                                {format(new Date(listing.departure), 'MMMM d, yyyy')}
-                                                            </div>
-                                                            <div className="flex items-center">
-                                                                <Clock className="w-4 h-4 mr-1" />
-                                                                {format(new Date(listing.departure), 'p')}
-                                                            </div>
-                                                            <div className="flex items-center">
-                                                                <Users className="w-4 h-4 mr-1" />
-                                                                {listing.seats} seats available
+                                    {userListings && userListings.length === 0 ? (
+                                        <div className="text-center text-gray-500">No active listings found.</div>
+                                    ) : (
+                                        <div className="space-y-4">
+                                            {userListings.filter(listing => new Date(listing.departure) > new Date()).map((listing, i) => (
+                                                <div key={i} className="border rounded-lg p-4">
+                                                    <div className="flex justify-between items-start mb-4">
+                                                        <div>
+                                                            <h4
+                                                                className="font-medium text-lg hover:text-amber-600 cursor-pointer"
+                                                                onClick={() => {
+                                                                    setSelectedListing(listing);
+                                                                    setIsBookingDetailsModalOpen(true);
+                                                                }}
+                                                            >
+                                                                {listing.startingCity} to {listing.ishaYogaCenter}
+                                                            </h4>
+                                                            <div className="flex items-center space-x-4 text-sm text-gray-500 mt-1">
+                                                                <div className="flex items-center">
+                                                                    <Calendar className="w-4 h-4 mr-1" />
+                                                                    {format(new Date(listing.departure), 'MMMM d, yyyy')}
+                                                                </div>
+                                                                <div className="flex items-center">
+                                                                    <Clock className="w-4 h-4 mr-1" />
+                                                                    {format(new Date(listing.departure), 'p')}
+                                                                </div>
+                                                                <div className="flex items-center">
+                                                                    <Users className="w-4 h-4 mr-1" />
+                                                                    <span className="text-amber-600 font-medium mr-1">{listing.bookedSeats}</span> / {listing.seats} seats
+                                                                </div>
                                                             </div>
                                                         </div>
+                                                        <div className="flex space-x-2">
+                                                            <button onClick={() => handleEditClick(listing)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg">
+                                                                <Edit className="w-5 h-5" />
+                                                            </button>
+                                                            <button onClick={() => handleDeleteClick(listing)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg">
+                                                                <Trash2 className="w-5 h-5" />
+                                                            </button>
+                                                        </div>
                                                     </div>
-                                                    <div className="flex space-x-2">
-                                                        <button onClick={() => handleEditClick(listing)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg">
-                                                            <Edit className="w-5 h-5" />
-                                                        </button>
-                                                        <button onClick={() => handleDeleteClick(listing)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg">
-                                                            <Trash2 className="w-5 h-5" />
-                                                        </button>
-                                                    </div>
-                                                </div>
 
-                                                <div className="flex items-center justify-between border-t pt-4">
-                                                    <div className="flex items-center space-x-4">
-                                                        <div className="text-sm">
-                                                            <span className="font-medium text-green-600">${listing.pricePerSeat}</span>
-                                                            <span className="text-gray-500"> per seat</span>
+                                                    <div className="flex items-center justify-between border-t pt-4">
+                                                        <div className="flex items-center space-x-4">
+                                                            <div className="text-sm">
+                                                                <span className="font-medium text-green-600">${listing.pricePerSeat}</span>
+                                                                <span className="text-gray-500"> per seat</span>
+                                                            </div>
+                                                            {listing.bookings?.length > 0 && (
+                                                                <button
+                                                                    onClick={() => {
+                                                                        setSelectedListing(listing);
+                                                                        setIsBookingDetailsModalOpen(true);
+                                                                    }}
+                                                                    className="text-sm text-amber-600 hover:text-amber-500"
+                                                                >
+                                                                    View {listing.bookings.length} booking{listing.bookings.length !== 1 ? 's' : ''}
+                                                                </button>
+                                                            )}
                                                         </div>
+                                                        {listing.bookings?.length > 0 && (
+                                                            <div className="text-sm">
+                                                                <span className="font-medium text-green-600">${listing.pricePerSeat * listing.bookedSeats}</span>
+                                                                <span className="text-gray-500"> total earnings</span>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
-                                            </div>
-                                        ))}
+                                            ))}
                                     </div>
                                 )}
                                 </div>
@@ -877,7 +773,7 @@ function Page() {
     };
 
     if (!session || !session?.user) {
-        redirect("/api/auth/sign-in")
+        redirect("/auth/sign-in")
     } else {
         return (
             <div className="min-h-screen bg-gray-50">
@@ -936,8 +832,18 @@ function Page() {
                             }}
                             listing={selectedListing}
                             getUserListings={getUserListings}
-                            setUserListings={setUserListings} />
+                            setUserListings={setUserListings}
+                            supabase={supabase} />
+                        <BookingDetailsModal
+                            isOpen={isBookingDetailsModalOpen}
+                            onClose={() => {
+                                setIsBookingDetailsModalOpen(false);
+                                setSelectedListing(null);
+                            }}
+                            listing={selectedListing}
+                        />
                     </>
+                    
 
                 )}
 
