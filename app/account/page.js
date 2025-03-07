@@ -733,7 +733,7 @@ function Page() {
                         <div className="bg-white rounded-lg shadow p-6">
                             <h3 className="text-lg font-semibold mb-4">Past Listings</h3>
                             <div className="space-y-4">
-                            {userListings.length === 0 ? (
+                                {!userListings || userListings.length === 0 ? (
                                     <div className="text-center text-gray-500">No past listings found.</div>
                                 ) : (
                                     <div className="space-y-4">
