@@ -25,6 +25,7 @@ import { useSearchParams } from 'next/navigation'
 import { BookingDetailsModal } from '@/components/account/bookingDetailsModal';
 import { DeleteModal } from '@/components/account/listingDeleteModal';
 import { EditModal } from '@/components/account/listingEditModal';
+import PayoutsSection from '@/components/payment-form/payoutSection';
 
 const supabase = createClient()
 
@@ -273,6 +274,7 @@ function Page() {
         { id: 'payments', label: 'Payments & Payouts', icon: CreditCard },
         { id: 'rides', label: 'Rides & Bookings', icon: Car },
         { id: 'listings', label: 'My Listings', icon: Users },
+        {id: 'payouts', label: 'Driver Payouts', icon: Wallet}
     ];
 
     const renderTabContent = () => {
@@ -486,7 +488,7 @@ function Page() {
                             </div>
                         </div>
 
-                        <div className="bg-white rounded-lg shadow p-6">
+                        {/* <div className="bg-white rounded-lg shadow p-6">
                             <h3 className="text-lg font-semibold mb-4">Payout Information</h3>
                             <div className="flex items-center space-x-4 p-4 border rounded-lg">
                                 <Wallet className="w-8 h-8 text-green-600" />
@@ -495,8 +497,9 @@ function Page() {
                                     <div className="text-sm text-gray-500">Account ending in 1234</div>
                                 </div>
                                 <button className="ml-auto text-blue-600 hover:text-blue-700">Edit</button>
+                                <PayoutsSection />
                             </div>
-                        </div>
+                        </div> */}
 
                         <div className="bg-white rounded-lg shadow p-6">
                             <h3 className="text-lg font-semibold mb-4">Recent Transactions</h3>
@@ -548,6 +551,9 @@ function Page() {
                         </div>
                     </div>
                 );
+            
+            case 'payouts':
+            return <PayoutsSection />
 
             case 'rides':
                 return (
