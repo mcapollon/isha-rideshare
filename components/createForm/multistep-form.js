@@ -82,30 +82,59 @@ export default function MultistepForm() {
     const prevStep = () => setStep(step - 1)
 
     const onSubmit = async (data) => {
-
-        const supabase = createClient()
-        const { error } = await supabase
-            .from('rides')
-            .insert({
-                startingPointAddress: data.startingPointAddress,
-                startingPointCoordinates: formStoreStartingCoordinates,
-                startingCity: data.startingCity,
-                ishaYogaCenter: data.ishaYogaCenter,
-                departure: data.departure,
-                seats: data.seats,
-                luggage: data.luggage,
-                description: data.description,
-                rideDistanceMeters: data.rideDistanceMeters,
-                rideDuration: formStoreRideDuration,
-                pricePerSeat: data.pricePerSeat,
-                createdByUser:  session.user.id,
-                seatsRemaining: data.seats
-            })
-        if (error) {
-            console.log(error, 'form error')
+        try {
+            const supabase = createClient()
+            
+            // First get the driver's Stripe Connect ID
+            const { data: userData, error: userError } = await supabase.schema('next_auth')
+                .from('users')
+                .select('stripe_connect_id')
+                .eq('id', session.user.id)
+                .single()
+                
+            if (userError) {
+                console.error("Error fetching user stripe data:", userError)
+                // setFormError("Unable to create ride. Please try again later.")
+                return
+            }
+            
+            if (!userData?.stripe_connect_id) {
+                console.error("Driver has no Stripe Connect account")
+                redirect('/driver/onboarding')
+                return
+            }
+            
+            // Then create the ride with the driver's Stripe Connect ID
+            const { error } = await supabase
+                .from('rides')
+                .insert({
+                    startingPointAddress: data.startingPointAddress,
+                    startingPointCoordinates: formStoreStartingCoordinates,
+                    startingCity: data.startingCity,
+                    ishaYogaCenter: data.ishaYogaCenter,
+                    departure: data.departure,
+                    seats: data.seats,
+                    luggage: data.luggage,
+                    description: data.description,
+                    rideDistanceMeters: data.rideDistanceMeters,
+                    rideDuration: formStoreRideDuration,
+                    pricePerSeat: data.pricePerSeat,
+                    createdByUser: session.user.id,
+                    seatsRemaining: data.seats,
+                    driver_stripe_connect_id: userData.stripe_connect_id
+                })
+                
+            if (error) {
+                console.error("Form error:", error)
+                // setFormError("Failed to create ride. Please try again.")
+                return
+            }
+            
+            setStep(4)
+        } catch (err) {
+            console.error("Unexpected error:", err)
+            // setFormError("An unexpected error occurred. Please try again.")
         }
-
-        setStep(4)
     }
 
     const renderStep = () => {

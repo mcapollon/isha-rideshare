@@ -1,25 +1,25 @@
 "use client"
 
 import { useState, useEffect } from 'react';
-import { createClient } from '@/utils/supabase/client';
 import { useSession } from 'next-auth/react';
-import { format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { 
   Calendar, Clock, ArrowRightCircle, CreditCard,
-  AlertCircle, CheckCircle, HelpCircle, Wallet
+  AlertCircle, CheckCircle, HelpCircle, Wallet,
+  DollarSign, ExternalLink
 } from 'lucide-react';
 
 export default function PayoutsSection() {
-  const [payouts, setPayouts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('pending');
-  const [stats, setStats] = useState({
-    pending: 0,
-    completed: 0,
-    totalEarned: 0
+  const [payoutData, setPayoutData] = useState({
+    pending: [],
+    completed: [],
+    balance: { available: 0, pending: 0 },
+    stats: { pending: 0, completed: 0, totalEarned: 0 }
   });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState('pending');
   
-  const supabase = createClient();
   const { data: session } = useSession();
 
   useEffect(() => {
@@ -27,27 +27,22 @@ export default function PayoutsSection() {
       if (!session?.user?.id) return;
       
       try {
-        const { data, error } = await supabase
-          .from('payouts')
-          .select('*, rides(*)')
-          .eq('driver_id', session.user.id)
-          .order('created_at', { ascending: false });
-          
-        if (error) throw error;
+        setLoading(true);
+        setError(null);
         
-        setPayouts(data || []);
+        const response = await fetch('/api/stripe/get-driver-payouts');
         
-        // Calculate stats
-        const pending = data.filter(p => ['scheduled', 'pending'].includes(p.status));
-        const completed = data.filter(p => p.status === 'paid');
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to fetch payouts');
+        }
         
-        setStats({
-          pending: pending.length,
-          completed: completed.length,
-          totalEarned: completed.reduce((sum, p) => sum + p.amount, 0)
-        });
+        const data = await response.json();
+        console.log('Stripe payout data:', data);
+        setPayoutData(data);
       } catch (err) {
         console.error('Error fetching payouts:', err);
+        setError(err.message || 'Failed to load payouts');
       } finally {
         setLoading(false);
       }
@@ -56,171 +51,214 @@ export default function PayoutsSection() {
     fetchPayouts();
   }, [session]);
 
-  const filteredPayouts = payouts.filter(payout => {
-    if (activeTab === 'pending') {
-      return ['scheduled', 'pending'].includes(payout.status);
-    } else if (activeTab === 'completed') {
-      return payout.status === 'paid';
-    } else if (activeTab === 'failed') {
-      return payout.status === 'failed';
+  const formatCurrency = (amount, currency = 'cad') => {
+    return new Intl.NumberFormat('en-CA', {
+      style: 'currency',
+      currency: currency.toUpperCase(),
+    }).format(amount / 100); // Stripe amounts are in cents
+  };
+  
+  const getPayoutsToDisplay = () => {
+    switch (activeTab) {
+      case 'pending':
+        return payoutData.pending;
+      case 'completed':
+        return payoutData.completed;
+      default:
+        return [];
     }
-    return true;
-  });
-
-  // Status badge component
-  const StatusBadge = ({ status }) => {
-    const statusConfig = {
-      pending: { color: 'bg-blue-100 text-blue-800', icon: <HelpCircle className="w-3 h-3 mr-1" /> },
-      scheduled: { color: 'bg-amber-100 text-amber-800', icon: <Clock className="w-3 h-3 mr-1" /> },
-      paid: { color: 'bg-green-100 text-green-800', icon: <CheckCircle className="w-3 h-3 mr-1" /> },
-      failed: { color: 'bg-red-100 text-red-800', icon: <AlertCircle className="w-3 h-3 mr-1" /> }
-    };
-    
-    const config = statusConfig[status] || statusConfig.pending;
-    
-    return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config.color}`}>
-        {config.icon}
-        {status.charAt(0).toUpperCase() + status.slice(1)}
-      </span>
-    );
   };
 
-  if (loading) {
-    return (
-      <div className="bg-white rounded-lg shadow p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-lg font-semibold">Your Payouts</h3>
-        </div>
-        <div className="space-y-4 animate-pulse">
-          <div className="h-12 bg-gray-200 rounded"></div>
-          <div className="h-12 bg-gray-200 rounded"></div>
-          <div className="h-12 bg-gray-200 rounded"></div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="bg-white rounded-lg shadow p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h3 className="text-lg font-semibold">Your Payouts</h3>
-        <Wallet className="h-6 w-6 text-amber-600" />
-      </div>
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold">Driver Payouts</h1>
+      
+      {/* Balance Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-white p-6 rounded-lg shadow">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-sm text-gray-500">Available Balance</p>
+              <p className="text-2xl font-semibold text-green-600">
+                {formatCurrency(payoutData.balance.available)}
+              </p>
+            </div>
+            <div className="p-2 bg-green-100 rounded-full">
+              <DollarSign className="w-6 h-6 text-green-600" />
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white p-6 rounded-lg shadow">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-sm text-gray-500">Pending Balance</p>
+              <p className="text-2xl font-semibold text-amber-600">
+                {formatCurrency(payoutData.balance.pending)}
+              </p>
+            </div>
+            <div className="p-2 bg-amber-100 rounded-full">
+              <Clock className="w-6 h-6 text-amber-600" />
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white p-6 rounded-lg shadow">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-sm text-gray-500">Total Earned</p>
+              <p className="text-2xl font-semibold text-blue-600">
+                {formatCurrency(payoutData.stats.totalEarned)}
+              </p>
+            </div>
+            <div className="p-2 bg-blue-100 rounded-full">
+              <Wallet className="w-6 h-6 text-blue-600" />
+            </div>
+          </div>
+        </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-amber-50 p-4 rounded-lg">
-          <div className="text-amber-600 text-sm font-medium">Pending Payouts</div>
-          <div className="text-2xl font-bold mt-2">{stats.pending}</div>
-        </div>
-        <div className="bg-green-50 p-4 rounded-lg">
-          <div className="text-green-600 text-sm font-medium">Total Paid</div>
-          <div className="text-2xl font-bold mt-2">{stats.completed}</div>
-        </div>
-        <div className="bg-blue-50 p-4 rounded-lg">
-          <div className="text-blue-600 text-sm font-medium">Total Earnings</div>
-          <div className="text-2xl font-bold mt-2">${(stats.totalEarned / 100).toFixed(2)}</div>
+        {/* New scheduled balance card */}
+        <div className="bg-white p-6 rounded-lg shadow">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-sm text-gray-500">Scheduled Transfers</p>
+              <p className="text-2xl font-semibold text-amber-600">
+                {formatCurrency(payoutData.balance.scheduled || 0)}
+              </p>
+            </div>
+            <div className="p-2 bg-amber-100 rounded-full">
+              <Clock className="w-6 h-6 text-amber-600" />
+            </div>
+          </div>
+          <p className="text-xs text-gray-500 mt-2">
+            3-day holding period applies
+          </p>
         </div>
       </div>
-
-      {/* Tab Navigation */}
-      <div className="border-b mb-6">
-        <nav className="flex space-x-8">
+      
+      {/* Tabs */}
+      <div className="border-b border-gray-200">
+        <nav className="-mb-px flex space-x-6">
           <button
             onClick={() => setActiveTab('pending')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'pending' ? 'border-amber-600 text-amber-600' : 'border-transparent text-gray-500 hover:text-gray-700'
+            className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'pending'
+                ? 'border-amber-500 text-amber-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             }`}
           >
-            Pending
+            Pending ({payoutData.stats.pending})
           </button>
           <button
             onClick={() => setActiveTab('completed')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'completed' ? 'border-amber-600 text-amber-600' : 'border-transparent text-gray-500 hover:text-gray-700'
+            className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'completed'
+                ? 'border-amber-500 text-amber-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             }`}
           >
-            Completed
-          </button>
-          <button
-            onClick={() => setActiveTab('failed')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'failed' ? 'border-amber-600 text-amber-600' : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Failed
+            Completed ({payoutData.stats.completed})
           </button>
         </nav>
       </div>
-
-      {/* Payouts List */}
-      {filteredPayouts.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">
-          No {activeTab} payouts found.
+      
+      {/* Content */}
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600"></div>
+        </div>
+      ) : error ? (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+          <div className="flex">
+            <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0" />
+            <p>{error}</p>
+          </div>
+        </div>
+      ) : getPayoutsToDisplay().length === 0 ? (
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center text-gray-500">
+          <HelpCircle className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+          <p className="font-medium text-gray-700 mb-1">No {activeTab} payouts</p>
+          <p className="text-sm">
+            {activeTab === 'pending' 
+              ? "You don't have any pending payouts at the moment."
+              : "You haven't received any payouts yet."}
+          </p>
         </div>
       ) : (
         <div className="space-y-4">
-          {filteredPayouts.map((payout) => (
-            <div key={payout.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-              <div className="flex flex-col md:flex-row justify-between">
-                <div className="space-y-2">
-                  <div className="font-medium flex items-center">
-                    <span>{payout.rides?.startingCity || 'Unknown'}</span>
-                    <ArrowRightCircle className="inline-block mx-1 h-4 w-4 text-gray-400" />
-                    <span>{payout.rides?.ishaYogaCenter || 'Unknown'}</span>
-                  </div>
-
-                  <div className="flex space-x-4 text-sm text-gray-500">
-                    <div className="flex items-center">
-                      <Calendar className="h-4 w-4 mr-1" />
-                      <span>{payout.rides?.departure ? format(parseISO(payout.rides.departure), 'MMM d, yyyy') : 'Unknown'}</span>
-                    </div>
-                    
-                    <div className="flex items-center">
-                      <Clock className="h-4 w-4 mr-1" />
-                      <span>{payout.rides?.departure ? format(parseISO(payout.rides.departure), 'h:mm a') : 'Unknown'}</span>
+          {getPayoutsToDisplay().map((payout) => (
+            <div key={payout.id} className="bg-white rounded-lg shadow overflow-hidden">
+              <div className="p-5">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="font-medium">{payout.description}</h3>
+                    <div className="text-sm text-gray-500 mt-1 space-y-1">
+                      {payout.rideDetails.departureTime && (
+                        <div className="flex items-center">
+                          <Calendar className="w-4 h-4 mr-1" />
+                          {format(new Date(payout.rideDetails.departureTime), 'PPP')}
+                        </div>
+                      )}
+                      <div className="flex items-center">
+                        <ArrowRightCircle className="w-4 h-4 mr-1" />
+                        {payout.rideDetails.departureLocation} to {payout.rideDetails.destination}
+                      </div>
                     </div>
                   </div>
-
-                  <div className="flex items-center space-x-2">
-                    <StatusBadge status={payout.status} />
-                    
-                    {payout.status === 'scheduled' && (
-                      <span className="text-xs text-gray-500">
-                        Scheduled for {format(parseISO(payout.scheduled_for), 'MMM d, yyyy')}
-                      </span>
-                    )}
+                  <div className="text-right">
+                    <div className="font-medium text-lg">
+                      {formatCurrency(payout.amount)}
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {payout.source === 'scheduled' ? (
+                        <div className="flex items-center justify-end text-amber-600">
+                          <Clock className="w-3 h-3 mr-1" />
+                          Scheduled for {format(new Date(payout.arrival_date), 'MMM d')} 
+                          <span className="ml-1 text-xs">(3-day hold)</span>
+                        </div>
+                      ) : payout.status === 'pending' ? (
+                        <div className="flex items-center justify-end">
+                          <Clock className="w-3 h-3 mr-1" />
+                          {payout.arrival_date 
+                            ? `Arriving ${format(new Date(payout.arrival_date), 'MMM d')}`
+                            : 'Processing'}
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-end text-green-600">
+                          <CheckCircle className="w-3 h-3 mr-1" />
+                          Paid on {format(new Date(payout.created), 'MMM d')}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
-                
-                <div className="text-right mt-4 md:mt-0">
-                  <div className="flex items-center justify-end space-x-1">
-                    <CreditCard className="h-4 w-4 text-green-600" />
-                    <span className="text-lg font-semibold">${(payout.amount / 100).toFixed(2)}</span>
-                  </div>
-                  
-                  <div className="text-xs text-gray-500">
-                    Platform fee: ${(payout.platform_fee / 100).toFixed(2)}
-                  </div>
-                  
-                  {payout.transfer_id && (
-                    <div className="text-xs text-gray-400 mt-1">
-                      Transfer ID: {payout.transfer_id.substring(0, 8)}...
-                    </div>
-                  )}
+              </div>
+              <div className="border-t px-5 py-3 flex justify-between items-center bg-gray-50">
+                <div className="text-sm text-gray-600">
+                  ID: {payout.id.slice(0, 10)}...
                 </div>
+                <a 
+                  href="https://dashboard.stripe.com/connect/transfers" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-sm text-amber-600 hover:text-amber-700 flex items-center"
+                >
+                  View in Stripe
+                  <ExternalLink className="w-3 h-3 ml-1" />
+                </a>
               </div>
             </div>
           ))}
         </div>
       )}
       
-      {/* Help Text */}
-      <div className="mt-8 text-sm text-gray-500 bg-gray-50 p-4 rounded-lg">
-        <p className="font-medium mb-2">About Payouts</p>
-        <p>Funds are automatically transferred to your bank account 3 days after each ride is completed. This delay allows time for any passenger issues to be resolved.</p>
-        <p className="mt-2">Having trouble with a payout? <a href="/help" className="text-amber-600 hover:text-amber-700">Contact Support</a></p>
+      {/* Help Section */}
+      <div className="bg-amber-50 p-4 rounded-lg border border-amber-100 mt-8">
+        <h3 className="font-medium text-amber-800 mb-2">About Payouts</h3>
+        <p className="text-sm text-amber-700">
+          Payouts are automatically processed 3 days after a ride is completed. 
+          Funds will be transferred to your connected bank account. Platform fees of 15% are deducted from each payout.
+        </p>
       </div>
     </div>
   );

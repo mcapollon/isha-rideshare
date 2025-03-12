@@ -15,25 +15,55 @@ export default function PaymentSection({ totalPrice, tripSummary, ref }) {
   const paymentStoreSeatCount = usePaymentStore((state) => state.paymentStoreSeatCount)
 
   useEffect(() => {
+    if (!tripSummary || !tripSummary.id) {
+      console.error("Missing ride information");
+      setErrorMessage("Missing ride information");
+      return;
+    }
+
     fetch("/api/create-payment-intent", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ amount: totalPrice })
+      body: JSON.stringify({ 
+        amount: totalPrice,
+        rideId: tripSummary.id 
+      }) 
     })
-      .then((res) => res.json())
-      .then((data) => {setClientSecret(data.clientSecret)})
-      .catch((error) => setErrorMessage("Failed to initialize payment"));
-
-  }, [totalPrice])
+      .then((res) => {
+        if (!res.ok) {
+          return res.json().then(data => {
+            throw new Error(data.error || "Failed to initialize payment");
+          });
+        }
+        return res.json();
+      })
+      .then((data) => {
+        setClientSecret(data.clientSecret);
+      })
+      .catch((error) => {
+        console.error("Payment initialization error:", error);
+        setErrorMessage(error.message || "Failed to initialize payment");
+      });
+  }, [totalPrice, tripSummary]);
 
   const handlePayment = async () => {
     if (!stripe || !elements) {
       return;
     }
 
-    const {error, selectedPaymentMethod} = await elements.submit();
+    // Check if clientSecret exists
+    if (!clientSecret) {
+      setErrorMessage("Payment cannot be initialized. Please try again later.");
+      return;
+    }
+
+    const {error: submitError} = await elements.submit();
+    if (submitError) {
+      setErrorMessage(submitError.message);
+      return;
+    }
     
     setPaymentLoading(true);
     setErrorMessage(null);
@@ -52,6 +82,7 @@ export default function PaymentSection({ totalPrice, tripSummary, ref }) {
       } 
 
     } catch (e) {
+      console.error("Payment error:", e);
       setErrorMessage("An unexpected error occurred");
     } finally {
       setPaymentLoading(false);

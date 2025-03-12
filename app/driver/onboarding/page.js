@@ -49,7 +49,7 @@ export default function DriverOnboarding() {
         <div className="flex items-center justify-center p-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600"></div>
         </div>
-      ) : !accountLink ? (
+      ) : accountLink ? (
         <div className="space-y-6">
           <p>To receive payments for your rides, you need to connect your bank account through our secure payment provider, Stripe.</p>
           
