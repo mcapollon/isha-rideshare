@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { auth } from '@/auth';
 import Stripe from 'stripe';
-import { addDays } from 'date-fns';
 
 export async function GET(request) {
   try {
@@ -36,14 +35,19 @@ export async function GET(request) {
       );
     }
     
-    // Get transfers - Stripe doesn't support status filtering on transfers
-    // Instead, we'll fetch all recent transfers and filter them ourselves
-    const [transfers, balance] = await Promise.all([
-      // Get all recent transfers (up to 100)
+    // Get both transfers and payouts
+    const [transfers, payouts, balance] = await Promise.all([
+      // Get transfers (money sent to driver's Stripe account)
       stripe.transfers.list({
         destination: user.stripe_connect_id,
         limit: 100,
         expand: ['data.destination_payment']
+      }),
+      
+      // Get payouts (money sent from Stripe to driver's bank account)
+      stripe.payouts.list({
+        stripeAccount: user.stripe_connect_id,
+        limit: 100
       }),
       
       // Get current account balance
@@ -51,37 +55,43 @@ export async function GET(request) {
         stripeAccount: user.stripe_connect_id
       })
     ]);
+
+    console.log(balance, 'balance')
     
-    // Manually separate pending from paid transfers
-    // A transfer is "pending" if it's created but not yet available in the balance
     const now = Math.floor(Date.now() / 1000); // Current time in seconds
-    const pendingTransfers = transfers.data.filter(t => 
-      (t.arrival_date && t.arrival_date > now)
-    );
     
-    const paidTransfers = transfers.data.filter(t => 
-      (!t.arrival_date || t.arrival_date <= now)
-    );
-    
-    // Format the data for our frontend
+    // Format transfer data
     const formatTransfer = (transfer) => ({
       id: transfer.id,
       amount: transfer.amount,
       currency: transfer.currency,
-      created: transfer.created * 1000, // Convert to milliseconds
-      arrival_date: transfer.arrival_date ? transfer.arrival_date * 1000 : null,
-      status: transfer.arrival_date > now ? 'pending' : 'paid',
-      description: transfer.description || 'Ride payout',
-      metadata: transfer.metadata || {},
-      // Try to get ride details from metadata if available
+      created: transfer.created,
+      status: 'pending',
+      description: transfer.description || 'Ride payout (pending)',
+      metadata: transfer.metadata,
+      type: 'transfer',
       rideDetails: {
-        departureLocation: transfer.metadata?.departureLocation || 'Unknown location',
-        destination: transfer.metadata?.destination || 'Isha Center',
+        departureLocation: transfer.metadata?.startingPointAddress || 'Unknown location',
+        destination: transfer.metadata?.ishaYogaCenter || 'Isha Yoga Center',
         departureTime: transfer.metadata?.departureTime ? parseInt(transfer.metadata.departureTime) * 1000 : null
       }
     });
     
-    // Get the current balance in the account
+    // Format payout data
+    const formatPayout = (payout) => ({
+      id: payout.id,
+      amount: payout.amount,
+      currency: payout.currency,
+      created: payout.created,
+      arrivalDate: payout.arrival_date,
+      status: 'completed',
+      description: payout.description || 'Bank payout',
+      method: payout.method,
+      type: 'payout',
+      bankAccount: payout.bank_account ? `${payout.bank_account.bank_name} (${payout.bank_account.last4})` : 'Bank account'
+    });
+    
+    // Get balance information
     const availableBalance = balance.available.reduce(
       (sum, balItem) => sum + balItem.amount, 
       0
@@ -92,17 +102,23 @@ export async function GET(request) {
       0
     );
     
+    // All transfers are considered "pending" until they move to the bank account
+    const pendingTransfers = transfers.data;
+    
+    // All payouts are considered "completed" as they're already sent to the bank
+    const completedPayouts = payouts.data;
+    
     return NextResponse.json({
       pending: pendingTransfers.map(formatTransfer),
-      completed: paidTransfers.map(formatTransfer),
+      completed: completedPayouts.map(formatPayout),
       balance: {
         available: availableBalance,
         pending: pendingBalance
       },
       stats: {
         pending: pendingTransfers.length,
-        completed: paidTransfers.length,
-        totalEarned: paidTransfers.reduce((sum, t) => sum + t.amount, 0)
+        completed: completedPayouts.length,
+        totalEarned: completedPayouts.reduce((sum, p) => sum + p.amount, 0)
       }
     });
     

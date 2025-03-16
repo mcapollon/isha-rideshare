@@ -45,6 +45,8 @@ export async function POST(request) {
     // Calculate platform fee (10%)
     const platformFeePercent = 10;
     const platformFee = Math.round(amount * (platformFeePercent / 100));
+
+    console.log(ride, 'ride data')
     
     // Create a payment intent with Connect destination and application fee
     const paymentIntent = await stripe.paymentIntents.create({
@@ -59,6 +61,8 @@ export async function POST(request) {
         rideId: rideId,
         driverId: ride.createdByUser,
         platformFee: platformFee,
+        ishaYogaCenter: ride.ishaYogaCenter,
+        startingPointAddress: ride.startingPointAddress
       }
     });
     

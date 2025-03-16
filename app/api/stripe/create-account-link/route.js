@@ -1,4 +1,3 @@
-// New file: /app/api/stripe/create-account-link/route.js
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createClient } from '@/utils/supabase/server';

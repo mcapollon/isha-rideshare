@@ -19,6 +19,8 @@ export default function PayoutsSection() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('pending');
+  const [dashboardLoading, setDashboardLoading] = useState(false);
+  const [dashboardError, setDashboardError] = useState(null);
   
   const { data: session } = useSession();
 
@@ -41,7 +43,7 @@ export default function PayoutsSection() {
         console.log('Stripe payout data:', data);
         setPayoutData(data);
       } catch (err) {
-        console.error('Error fetching payouts:', err);
+        console.log('Error fetching payouts:', err);
         setError(err.message || 'Failed to load payouts');
       } finally {
         setLoading(false);
@@ -69,12 +71,60 @@ export default function PayoutsSection() {
     }
   };
 
+  const openStripeDashboard = async () => {
+    try {
+      setDashboardLoading(true);
+      setDashboardError(null);
+      
+      const response = await fetch('/api/stripe/create-dashboard-link');
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to generate dashboard link');
+      }
+      
+      // Open the Stripe dashboard in a new tab
+      window.open(data.url, '_blank');
+    } catch (err) {
+      console.error('Error opening Stripe dashboard:', err);
+      setDashboardError(err.message);
+    } finally {
+      setDashboardLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    console.log(error, 'error message')
+  }, [error])
+
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Driver Payouts</h1>
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Driver Payouts</h1>
+        
+        {/* Only show button if there's no Stripe-related error (which indicates an account exists) */}
+        {!loading && 
+         !error?.includes('Stripe') && 
+         !error?.includes('stripe') && 
+         !error?.includes('connect') && 
+         !error?.includes('account') && (
+          <button
+            onClick={openStripeDashboard}
+            disabled={dashboardLoading}
+            className="inline-flex items-center px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-md shadow-sm transition-colors duration-200 font-medium"
+          >
+            {dashboardLoading ? (
+              <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></span>
+            ) : (
+              <ExternalLink className="w-4 h-4 mr-2" />
+            )}
+            <span>View Stripe Dashboard</span>
+          </button>
+        )}
+      </div>
       
       {/* Balance Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white p-6 rounded-lg shadow">
           <div className="flex items-start justify-between">
             <div>
@@ -117,23 +167,7 @@ export default function PayoutsSection() {
           </div>
         </div>
 
-        {/* New scheduled balance card */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm text-gray-500">Scheduled Transfers</p>
-              <p className="text-2xl font-semibold text-amber-600">
-                {formatCurrency(payoutData.balance.scheduled || 0)}
-              </p>
-            </div>
-            <div className="p-2 bg-amber-100 rounded-full">
-              <Clock className="w-6 h-6 text-amber-600" />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 mt-2">
-            3-day holding period applies
-          </p>
-        </div>
+        {/* Removed scheduled balance card */}
       </div>
       
       {/* Tabs */}
@@ -169,9 +203,21 @@ export default function PayoutsSection() {
         </div>
       ) : error ? (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
-          <div className="flex">
-            <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0" />
-            <p>{error}</p>
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 sm:gap-2">
+            <div className="flex items-center">
+              <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0" />
+              <p>{error}</p>
+            </div>
+            
+            {/* Button stacks on mobile, inline on desktop */}
+            {error.includes('Stripe') || error.includes('stripe') || error.includes('connect') || error.includes('account') ? (
+              <a 
+                href="/driver/onboarding" 
+                className="inline-flex items-center px-4 py-2 bg-red-800 hover:bg-red-900 text-white font-medium rounded-md shadow-sm transition-colors duration-200 whitespace-nowrap self-start sm:self-auto"
+              >
+                Set up your Stripe Connect account
+              </a>
+            ) : null}
           </div>
         </div>
       ) : getPayoutsToDisplay().length === 0 ? (

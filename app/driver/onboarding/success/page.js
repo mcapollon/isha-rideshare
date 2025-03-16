@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
 import Link from 'next/link'
 import { CheckCircle, ArrowRight, Clock } from 'lucide-react'
+import { redirect } from 'next/navigation'
 
 export default function OnboardingSuccess() {
   const { data: session } = useSession()
@@ -64,18 +65,14 @@ export default function OnboardingSuccess() {
   }, [session])
 
   if (!session) {
-    return (
-      <div className="max-w-3xl mx-auto p-6 text-center">
-        <p className="mb-4">Please sign in to continue.</p>
-        <button 
-          onClick={() => router.push('/auth/sign-in')}
-          className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700"
-        >
-          Sign In
-        </button>
-      </div>
-    )
+    redirect('/auth/sign-in')
   }
+
+    useEffect(() => {
+      if (!session) {
+        redirect('/auth/sign-in')
+      }
+    }, [session])
 
   return (
     <div className="max-w-3xl mx-auto p-6">

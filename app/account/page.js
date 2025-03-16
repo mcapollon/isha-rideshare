@@ -25,7 +25,7 @@ import { useSearchParams } from 'next/navigation'
 import { BookingDetailsModal } from '@/components/account/bookingDetailsModal';
 import { DeleteModal } from '@/components/account/listingDeleteModal';
 import { EditModal } from '@/components/account/listingEditModal';
-import PayoutsSection from '@/components/payment-form/payoutSection';
+import PayoutsSection from '@/components/account/payoutSection';
 
 const supabase = createClient()
 

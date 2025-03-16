@@ -18,7 +18,35 @@ export default function Page() {
   const [loading, setLoading] = useState(true)
   const [uploadStatus, setUploadStatus] = useState('')
   const supabase = createClient()
+  
+  // Calculate the maximum allowed date (16 years ago from today)
+  const maxDate = new Date()
+  maxDate.setFullYear(maxDate.getFullYear() - 16)
+  const formattedMaxDate = maxDate.toISOString().split('T')[0]
 
+  const schema = yup.object().shape({
+    name: yup.string().required('Name is required'),
+    phone: yup.string().required('Phone number is required'),
+    email: yup.string().email('Must be a valid email').required('Email is required'),
+    location: yup.string().required('Location is required'),
+    dateOfBirth: yup.date()
+      .max(maxDate, 'You must be at least 16 years old')
+      .required('Date of birth is required'),
+    image: yup.string()
+  })
+
+  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm({
+    resolver: yupResolver(schema),
+    defaultValues: {
+      phone: '',
+      email: '',
+      location: '',
+      dateOfBirth: '',
+      name: '',
+      image: ''
+    }
+  })
+  
   const checkProfile = async () => {
     const { data, error } = await supabase.schema('next_auth')
       .from('users')
@@ -59,37 +87,8 @@ export default function Page() {
     )
   }
 
-  // Calculate the maximum allowed date (16 years ago from today)
-  const maxDate = new Date()
-  maxDate.setFullYear(maxDate.getFullYear() - 16)
-  const formattedMaxDate = maxDate.toISOString().split('T')[0]
-
-  const schema = yup.object().shape({
-    name: yup.string().required('Name is required'),
-    phone: yup.string().required('Phone number is required'),
-    email: yup.string().email('Must be a valid email').required('Email is required'),
-    location: yup.string().required('Location is required'),
-    dateOfBirth: yup.date()
-      .max(maxDate, 'You must be at least 16 years old')
-      .required('Date of birth is required'),
-    image: yup.string()
-  })
-
-  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm({
-    resolver: yupResolver(schema),
-    defaultValues: {
-      phone: '',
-      email: '',
-      location: '',
-      dateOfBirth: '',
-      name: '',
-      image: ''
-    }
-  })
-
-  
-
   const onSubmit = async (formData) => {
+    console.log(session, 'session')
     const { error } = await supabase.schema('next_auth')
       .from('users')
       .update({

@@ -21,5 +21,14 @@ export const { handlers, auth, signIn, signOut, useSession } = NextAuth({
     newUser: '/auth/new-user',
     signIn: '/auth/sign-in',
   },
-  trustHost: true
+  trustHost: true,
+  callbacks: {
+    session: ({ session, user, token }) => ({
+      ...session,
+      user: {
+        ...session.user,
+        id: user?.id || token?.sub, // Make sure user ID is included in the session
+      },
+    }),
+  }
 })
