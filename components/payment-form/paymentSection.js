@@ -1,11 +1,12 @@
 "use client"
 
-import React, { useEffect, useState, use, useImperativeHandle } from 'react'
+import React, { useEffect, useState, useImperativeHandle } from 'react'
 import { useStripe, useElements, PaymentElement } from '@stripe/react-stripe-js';
 import { CheckCircle, Shield, Lock, CreditCard } from 'lucide-react';
 import usePaymentStore from '../../components/payment-form/paymentStore'
+import { useSession } from 'next-auth/react';
 
-export default function PaymentSection({ totalPrice, tripSummary, ref }) {
+export default function PaymentSection({ totalPrice, tripSummary, ref, session, seats }) {
   const stripe = useStripe();
   const elements = useElements();
   const [errorMessage, setErrorMessage] = useState('')
@@ -21,32 +22,36 @@ export default function PaymentSection({ totalPrice, tripSummary, ref }) {
       return;
     }
 
+    console.log(tripSummary, 'trip summary')
+
     fetch("/api/create-payment-intent", {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
+      "Content-Type": "application/json",
       },
       body: JSON.stringify({ 
-        amount: totalPrice,
-        rideId: tripSummary.id 
+      amount: totalPrice,
+      rideData: tripSummary,
+      seats, 
+      session
       }) 
     })
       .then((res) => {
-        if (!res.ok) {
-          return res.json().then(data => {
-            throw new Error(data.error || "Failed to initialize payment");
-          });
-        }
-        return res.json();
+      if (!res.ok) {
+        return res.json().then(data => {
+        throw new Error(data.error || "Failed to initialize payment");
+        });
+      }
+      return res.json();
       })
       .then((data) => {
-        setClientSecret(data.clientSecret);
+      setClientSecret(data.clientSecret);
       })
       .catch((error) => {
-        console.error("Payment initialization error:", error);
-        setErrorMessage(error.message || "Failed to initialize payment");
+      console.error("Payment initialization error:", error);
+      setErrorMessage(error.message || "Failed to initialize payment");
       });
-  }, [totalPrice, tripSummary]);
+  }, [totalPrice, tripSummary, session, seats]);
 
   const handlePayment = async () => {
     if (!stripe || !elements) {

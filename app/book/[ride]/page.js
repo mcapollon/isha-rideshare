@@ -348,6 +348,7 @@ function Page({ params }) {
                   totalPrice={paymentStoreAmountInCents}
                   tripSummary={rideData}
                   seats={seatCount}
+                  session={session}
                   />
               </Elements>
             </div>

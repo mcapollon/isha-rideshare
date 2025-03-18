@@ -40,14 +40,14 @@ export async function GET(request) {
       // Get transfers (money sent to driver's Stripe account)
       stripe.transfers.list({
         destination: user.stripe_connect_id,
-        limit: 100,
+        limit: 50,
         expand: ['data.destination_payment']
       }),
       
       // Get payouts (money sent from Stripe to driver's bank account)
       stripe.payouts.list({
         stripeAccount: user.stripe_connect_id,
-        limit: 100
+        limit: 50
       }),
       
       // Get current account balance
@@ -70,11 +70,6 @@ export async function GET(request) {
       description: transfer.description || 'Ride payout (pending)',
       metadata: transfer.metadata,
       type: 'transfer',
-      rideDetails: {
-        departureLocation: transfer.metadata?.startingPointAddress || 'Unknown location',
-        destination: transfer.metadata?.ishaYogaCenter || 'Isha Yoga Center',
-        departureTime: transfer.metadata?.departureTime ? parseInt(transfer.metadata.departureTime) * 1000 : null
-      }
     });
     
     // Format payout data

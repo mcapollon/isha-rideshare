@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import Stripe from 'stripe';
-import { addDays } from 'date-fns';
+import { addDays, format } from 'date-fns';
+import { formatCurrency } from '@/utils/utils';
 
 // Strip signature verification middleware
 async function buffer(readable) {
@@ -21,11 +22,11 @@ export const config = {
 export async function POST(request) {
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
   const signature = request.headers.get('stripe-signature');
-  
+
   try {
     // Get raw body for signature verification
     const rawBody = await request.text();
-    
+
     let event;
     try {
       event = stripe.webhooks.constructEvent(
@@ -37,116 +38,222 @@ export async function POST(request) {
       console.error('⚠️ Webhook signature verification failed:', err.message);
       return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
     }
-    
+
     console.log(`✅ Event received: ${event.type}`);
-    
+
+    const handlePaymentComplete = async (paymentIntent, supabase) => {
+      
+    }
+
+    // if (event.type === 'payment_intent.created') {
+    //   const paymentIntent = event.data.object;
+
+    //   console.log(paymentIntent, 'paymentIntent created data object')
+    // }
+
     // Handle payment_intent.succeeded event
     if (event.type === 'payment_intent.succeeded') {
       const paymentIntent = event.data.object;
       const supabase = await createClient();
-      
-      // Implement a retry mechanism for finding the booking
-      let booking = null;
-      let retryCount = 0;
-      const maxRetries = 3;
-      
-      while (!booking && retryCount < maxRetries) {
-        // Try to find the booking
-        const { data, error } = await supabase
-          .from('bookings')
-          .select('*, rides(*)')
-          .eq('payment_intent', paymentIntent.id)
-          .single();
-        
-        if (data) {
-          booking = data;
-          break; // Found it!
-        }
-        
-        // Wait a bit before retrying
-        retryCount++;
-        if (retryCount < maxRetries) {
-          console.log(`Booking not found, retry ${retryCount}/${maxRetries} for payment: ${paymentIntent.id}`);
-          await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
-        }
-      }
-      
-      // If still not found after retries, store the event for later processing
-      if (!booking) {
-        console.log('⚠️ Booking not found after retries, storing event for later processing:', paymentIntent.id);
-        
-        // Store the unprocessed payment in a separate table
-        await supabase.from('unprocessed_payments').insert({
-          payment_intent_id: paymentIntent.id,
-          payment_data: paymentIntent,
-          event_type: event.type,
-          processed: false,
-          created_at: new Date().toISOString()
-        });
-        
-        // Return success to Stripe (we'll process this later)
-        return NextResponse.json({ received: true });
-      }
-      
-      // 2. Calculate payout details
-      const totalAmount = booking.totalPrice * 100; // Convert dollars to cents
-      const platformFeePercent = 10; // 15% platform fee
-      const platformFee = Math.round(totalAmount * (platformFeePercent / 100));
-      const payoutAmount = totalAmount - platformFee;
-      
-      // Instead of creating a transfer now, schedule one for later
-      const scheduledDate = addDays(new Date(), 3);
-      
-      // Create a record in a 'scheduled_transfers' table
-      // Create a record in a 'scheduled_transfers' table
-      const { data: scheduleData, error: scheduleError } = await supabase
-        .from('scheduled_transfers')
-        .insert({
-          amount: payoutAmount,
-          platform_fee: platformFee,
-          ride_id: booking.rides.id,
-          booking_id: booking.id,
-          user_id: booking.user_id,
-          driver_id: booking.rides.createdByUser,
-          stripe_connect_id: booking.rides.driver_stripe_connect_id,
-          payment_intent_id: paymentIntent.id,
-          charge_id: paymentIntent.charges?.data[0]?.id,
-          scheduled_for: scheduledDate.toISOString(),
-          status: 'scheduled',
-          metadata: {
-        departureLocation: booking.rides.startingCity,
-        destination: booking.rides.ishaYogaCenter,
-        departureTime: booking.rides.departure
-          }
-        })
-        .select()
-        .single();
-      
-      if (scheduleError) {
-        console.error('Error scheduling transfer:', scheduleError);
-        throw new Error(`Failed to schedule transfer: ${scheduleError.message}`);
-      }
-      
-      console.log(`Transfer scheduled successfully with ID: ${scheduleData?.id}`);
-      
-      // Update the booking with schedule information
-      await supabase
+
+      const metadata = paymentIntent.metadata
+
+      const id = metadata.rideId
+      const startingCity = metadata.startingCity
+      const ishaYogaCenter = metadata.ishaYogaCenter
+      const userEmail = metadata.userEmail
+      const departure = metadata.departureTime
+      const driverId = metadata.driverId
+      const seats = metadata.seats
+      const amount = metadata.amount
+      const pricePerSeat = metadata.pricePerSeat
+      const rideDuration = metadata.duration
+      const distance = metadata.distance
+      const userName = metadata.user
+      const userId = metadata.userId
+      const baseUrl = process.env.BASE_URL
+
+      const { data: existingBooking, error: fetchError } = await supabase
         .from('bookings')
-        .update({ 
-          transfer_scheduled: true,
-          platform_fee: platformFee / 100,
-          driver_amount: payoutAmount / 100,
-          transfer_scheduled_for: scheduledDate.toISOString()
-        })
-        .eq('id', booking.id);
+        .select('payment_intent')
+        .eq('payment_intent', paymentIntent)
+        .maybeSingle();
+
+      if (existingBooking) {
+        return
+      }
+
+      if (fetchError) {
+        return
+      }
+
+      // Get driver's name
+      const { data: driver, error: driverError } = await supabase
+        .schema('next_auth')
+        .from('users')
+        .select('name')
+        .eq('id', driverId)
+        .single();
+
+      if (driverError) {
+        console.error('Error fetching driver:', driverError);
+        return;
+      }
+
+      
+
+      const { data, error } = await supabase
+        .from('bookings')
+        .insert([
+          {
+            payment_intent: paymentIntent.id,
+            charge_id: paymentIntent.latest_charge,
+            ride_id: id,
+            userId,
+            seats_booked: seats,
+            totalPrice: amount,
+          },
+        ])
+        .select()
+
+      if (error) {
+        console.error(error)
+      }
+
+      const { error: updateError } = await supabase
+        .rpc('decrement_remaining_seats', { ride_id: id, seats_booked: seats })
+        .single()
+
+        const response = await fetch(`${baseUrl}/api/send-ride-receipt`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: userEmail, // Make sure to get user's email from session
+            tripDetails: {
+              startingCity: startingCity,
+              ishaYogaCenter: ishaYogaCenter,
+              rideDate: format(departure, 'PP'),
+              rideTime: format(departure, 'p'),
+              rideDuration,
+              rideDistanceKm: distance,
+              seatsBooked: seats,
+              pricePerSeat: pricePerSeat,
+              totalAmount: formatCurrency(amount),
+              paymentIntent: paymentIntent.id,
+              driverName: driver.name,
+              userName,
+            }
+          })
+        });
+  
+        if (!response.ok) {
+          console.error('Failed to send receipt email', response);
+        } else if (response.ok) {
+          console.log('email sent')
+        }
     }
 
     if (event.type === 'transfer.created') {
-      console.log(event.data.object, 'transfer created event object')
+      const transfer = event.data.object;
+      console.log(transfer, 'transfer created event object');
+
+      // Find the corresponding booking using source_transaction (charge ID)
+      const supabase = await createClient();
+      let booking = null;
+      let retryCount = 0;
+      const maxRetries = 3;
+
+      while (!booking && retryCount < maxRetries) {
+        const { data, error } = await supabase
+          .from('bookings')
+          .select('*')
+          .eq('charge_id', transfer.source_transaction)
+          .single();
+
+        if (data) {
+          booking = data;
+          break;
+        }
+
+        // Wait before retrying
+        retryCount++;
+        if (retryCount < maxRetries) {
+          console.log(`Booking not found, retry ${retryCount}/${maxRetries} for charge: ${transfer.source_transaction}`);
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+      }
+
+      if (booking) {
+        // Get ride information
+        const { data: ride, error: rideError } = await supabase
+          .from('rides')
+          .select('*, createdByUser')
+          .eq('id', booking.ride_id)
+          .single();
+
+        if (rideError) {
+          console.error('Error fetching ride:', rideError);
+          return NextResponse.json({ error: 'Error fetching ride' }, { status: 500 });
+        }
+
+        // Get user information
+        const { data: user, error: userError } = await supabase.schema('next_auth')
+          .from('users')
+          .select('name, email')
+          .eq('id', booking.userId)
+          .single();
+
+        if (userError) {
+          console.error('Error fetching user:', userError);
+        }
+
+        // Get driver information
+        const { data: driver, error: driverError } = await supabase.schema('next_auth')
+          .from('users')
+          .select('name, email')
+          .eq('id', ride.createdByUser)
+          .single();
+
+        if (driverError) {
+          console.error('Error fetching driver:', driverError);
+        }
+
+        // Create comprehensive metadata for the transfer
+        const transferMetadata = {
+          departureLocation: ride.startingCity,
+          destinationLocation: ride.ishaYogaCenter,
+          departureTime: ride.departure,
+        };
+
+        // Update the transfer with the metadata
+        try {
+          const updatedTransfer = await stripe.transfers.update(
+            transfer.id,
+            { metadata: transferMetadata }
+          );
+          console.log('Transfer metadata updated successfully:', updatedTransfer.id);
+
+          // Update the booking to indicate the transfer was processed
+          await supabase
+            .from('bookings')
+            .update({
+              transfer_id: transfer.id,
+              status: 'completed'
+            })
+            .eq('id', booking.id);
+
+        } catch (updateError) {
+          console.error('Error updating transfer metadata:', updateError);
+        }
+      } else {
+        console.log(`No booking found for charge: ${transfer.source_transaction}`);
+      }
     }
-    
+
     // Handle other events as needed
-    
+
     return NextResponse.json({ received: true });
   } catch (err) {
     console.error('⚠️ Webhook error:', err.message);

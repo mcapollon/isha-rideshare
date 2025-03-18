@@ -160,7 +160,7 @@ export const RideReceiptEmail = ({
                   <Text style={totalLabel}>Total</Text>
                 </Column>
                 <Column style={{ textAlign: 'right' }}>
-                  <Text style={totalValue}>${totalAmount}</Text>
+                  <Text style={totalValue}>{totalAmount}</Text>
                 </Column>
               </Row>
               

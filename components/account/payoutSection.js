@@ -8,6 +8,7 @@ import {
   AlertCircle, CheckCircle, HelpCircle, Wallet,
   DollarSign, ExternalLink
 } from 'lucide-react';
+import { formatCurrency } from '@/utils/utils';
 
 export default function PayoutsSection() {
   const [payoutData, setPayoutData] = useState({
@@ -52,13 +53,6 @@ export default function PayoutsSection() {
     
     fetchPayouts();
   }, [session]);
-
-  const formatCurrency = (amount, currency = 'cad') => {
-    return new Intl.NumberFormat('en-CA', {
-      style: 'currency',
-      currency: currency.toUpperCase(),
-    }).format(amount / 100); // Stripe amounts are in cents
-  };
   
   const getPayoutsToDisplay = () => {
     switch (activeTab) {
@@ -156,7 +150,7 @@ export default function PayoutsSection() {
         <div className="bg-white p-6 rounded-lg shadow">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-sm text-gray-500">Total Earned</p>
+              <p className="text-sm text-gray-500">Total Paid Out</p>
               <p className="text-2xl font-semibold text-blue-600">
                 {formatCurrency(payoutData.stats.totalEarned)}
               </p>
@@ -239,15 +233,15 @@ export default function PayoutsSection() {
                   <div>
                     <h3 className="font-medium">{payout.description}</h3>
                     <div className="text-sm text-gray-500 mt-1 space-y-1">
-                      {payout.rideDetails.departureTime && (
+                      {payout.metadata?.departureTime && (
                         <div className="flex items-center">
                           <Calendar className="w-4 h-4 mr-1" />
-                          {format(new Date(payout.rideDetails.departureTime), 'PPP')}
+                          {format(payout.metadata.departureTime, 'PPP')}
                         </div>
                       )}
                       <div className="flex items-center">
                         <ArrowRightCircle className="w-4 h-4 mr-1" />
-                        {payout.rideDetails.departureLocation} to {payout.rideDetails.destination}
+                        {payout.metadata?.departureLocation} to {payout.metadata?.destinationLocation}
                       </div>
                     </div>
                   </div>
@@ -259,20 +253,20 @@ export default function PayoutsSection() {
                       {payout.source === 'scheduled' ? (
                         <div className="flex items-center justify-end text-amber-600">
                           <Clock className="w-3 h-3 mr-1" />
-                          Scheduled for {format(new Date(payout.arrival_date), 'MMM d')} 
+                          Scheduled for {format(payout.arrival_date, 'MMM d')} 
                           <span className="ml-1 text-xs">(3-day hold)</span>
                         </div>
                       ) : payout.status === 'pending' ? (
                         <div className="flex items-center justify-end">
                           <Clock className="w-3 h-3 mr-1" />
                           {payout.arrival_date 
-                            ? `Arriving ${format(new Date(payout.arrival_date), 'MMM d')}`
-                            : 'Processing'}
+                            ? `Arriving ${format(payout.arrival_date, 'MMM d')}`
+                            : 'Pending'}
                         </div>
                       ) : (
                         <div className="flex items-center justify-end text-green-600">
                           <CheckCircle className="w-3 h-3 mr-1" />
-                          Paid on {format(new Date(payout.created), 'MMM d')}
+                          Paid on {format(payout.arrivalDate, 'MMM d')}
                         </div>
                       )}
                     </div>
@@ -303,7 +297,7 @@ export default function PayoutsSection() {
         <h3 className="font-medium text-amber-800 mb-2">About Payouts</h3>
         <p className="text-sm text-amber-700">
           Payouts are automatically processed 3 days after a ride is completed. 
-          Funds will be transferred to your connected bank account. Platform fees of 15% are deducted from each payout.
+          Funds will be transferred to your connected bank account. Platform fees of 10% are deducted from each payout.
         </p>
       </div>
     </div>

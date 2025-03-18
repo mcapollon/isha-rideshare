@@ -4,11 +4,15 @@ import { createClient } from '@/utils/supabase/server';
 
 export async function POST(request) {
   try {
-    const { amount, rideId } = await request.json();
-    
-    if (!amount || !rideId) {
+    const { amount, session, rideData, seats} = await request.json();
+    let rideId = rideData.id
+
+    console.log(session, 'session data payment intent')
+    console.log(rideData, 'session data payment intent')
+
+    if (!amount || !rideId || !session || !seats) {
       return NextResponse.json(
-        { error: 'Amount and ride ID are required' }, 
+        { error: 'Amount, ride data, session and seats are required' }, 
         { status: 400 }
       );
     }
@@ -61,8 +65,21 @@ export async function POST(request) {
         rideId: rideId,
         driverId: ride.createdByUser,
         platformFee: platformFee,
+        stripeConnectId: driver.stripe_connect_id, // Store for webhook
+        driverAmount: amount - platformFee, // Store for webhook
         ishaYogaCenter: ride.ishaYogaCenter,
-        startingPointAddress: ride.startingPointAddress
+        startingPointAddress: ride.startingPointAddress,
+        startingCity: ride.startingCity,
+        destination: ride.ishaYogaCenter,
+        departureTime: ride.departure,
+        duration: ride.rideDuration.text,
+        distance: ride.rideDistanceMeters,
+        pricePerSeat: ride.pricePerSeat,
+        seats,
+        user: session.user.name,
+        userId: session.user.id,
+        userEmail: session.user.email,
+        amount,
       }
     });
     
