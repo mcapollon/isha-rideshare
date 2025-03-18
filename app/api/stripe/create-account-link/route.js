@@ -7,6 +7,8 @@ export async function POST(request) {
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
     const supabase = await createClient();
     const { userId } = await request.json();
+
+    console.log(userId, 'user id')
     
     // Check if user already has a Stripe account
     const { data: userData, error: userError } = await supabase.schema('next_auth')
