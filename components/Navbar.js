@@ -33,7 +33,7 @@ export default function Navbar() {
             <span className="sr-only">Isha Ride Share</span>
             <img
               alt=""
-              src="./logo.png"
+              src="/logo.png"
               className="h-8 w-auto"
             />
           </a>
