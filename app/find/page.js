@@ -1,6 +1,6 @@
 "use client"
 
-import { Search, Calendar, MapPin, Clock, Users, Star, Car, ChevronDown, RefreshCw } from "lucide-react"
+import { Search, Calendar, MapPin, Clock, Users, Star, Car, ChevronDown, RefreshCw, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Avatar } from "@/components/ui/avatar"
@@ -13,6 +13,7 @@ import "react-datepicker/dist/react-datepicker.css"
 import { Controller, useForm } from "react-hook-form";
 import Autocomplete from "react-google-autocomplete";
 import Link from "next/link";
+import "../styles/custom-datepicker.css";
 
 export default function Page() {
   const ishaYogaCenters = [
@@ -55,6 +56,7 @@ export default function Page() {
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(10)
   const [totalItems, setTotalItems] = useState(0)
+  const [formModified, setFormModified] = useState(false)
 
   useEffect(() => {
     getAllRides().then((rides) => {
@@ -62,6 +64,7 @@ export default function Page() {
       fetchUserPictures(rides).then(() => setLoading(false))
       fetchUserNames(rides).then(() => setLoading(false))
     })
+    setFormModified(false)
   }, [])
 
   async function getAllRides(page = currentPage, items = itemsPerPage) {
@@ -172,6 +175,7 @@ export default function Page() {
     setCurrentPage(1)
     setItemsPerPage(10)
     getAllRides().then(rides => setRides(rides))
+    setFormModified(false)
   }
 
   return (
@@ -190,68 +194,149 @@ export default function Page() {
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-black/40" />
                     <Autocomplete
-                    {...field}
-                    value={field.value}
-                    placeholder="Please enter a city"
-                    apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS}
-                    onPlaceSelected={(place) => {
-                      setSearchStartingPoint(place.address_components[0].long_name);
-                      field.onChange(place.address_components[0].long_name);
-                      clearErrors('searchStartingPoint');
-                    }}
-                    className='flex h-10 w-full rounded-md border border-input bg-background pl-9 pr-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm'
-                    options={{
-                      types: ['locality'],
-                    }}
-                  />
+                      {...field}
+                      value={field.value}
+                      placeholder="Please enter a city"
+                      apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS}
+                      onPlaceSelected={(place) => {
+                        setSearchStartingPoint(place.address_components[0].long_name);
+                        field.onChange(place.address_components[0].long_name);
+                        clearErrors('searchStartingPoint');
+                        setFormModified(true);
+                      }}
+                      onChange={(e) => {
+                        field.onChange(e);
+                        if (e.target.value === '') {
+                          setSearchStartingPoint('');
+                        }
+                        setFormModified(true);
+                      }}
+                      className={`flex h-10 w-full rounded-md border ${errors.searchStartingPoint ? 'border-red-500' : 'border-input'} bg-background pl-9 pr-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm`}
+                      options={{
+                        types: ['locality'],
+                      }}
+                    />
                   </div>
-                  
+                )}
+              />
+              {errors.searchStartingPoint && (
+                <p className="text-red-500 text-sm mt-1">{errors.searchStartingPoint.message}</p>
+              )}
+            </div>
+            <div className="relative">
+              <Controller
+                name="searchIshaYogaCenter"
+                control={control}
+                defaultValue=""
+                rules={{ required: "Isha Yoga Center is required" }}
+                render={({ field }) => (
+                  <>
+                    <Select {...field} onValueChange={(e) => { 
+                      field.onChange(e); 
+                      setSearchIshaYogaCenter(e); 
+                      clearErrors('searchIshaYogaCenter');
+                      setFormModified(true);
+                    }}>
+                      <SelectTrigger className={`${errors.searchIshaYogaCenter ? 'border-red-500' : ''}`}>
+                        <SelectValue placeholder="Select Isha Yoga Center" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ishaYogaCenters.map((ishaYogaCenter, i) => (
+                          <SelectItem key={i} value={ishaYogaCenter.name}>{ishaYogaCenter.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {errors.searchIshaYogaCenter && (
+                      <p className="text-red-500 text-sm mt-1">{errors.searchIshaYogaCenter.message}</p>
+                    )}
+                  </>
                 )}
               />
             </div>
-            <div className="relative">
-            <Controller
-                    name="searchIshaYogaCenter"
-                    control={control}
-                    defaultValue=""
-                    rules={{ required: "Isha Yoga Center is required" }}
-                    render={({ field }) => (
-                        <Select {...field} onValueChange={(e) => { field.onChange(e); setSearchIshaYogaCenter(e); clearErrors('searchIshaYogaCenter'); }}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select Isha Yoga Center" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {ishaYogaCenters.map((ishaYogaCenter, i) => (
-                                    <SelectItem key={i} value={ishaYogaCenter.name}>{ishaYogaCenter.name}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    )}
-                />
-            </div>
-            <div className="inline-grid">
+            <div className="inline-grid datepicker-container w-full">
               <Controller
                 name="searchDeparture"
                 control={control}
                 defaultValue={null}
                 rules={{ required: "Departure date and time is required" }}
                 render={({ field }) => (
-                  <DatePicker
-                    id="searchDeparture"
-                    selected={field.value}
-                    showIcon
-                    icon={<Calendar className="h-4 w-4 text-black/50 translate-y-1" />}
-                    onChange={(date) => { field.onChange(date); clearErrors('searchDeparture') }}
-                    showTimeSelect
-                    dateFormat="MMMM d, yyyy h:mm aa"
-                    minDate={new Date()}
-                    className="w-full p-2 border rounded-md flex h-10 border-input bg-background text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
-                  />
+                  <>
+                    <div className="relative">
+                      <DatePicker
+                        id="searchDeparture"
+                        selected={field.value}
+                        showIcon
+                        icon={<Calendar className="h-4 w-4 text-black/50 translate-y-1" />}
+                        onChange={(date) => { 
+                          field.onChange(date); 
+                          clearErrors('searchDeparture');
+                          setFormModified(true);
+                        }}
+                        showTimeSelect
+                        dateFormat="MMMM d, yyyy h:mm aa"
+                        minDate={new Date()}
+                        className={`w-full p-2 border rounded-md flex h-10 ${errors.searchDeparture ? 'border-red-500' : 'border-input'} bg-background text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm`}
+                      />
+                    </div>
+                    {errors.searchDeparture && (
+                      <p className="text-red-500 text-sm mt-1">{errors.searchDeparture.message}</p>
+                    )}
+                  </>
                 )}
               />
             </div>
           </div>
-          <Button onClick={() => getRidesFiltered()} className="mt-4 w-full bg-amber-600 text-white hover:bg-amber-500">Search</Button>
+          <div className="mt-4 flex gap-2">
+            <Button 
+              onClick={() => {
+                // Get errors for all fields
+                const hasStartingPointError = !watch('searchStartingPoint');
+                const hasIshaYogaCenterError = !watch('searchIshaYogaCenter');
+                const hasDepartureError = !watch('searchDeparture');
+                
+                // Set errors if fields are empty
+                if (hasStartingPointError) {
+                  setError('searchStartingPoint', { 
+                    type: 'required', 
+                    message: 'Starting point is required' 
+                  });
+                }
+                
+                if (hasIshaYogaCenterError) {
+                  setError('searchIshaYogaCenter', { 
+                    type: 'required', 
+                    message: 'Isha Yoga Center is required' 
+                  });
+                }
+                
+                if (hasDepartureError) {
+                  setError('searchDeparture', { 
+                    type: 'required', 
+                    message: 'Departure date is required' 
+                  });
+                }
+                
+                // Only search if there are no errors
+                if (!hasStartingPointError && !hasIshaYogaCenterError) {
+                  getRidesFiltered();
+                }
+              }} 
+              className="w-full bg-amber-600 text-white hover:bg-amber-500"
+            >
+              Search
+            </Button>
+            
+            {formModified && (
+              <Button 
+                onClick={handleReset}
+                variant="outline" 
+                className="px-4 flex items-center"
+              >
+                <X className="w-4 h-4" />
+                Reset
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Results */}
