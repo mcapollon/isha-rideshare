@@ -66,6 +66,7 @@ export default function PaymentSection({ totalPrice, tripSummary, ref, session, 
 
     const {error: submitError} = await elements.submit();
     if (submitError) {
+      return new Error(submitError || "Payment failed");
       setErrorMessage(submitError.message);
       return;
     }
@@ -83,7 +84,9 @@ export default function PaymentSection({ totalPrice, tripSummary, ref, session, 
       });
 
       if (error) {
+        console.log(error, 'error from payment section')
         setErrorMessage(error.message);
+        return new Error(error.message || "Payment failed");
       } 
 
     } catch (e) {

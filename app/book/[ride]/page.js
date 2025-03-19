@@ -32,7 +32,7 @@ function Page({ params }) {
   const updatePaymentStoreAmount = usePaymentStore((state) => state.updatePaymentStoreAmount)
   const updatePaymentStoreAmountInCents = usePaymentStore((state) => state.updatePaymentStoreAmountInCents)
   const updatePaymentStoreSeatCountIncrement = usePaymentStore((state) => state.updatePaymentStoreSeatCountIncrement)
-  const updatePaymentStoreSeatCountDecrement = usePaymentStore((state) => state.updatePaymentStoreSeatDecrement)
+  const updatePaymentStoreSeatCountDecrement = usePaymentStore((state) => state.updatePaymentStoreSeatCountDecrement)
   const updatePaymentStorePaymentStoreSeatLimit = usePaymentStore((state) => state.updatePaymentStorePaymentStoreSeatLimit)
 
   const [loading, setLoading] = useState(true)
@@ -41,6 +41,7 @@ function Page({ params }) {
   const [seatCount, setSeatCount] = useState(1);
   const [totalPrice, setTotalPrice] = useState(1)
   const [totalPriceSubUnit, setTotalPriceSubUnit] = useState(1)
+  const [isBookingInProgress, setIsBookingInProgress] = useState(false);
   
 
   useEffect(() => {
@@ -258,8 +259,18 @@ function Page({ params }) {
     if (!session || !session?.user) {
       redirect("/api/auth/signin")
     } else {
-      if (paymentSectionRef.current) {
-        await paymentSectionRef.current.handlePayment();
+      setIsBookingInProgress(true);
+      try {
+        if (paymentSectionRef.current) {
+          const error = await paymentSectionRef.current.handlePayment();
+
+          if (error) {
+            setIsBookingInProgress(false);
+          }
+        }
+      } catch (error) {
+        console.error("Payment process failed:", error);
+        setIsBookingInProgress(false);
       }
     }    
   };
@@ -386,8 +397,19 @@ function Page({ params }) {
               </div>
             </div>
 
-            <button onClick={handleBookNow} className="w-full bg-amber-600 text-white py-3 rounded-lg hover:bg-amber-500 font-medium transition-all duration-500">
-              Book now
+            <button 
+              onClick={handleBookNow} 
+              disabled={isBookingInProgress}
+              className="w-full bg-amber-600 text-white py-3 rounded-lg hover:bg-amber-500 font-medium transition-all duration-500 disabled:opacity-70 disabled:cursor-not-allowed"
+            >
+              {isBookingInProgress ? (
+                <div className="flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+                  Processing...
+                </div>
+              ) : (
+                "Book now"
+              )}
             </button>
 
             <div className="mt-6 flex items-center justify-center text-sm text-gray-500">

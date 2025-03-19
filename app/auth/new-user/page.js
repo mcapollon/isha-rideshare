@@ -1,6 +1,6 @@
 'use client'
 
-import { useSession } from "next-auth/react"
+import { useSession, signOut, update } from "next-auth/react"
 import { redirect } from "next/navigation"
 import { useEffect, useState } from "react"
 import { createClient } from "@/utils/supabase/client"
@@ -14,7 +14,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Label } from "@radix-ui/react-label"
 
 export default function Page() {
-  const { data: session, status } = useSession()
+  const { data: session, status, update } = useSession()
   const [loading, setLoading] = useState(true)
   const [uploadStatus, setUploadStatus] = useState('')
   const supabase = createClient()
@@ -132,6 +132,14 @@ export default function Page() {
 
       setValue('image', publicURL.publicUrl)
       setUploadStatus('success')
+
+      await update({
+        ...session,
+        user: {
+          ...session.user,
+          image: publicURL.publicUrl
+        }
+      });
 
       setTimeout(() => {
         setUploadStatus('')

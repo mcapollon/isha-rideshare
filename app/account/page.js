@@ -31,7 +31,7 @@ const supabase = createClient()
 
 
 function Page() {
-    const { data: session } = useSession()
+    const { data: session, update } = useSession()
 
     useEffect(() => {
         if (!session) {
@@ -239,6 +239,15 @@ function Page() {
             setProfileData({ ...profileData, image: publicURL.publicUrl })
             setUploadStatus('success');
 
+            // Add this line to update the session
+            await update({
+                ...session,
+                user: {
+                    ...session.user,
+                    image: publicURL.publicUrl
+                }
+            });
+
             setTimeout(() => {
                 setUploadStatus('');
             }, 3000);
@@ -265,8 +274,19 @@ function Page() {
 
         if (error) {
             console.error('Error updating profile:', error);
-        } 
-        setIsEditingProfile(false);
+        } else {
+            // Add this to update all profile changes in the session
+            await update({
+                ...session,
+                user: {
+                    ...session.user,
+                    name: profileData.name,
+                    image: profileData.image,
+                    email: profileData.email
+                }
+            });
+            setIsEditingProfile(false);
+        }
     };
 
     const tabs = [
