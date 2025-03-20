@@ -70,12 +70,19 @@ export default function Page() {
   async function getAllRides(page = currentPage, items = itemsPerPage) {
     const from = (page - 1) * items
     const to = from + items - 1
+    
+    // Get current date/time for filtering - use the beginning of the current day
+    // This will allow rides scheduled for later today to appear in results
+    const currentDate = new Date()
+    currentDate.setHours(0, 0, 0, 0) // Set to beginning of the current day
+    const currentDateISO = currentDate.toISOString()
 
     // First get total count
     const { count } = await supabase
       .from('rides')
       .select('*', { count: 'exact' })
       .gt('seatsRemaining', 0)
+      .gte('departure', currentDateISO) // Greater than or equal to start of today
       .neq('cancelled', true)
 
     setTotalItems(count)
@@ -85,6 +92,7 @@ export default function Page() {
       .from('rides')
       .select('*')
       .gt('seatsRemaining', 0)
+      .gte('departure', currentDateISO) // Greater than or equal to start of today
       .neq('cancelled', true)
       .range(from, to)
       .order('created_at', { ascending: false })
@@ -131,14 +139,28 @@ export default function Page() {
     if (searchStartingPoint && searchIshaYogaCenter) {
       const from = (page - 1) * items
       const to = from + items - 1
+      
+      // Get current date/time for filtering - use the beginning of the current day
+      // This will allow rides scheduled for later today to appear in results
+      const currentDate = new Date()
+      currentDate.setHours(0, 0, 0, 0) // Set to beginning of the current day
+      const currentDateISO = currentDate.toISOString()
+
+      // Prepare search terms by:
+      // 1. Removing URL encoding which can interfere with wildcards
+      // 2. Converting to lowercase for case-insensitive search
+      // 3. Trimming whitespace
+      const startingPointTerm = searchStartingPoint.toLowerCase().trim()
+      const ishaYogaCenterTerm = searchIshaYogaCenter.toLowerCase().trim()
 
       // Get total count for filtered results
       const { count } = await supabase
         .from('rides')
         .select('*', { count: 'exact' })
-        .ilike('startingCity', encodeURIComponent(searchStartingPoint))
-        .ilike('ishaYogaCenter', encodeURIComponent(searchIshaYogaCenter))
+        .or(`startingCity.ilike.%${startingPointTerm}%,startingPointAddress.ilike.%${startingPointTerm}%`)
+        .ilike('ishaYogaCenter', `%${ishaYogaCenterTerm}%`)
         .gt('seatsRemaining', 0)
+        .gte('departure', currentDateISO) // Greater than or equal to start of today
         .neq('cancelled', true)
 
       setTotalItems(count)
@@ -147,9 +169,10 @@ export default function Page() {
       let { data: rides, error } = await supabase
         .from('rides')
         .select('*')
-        .ilike('startingCity', encodeURIComponent(searchStartingPoint))
-        .ilike('ishaYogaCenter', encodeURIComponent(searchIshaYogaCenter))
+        .or(`startingCity.ilike.%${startingPointTerm}%,startingPointAddress.ilike.%${startingPointTerm}%`)
+        .ilike('ishaYogaCenter', `%${ishaYogaCenterTerm}%`)
         .gt('seatsRemaining', 0)
+        .gte('departure', currentDateISO) // Greater than or equal to start of today
         .neq('cancelled', true)
         .range(from, to)
         .order('created_at', { ascending: false })
