@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation'
 import { format, set } from 'date-fns';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+import Autocomplete from "react-google-autocomplete";
 import {
     User,
     CreditCard,
@@ -19,6 +20,9 @@ import {
     Users,
     Edit,
     Trash2,
+    Search,
+    Loader2,
+    AlertCircle,
 } from 'lucide-react';
 import { createClient } from "@/utils/supabase/client"
 import { useSearchParams } from 'next/navigation'
@@ -54,6 +58,12 @@ function Page() {
 
     const [isEditingProfile, setIsEditingProfile] = useState(false);
     const [profileData, setProfileData] = useState(null);
+    const [isSaving, setIsSaving] = useState(false);
+    const [formErrors, setFormErrors] = useState({
+        phone: '',
+        email: '',
+        location: ''
+    });
 
     const searchParams = useSearchParams()
 
@@ -257,35 +267,102 @@ function Page() {
         }
     }
 
-    const handleProfileSave = async () => {
-        // Here you would typically make an API call to update the profile
-
-        const { data, error } = await supabase.schema('next_auth')
-            .from('users')
-            .update({
-                phone_number: profileData.phone,
-                email: profileData.email,
-                location: profileData.location,
-                dateOfBirth: profileData.dateOfBirth ? profileData.dateOfBirth.toISOString() : null,
-                image: profileData.image
-            })
-            .eq('id', session.user?.id)
-            .select()
-
-        if (error) {
-            console.error('Error updating profile:', error);
+    const validateForm = () => {
+        let isValid = true;
+        const errors = {
+            phone: '',
+            email: '',
+            location: '',
+            dateOfBirth: ''
+        };
+        
+        // Phone validation - basic check for non-empty and numeric
+        if (!profileData.phone) {
+            errors.phone = 'Phone number is required';
+            isValid = false;
+        } else if (!/^\d{10,15}$/.test(profileData.phone.replace(/[^0-9]/g, ''))) {
+            errors.phone = 'Please enter a valid phone number (10-15 digits)';
+            isValid = false;
+        }
+        
+        // Email validation
+        if (!profileData.email) {
+            errors.email = 'Email address is required';
+            isValid = false;
+        } else if (!/\S+@\S+\.\S+/.test(profileData.email)) {
+            errors.email = 'Please enter a valid email address';
+            isValid = false;
+        }
+        
+        // Location validation
+        if (!profileData.location) {
+            errors.location = 'Location is required';
+            isValid = false;
+        }
+        
+        // Date of Birth validation
+        if (!profileData.dateOfBirth) {
+            errors.dateOfBirth = 'Date of birth is required';
+            isValid = false;
         } else {
-            // Add this to update all profile changes in the session
-            await update({
-                ...session,
-                user: {
-                    ...session.user,
-                    name: profileData.name,
-                    image: profileData.image,
-                    email: profileData.email
+            // Check if user is at least 16 years old
+            const today = new Date();
+            const minAgeDate = new Date(today.getFullYear() - 16, today.getMonth(), today.getDate());
+            if (profileData.dateOfBirth > minAgeDate) {
+                errors.dateOfBirth = 'You must be at least 16 years old';
+                isValid = false;
+            }
+        }
+        
+        setFormErrors(errors);
+        return isValid;
+    };
+
+    const handleProfileSave = async () => {
+        // Validate form before saving
+        if (!validateForm()) {
+            return; // Stop if validation fails
+        }
+        
+        setIsSaving(true);
+        
+        try {
+            // Update the user profile in the database
+            const { data, error } = await supabase.schema('next_auth')
+                .from('users')
+                .update({
+                    phone_number: profileData.phone,
+                    email: profileData.email,
+                    location: profileData.location,
+                    dateOfBirth: profileData.dateOfBirth ? profileData.dateOfBirth.toISOString() : null,
+                    image: profileData.image
+                })
+                .eq('id', session.user?.id)
+                .select()
+
+            if (error) {
+                console.error('Error updating profile:', error);
+                // Handle specific error cases if needed
+                if (error.code === '23505') { // Unique constraint violation (e.g., duplicate email)
+                    setFormErrors(prev => ({...prev, email: 'This email is already in use'}));
                 }
-            });
-            setIsEditingProfile(false);
+            } else {
+                // Update the session with the new user data
+                await update({
+                    ...session,
+                    user: {
+                        ...session.user,
+                        name: profileData.name,
+                        image: profileData.image,
+                        email: profileData.email
+                    }
+                });
+                setIsEditingProfile(false);
+            }
+        } catch (error) {
+            console.error('Unexpected error saving profile:', error);
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -410,10 +487,16 @@ function Page() {
                                                         type="text"
                                                         value={profileData.phone}
                                                         onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
-                                                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 ${formErrors.phone ? 'border-red-500' : ''}`}
                                                     />
                                                 ) : (
                                                     <div className="font-medium">{profileData?.phone}</div>
+                                                )}
+                                                {isEditingProfile && formErrors.phone && (
+                                                    <div className="text-red-500 text-sm mt-1 flex items-center">
+                                                        <AlertCircle className="h-4 w-4 mr-1" />
+                                                        {formErrors.phone}
+                                                    </div>
                                                 )}
                                             </div>
                                         </div>
@@ -426,10 +509,16 @@ function Page() {
                                                         type="email"
                                                         value={profileData.email}
                                                         onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
-                                                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 ${formErrors.email ? 'border-red-500' : ''}`}
                                                     />
                                                 ) : (
                                                     <div className="font-medium">{profileData?.email}</div>
+                                                )}
+                                                {isEditingProfile && formErrors.email && (
+                                                    <div className="text-red-500 text-sm mt-1 flex items-center">
+                                                        <AlertCircle className="h-4 w-4 mr-1" />
+                                                        {formErrors.email}
+                                                    </div>
                                                 )}
                                             </div>
                                         </div>
@@ -438,14 +527,39 @@ function Page() {
                                             <div>
                                                 <div className="text-sm text-gray-500">Location</div>
                                                 {isEditingProfile ? (
-                                                    <input
-                                                        type="text"
-                                                        value={profileData.location}
-                                                        onChange={(e) => setProfileData({ ...profileData, location: e.target.value })}
-                                                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                                    />
+                                                    <div className="relative">
+                                                        <Autocomplete
+                                                            value={profileData.location}
+                                                            placeholder="Please enter a city"
+                                                            apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS}
+                                                            onPlaceSelected={(place) => {
+                                                                // Extract the city name from the selected place
+                                                                if (place && place.address_components) {
+                                                                    const cityName = place.address_components[0].long_name;
+                                                                    setProfileData({ ...profileData, location: cityName });
+                                                                }
+                                                            }}
+                                                            onChange={(e) => {
+                                                                if (e.target.value === '') {
+                                                                    setProfileData({ ...profileData, location: '' });
+                                                                } else {
+                                                                    setProfileData({ ...profileData, location: e.target.value });
+                                                                }
+                                                            }}
+                                                            className={`flex h-10 w-full rounded-md border px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm ${formErrors.location ? 'border-red-500' : ''}`}
+                                                            options={{
+                                                                types: ['locality'],
+                                                            }}
+                                                        />
+                                                    </div>
                                                 ) : (
                                                     <div className="font-medium">{profileData?.location}</div>
+                                                )}
+                                                {isEditingProfile && formErrors.location && (
+                                                    <div className="text-red-500 text-sm mt-1 flex items-center">
+                                                        <AlertCircle className="h-4 w-4 mr-1" />
+                                                        {formErrors.location}
+                                                    </div>
                                                 )}
                                             </div>
                                         </div>
@@ -457,12 +571,20 @@ function Page() {
                                             <div>
                                                 <div className="text-sm text-gray-500">Date of Birth</div>
                                                 {isEditingProfile ? (
-                                                    <DatePicker
-                                                        selected={profileData.dateOfBirth}
-                                                        onChange={(date) => setProfileData({ ...profileData, dateOfBirth: date })}
-                                                        dateFormat="MMMM d, yyyy"
-                                                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                                    />
+                                                    <div>
+                                                        <DatePicker
+                                                            selected={profileData.dateOfBirth}
+                                                            onChange={(date) => setProfileData({ ...profileData, dateOfBirth: date })}
+                                                            dateFormat="MMMM d, yyyy"
+                                                            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 ${formErrors.dateOfBirth ? 'border-red-500' : ''}`}
+                                                        />
+                                                        {isEditingProfile && formErrors.dateOfBirth && (
+                                                            <div className="text-red-500 text-sm mt-1 flex items-center">
+                                                                <AlertCircle className="h-4 w-4 mr-1" />
+                                                                {formErrors.dateOfBirth}
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 ) : (
                                                     <div className="font-medium">
                                                         {profileData?.dateOfBirth ? format(new Date(profileData.dateOfBirth), 'MMMM d, yyyy') : ''}
@@ -474,12 +596,38 @@ function Page() {
                                 </div>
 
                                 {isEditingProfile ? (
-                                    <button
-                                        onClick={handleProfileSave}
-                                        className="mt-6 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                                    >
-                                        Save
-                                    </button>
+                                    <div className="flex space-x-3 mt-6">
+                                        <button
+                                            onClick={handleProfileSave}
+                                            disabled={isSaving}
+                                            className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-500 flex items-center disabled:opacity-70"
+                                        >
+                                            {isSaving ? (
+                                                <>
+                                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                                    Saving...
+                                                </>
+                                            ) : (
+                                                'Save'
+                                            )}
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                setIsEditingProfile(false);
+                                                fetchUserProfile(); // Reload original data to discard changes
+                                                setFormErrors({     // Reset form errors
+                                                    phone: '',
+                                                    email: '',
+                                                    location: '',
+                                                    dateOfBirth: ''
+                                                });
+                                            }}
+                                            disabled={isSaving}
+                                            className="px-4 py-2 border border-gray-300 bg-white text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-70"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
                                 ) : (
                                     <button
                                         onClick={handleProfileEdit}

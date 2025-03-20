@@ -5,13 +5,15 @@ import { redirect } from "next/navigation"
 import { useEffect, useState } from "react"
 import { createClient } from "@/utils/supabase/client"
 import { addYears } from 'date-fns'
-import { useForm } from "react-hook-form"
+import { useForm, Controller } from "react-hook-form" // Add Controller import
 import * as yup from "yup"
 import { yupResolver } from "@hookform/resolvers/yup"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Label } from "@radix-ui/react-label"
+import Autocomplete from "react-google-autocomplete" // Import Autocomplete
+import { Search } from "lucide-react" // Import Search icon
 
 export default function Page() {
   const { data: session, status, update } = useSession()
@@ -35,7 +37,7 @@ export default function Page() {
     image: yup.string()
   })
 
-  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm({
+  const { register, handleSubmit, setValue, watch, formState: { errors }, control } = useForm({
     resolver: yupResolver(schema),
     defaultValues: {
       phone: '',
@@ -245,12 +247,38 @@ export default function Page() {
 
               <div className="space-y-2">
                 <Label htmlFor="location">Location</Label>
-                <Input
-                  id="location"
-                  {...register('location')}
-                  type="text"
-                  autoComplete="off"
-                />
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-black/40" />
+                  <Controller
+                    name="location"
+                    control={control}
+                    defaultValue=""
+                    render={({ field }) => (
+                      <Autocomplete
+                        {...field}
+                        placeholder="Please enter a city"
+                        apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS}
+                        onPlaceSelected={(place) => {
+                          // Extract the city name from the selected place
+                          if (place && place.address_components) {
+                            const cityName = place.address_components[0].long_name;
+                            setValue('location', cityName);
+                          }
+                        }}
+                        onChange={(e) => {
+                          field.onChange(e);
+                          if (e.target.value === '') {
+                            setValue('location', '');
+                          }
+                        }}
+                        className="flex h-10 w-full rounded-md border border-input bg-background pl-9 pr-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+                        options={{
+                          types: ['locality'],
+                        }}
+                      />
+                    )}
+                  />
+                </div>
                 {errors.location && (
                   <p className="text-sm text-red-600">{errors.location.message}</p>
                 )}
