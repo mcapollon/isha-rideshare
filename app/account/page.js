@@ -31,6 +31,7 @@ import { BookingDetailsModal } from '@/components/account/bookingDetailsModal';
 import { DeleteModal } from '@/components/account/listingDeleteModal';
 import { EditModal } from '@/components/account/listingEditModal';
 import PayoutsSection from '@/components/account/payoutSection';
+import ReportButton from '@/components/reviews/ReportButton';
 
 const supabase = createClient()
 
@@ -1064,45 +1065,50 @@ function Page() {
                                     <div className="space-y-6">
                                         {driverReviews.map((review) => (
                                             <div key={review.id} className="border-b pb-6 last:border-b-0 last:pb-0">
-                                                <div className="flex items-start">
-                                                    <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200 mr-4 flex-shrink-0">
-                                                        {review.reviewer?.image ? (
-                                                            <img
-                                                                src={review.reviewer.image}
-                                                                alt={review.reviewer.name || 'Reviewer'}
-                                                                className="w-full h-full object-cover"
-                                                            />
-                                                        ) : (
-                                                            <div className="w-full h-full flex items-center justify-center bg-amber-100 text-amber-800">
-                                                                {(review.reviewer?.name || 'A')[0].toUpperCase()}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                    <div>
-                                                        <div className="font-medium">{review.reviewer?.name || 'Anonymous'}</div>
-                                                        <div className="flex items-center mt-1">
-                                                            {[1, 2, 3, 4, 5].map((star) => (
-                                                                <Star
-                                                                    key={star}
-                                                                    className={`w-4 h-4 ${
-                                                                        star <= review.rating
-                                                                            ? 'text-amber-500 fill-amber-500'
-                                                                            : 'text-gray-300'
-                                                                    }`}
+                                                <div className="flex items-start justify-between">
+                                                    <div className="flex items-start">
+                                                        <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200 mr-4 flex-shrink-0">
+                                                            {review.reviewer?.image ? (
+                                                                <img
+                                                                    src={review.reviewer.image}
+                                                                    alt={review.reviewer.name || 'Reviewer'}
+                                                                    className="w-full h-full object-cover"
                                                                 />
-                                                            ))}
-                                                            <span className="text-xs text-gray-500 ml-2">
-                                                                {new Date(review.created_at).toLocaleDateString('en-US', {
-                                                                    year: 'numeric',
-                                                                    month: 'long',
-                                                                    day: 'numeric'
-                                                                })}
-                                                            </span>
+                                                            ) : (
+                                                                <div className="w-full h-full flex items-center justify-center bg-amber-100 text-amber-800">
+                                                                    {(review.reviewer?.name || 'A')[0].toUpperCase()}
+                                                                </div>
+                                                            )}
                                                         </div>
-                                                        {review.comment && (
-                                                            <p className="mt-2 text-gray-700">{review.comment}</p>
-                                                        )}
+                                                        <div>
+                                                            <div className="font-medium">{review.reviewer?.name || 'Anonymous'}</div>
+                                                            <div className="flex items-center mt-1">
+                                                                {[1, 2, 3, 4, 5].map((star) => (
+                                                                    <Star
+                                                                        key={star}
+                                                                        className={`w-4 h-4 ${
+                                                                            star <= review.rating
+                                                                                ? 'text-amber-500 fill-amber-500'
+                                                                                : 'text-gray-300'
+                                                                        }`}
+                                                                    />
+                                                                ))}
+                                                                <span className="text-xs text-gray-500 ml-2">
+                                                                    {new Date(review.created_at).toLocaleDateString('en-US', {
+                                                                        year: 'numeric',
+                                                                        month: 'long',
+                                                                        day: 'numeric'
+                                                                    })}
+                                                                </span>
+                                                            </div>
+                                                            {review.comment && (
+                                                                <p className="mt-2 text-gray-700">{review.comment}</p>
+                                                            )}
+                                                        </div>
                                                     </div>
+                                                    
+                                                    {/* Add a button to report inappropriate reviews */}
+                                                    <ReportButton review={review} />
                                                 </div>
                                             </div>
                                         ))}

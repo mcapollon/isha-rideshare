@@ -2,12 +2,17 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import StarRating from './StarRating';
 import { formatDistanceToNow } from 'date-fns';
+import { Flag } from 'lucide-react';
+import ReportReviewModal from './ReportReviewModal';
 
 export default function DriverReviews({ driverId }) {
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [averageRating, setAverageRating] = useState(0);
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [selectedReview, setSelectedReview] = useState(null);
+  const [reportedReviews, setReportedReviews] = useState({});
   const supabase = createClient();
 
   useEffect(() => {
@@ -65,6 +70,20 @@ export default function DriverReviews({ driverId }) {
           
           setReviews(reviewsWithUsers);
         }
+
+        // Fetch which reviews have already been reported by this driver
+        const { data: flaggedData, error: flaggedError } = await supabase
+          .from('review_flags')
+          .select('review_id')
+          .eq('reporter_id', driverId);
+
+        if (!flaggedError && flaggedData) {
+          const flaggedReviews = {};
+          flaggedData.forEach(flag => {
+            flaggedReviews[flag.review_id] = true;
+          });
+          setReportedReviews(flaggedReviews);
+        }
       } catch (err) {
         console.error('Error in fetchReviews:', err);
         setError(err);
@@ -75,6 +94,19 @@ export default function DriverReviews({ driverId }) {
 
     fetchReviews();
   }, [driverId, supabase]);
+
+  const handleReportClick = (review) => {
+    setSelectedReview(review);
+    setReportModalOpen(true);
+  };
+
+  const handleReportSubmitted = () => {
+    // Mark this review as reported
+    setReportedReviews(prev => ({
+      ...prev,
+      [selectedReview.id]: true
+    }));
+  };
 
   if (loading) {
     return (
@@ -116,29 +148,45 @@ export default function DriverReviews({ driverId }) {
           <div className="space-y-4">
             {reviews.map(review => (
               <div key={review.id} className="border-b pb-4 last:border-b-0">
-                <div className="flex items-center">
-                  <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden mr-3">
-                    {review.reviewer?.image ? (
-                      <img 
-                        src={review.reviewer.image} 
-                        alt={review.reviewer.name || 'User'} 
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-amber-100 text-amber-800 font-medium">
-                        {(review.reviewer?.name || 'U').charAt(0)}
+                <div className="flex items-start justify-between">
+                  <div className="flex">
+                    <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden mr-3">
+                      {review.reviewer?.image ? (
+                        <img 
+                          src={review.reviewer.image} 
+                          alt={review.reviewer.name || 'User'} 
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-amber-100 text-amber-800 font-medium">
+                          {(review.reviewer?.name || 'U').charAt(0)}
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <p className="font-medium">{review.reviewer?.name || 'Anonymous'}</p>
+                      <div className="flex items-center">
+                        <StarRating rating={review.rating} size="small" />
+                        <span className="text-xs text-gray-500 ml-2">
+                          {formatDistanceToNow(new Date(review.created_at), { addSuffix: true })}
+                        </span>
                       </div>
-                    )}
-                  </div>
-                  <div>
-                    <p className="font-medium">{review.reviewer?.name || 'Anonymous'}</p>
-                    <div className="flex items-center">
-                      <StarRating rating={review.rating} size="small" />
-                      <span className="text-xs text-gray-500 ml-2">
-                        {formatDistanceToNow(new Date(review.created_at), { addSuffix: true })}
-                      </span>
                     </div>
                   </div>
+                  
+                  {/* Only show flag/report button for the driver's own reviews in their account page */}
+                  {review.driver_id === driverId && (
+                    <button 
+                      onClick={() => handleReportClick(review)}
+                      disabled={reportedReviews[review.id]}
+                      className={`text-gray-500 p-1 rounded-full hover:bg-gray-100 ${
+                        reportedReviews[review.id] ? 'opacity-50 cursor-not-allowed' : ''
+                      }`}
+                      title={reportedReviews[review.id] ? "You've already reported this review" : "Report this review"}
+                    >
+                      <Flag className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
                 {review.comment && (
                   <p className="mt-2 text-gray-700">{review.comment}</p>
@@ -149,6 +197,18 @@ export default function DriverReviews({ driverId }) {
         </>
       ) : (
         <p className="text-gray-500 italic text-center py-4">No reviews yet</p>
+      )}
+
+      {selectedReview && (
+        <ReportReviewModal 
+          isOpen={reportModalOpen}
+          onClose={() => {
+            setReportModalOpen(false);
+            setSelectedReview(null);
+          }}
+          review={selectedReview}
+          onReportSubmitted={handleReportSubmitted}
+        />
       )}
     </div>
   );
