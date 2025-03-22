@@ -9,7 +9,9 @@ import PaymentSection from '@/components/payment-form/paymentSection';
 import { useSession } from 'next-auth/react'
 import { redirect } from 'next/navigation'
 import usePaymentStore from '../../../components/payment-form/paymentStore'
-
+import DriverRatingDisplay from '@/components/reviews/DriverRatingDisplay';
+import DriverReviews from '@/components/reviews/DriverReviews';
+import Link from 'next/link';
 
 if (process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY === undefined) {
   throw new Error("Stripe Public Key is not defined")
@@ -283,23 +285,22 @@ function Page({ params }) {
           <div className="bg-white rounded-xl shadow-sm p-6">
             <div className="flex items-center space-x-4 mb-6">
               <img
-                src={userData?.image}
+                src={userData?.image || '/default-user-icon.png'}
                 alt="Driver profile"
                 className="w-16 h-16 rounded-full object-cover"
               />
               <div>
-                <h2 className="text-xl font-semibold">{userData?.name.split(" ")[0]}'s Trip</h2>
-                <div className="flex items-center space-x-1 text-yellow-400">
-                  <Star size={16} fill="currentColor" />
-                  <Star size={16} fill="currentColor" />
-                  <Star size={16} fill="currentColor" />
-                  <Star size={16} fill="currentColor" />
-                  <Star size={16} fill="currentColor" />
-                  <span className="text-gray-600 text-sm ml-1">(48 reviews)</span>
-                </div>
+                <h2 className="text-xl font-semibold">{userData?.name?.split(" ")[0] || "Driver"}'s Trip</h2>
+                <DriverRatingDisplay driverId={rideData?.createdByUser} />
+                <Link 
+                  href={`/drivers/${rideData?.createdByUser}`}
+                  className="text-sm text-amber-600 hover:text-amber-800"
+                >
+                  View driver profile
+                </Link>
               </div>
             </div>
-
+            
             <div className="space-y-4">
               <div className="flex items-start space-x-3">
                 <MapPin className="w-6 h-6 text-gray-400 mt-1" />
@@ -338,6 +339,12 @@ function Page({ params }) {
             <p className="text-gray-600">
               {rideData.description}
             </p>
+          </div>
+
+          {/* Driver Reviews Section */}
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <h3 className="text-lg font-semibold mb-4">Driver Reviews</h3>
+            <DriverReviews driverId={rideData?.createdByUser} />
           </div>
 
           {/* Payment Section */}

@@ -14,6 +14,7 @@ import { Controller, useForm } from "react-hook-form";
 import Autocomplete from "react-google-autocomplete";
 import Link from "next/link";
 import "../styles/custom-datepicker.css";
+import DriverRatingDisplay from '@/components/reviews/DriverRatingDisplay';
 
 export default function Page() {
   const ishaYogaCenters = [
@@ -449,15 +450,7 @@ export default function Page() {
                       />
                       <div>
                         <h3 className="font-medium">{userNames[ride.createdByUser]}</h3>
-                        {/* TODO Review / Star Rating System & Number of User Rides */}
-                        {/* <div className="flex items-center space-x-2 text-sm">
-                          <div className="flex items-center text-yellow-400">
-                            <Star className="w-4 h-4 fill-current" />
-                            <span className="ml-1 text-gray-700">{listing.driver.rating}</span> 
-                          </div>
-                          <span className="text-gray-500">·</span>
-                          <span className="text-gray-500">{listing.driver.totalRides} rides</span>
-                        </div> */}
+                        <DriverRatingDisplay driverId={ride.createdByUser} />
                       </div>
                     </div>
                     <div className="text-right">
