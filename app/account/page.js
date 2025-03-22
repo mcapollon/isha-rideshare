@@ -23,6 +23,7 @@ import {
     Search,
     Loader2,
     AlertCircle,
+    Star,
 } from 'lucide-react';
 import { createClient } from "@/utils/supabase/client"
 import { useSearchParams } from 'next/navigation'
@@ -33,7 +34,6 @@ import PayoutsSection from '@/components/account/payoutSection';
 
 const supabase = createClient()
 
-
 function Page() {
     const { data: session, update } = useSession()
 
@@ -41,7 +41,6 @@ function Page() {
         if (!session) {
             redirect("/auth/sign-in")
         }
-
     }, [session])
 
     const [activeTab, setActiveTab] = useState('profile');
@@ -64,6 +63,11 @@ function Page() {
         email: '',
         location: ''
     });
+
+    // Add these states for driver reviews at the top level
+    const [driverReviews, setDriverReviews] = useState([]);
+    const [reviewsLoading, setReviewsLoading] = useState(true);
+    const [averageRating, setAverageRating] = useState(0);
 
     const searchParams = useSearchParams()
 
@@ -93,7 +97,68 @@ function Page() {
         if (activeTab === 'profile') {
             fetchUserProfile();
         }
-    }, [activeTab])
+        
+        if (activeTab === 'reviews') {
+            fetchDriverReviews();
+        }
+    }, [activeTab, session?.user?.id])
+
+    // Move the fetchDriverReviews function outside of the renderTabContent
+    async function fetchDriverReviews() {
+        if (!session?.user?.id) return;
+        
+        setReviewsLoading(true);
+        try {
+            // Fetch reviews for the driver
+            const { data, error } = await supabase
+                .from('driver_reviews')
+                .select('*')
+                .eq('driver_id', session.user.id)
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('Error fetching driver reviews:', error);
+                setReviewsLoading(false);
+                return;
+            }
+            
+            // Calculate average rating
+            if (data && data.length > 0) {
+                const total = data.reduce((sum, review) => sum + review.rating, 0);
+                setAverageRating((total / data.length).toFixed(1));
+                
+                // Fetch reviewer details for each review
+                const reviewsWithUsers = await Promise.all(
+                    data.map(async (review) => {
+                        try {
+                            const { data: userData, error: userError } = await supabase
+                                .schema('next_auth')
+                                .from('users')
+                                .select('name, image')
+                                .eq('id', review.reviewer_id)
+                                .single();
+                            
+                            return {
+                                ...review,
+                                reviewer: userError ? null : userData
+                            };
+                        } catch (err) {
+                            console.error('Error fetching reviewer data:', err);
+                            return { ...review, reviewer: null };
+                        }
+                    })
+                );
+                
+                setDriverReviews(reviewsWithUsers);
+            } else {
+                setDriverReviews([]);
+            }
+        } catch (err) {
+            console.error('Error in fetchDriverReviews:', err);
+        } finally {
+            setReviewsLoading(false);
+        }
+    }
 
     const checkUrlTab = () => {
         
@@ -371,6 +436,7 @@ function Page() {
         { id: 'payments', label: 'Payments & Payouts', icon: CreditCard },
         { id: 'rides', label: 'Rides & Bookings', icon: Car },
         { id: 'listings', label: 'My Listings', icon: Users },
+        { id: 'reviews', label: 'My Reviews', icon: Star },
         {id: 'payouts', label: 'Driver Payouts', icon: Wallet}
     ];
 
@@ -937,6 +1003,120 @@ function Page() {
                                     </div>
                                 )}
                             </div>
+                        </div>
+                    </div>
+                );
+
+            case 'reviews':
+                return (
+                    <div className="space-y-6">
+                        <div className="bg-white rounded-lg shadow p-6">
+                            <h3 className="text-xl font-semibold mb-6">My Reviews & Ratings</h3>
+                            
+                            {reviewsLoading ? (
+                                <div className="animate-pulse space-y-6">
+                                    <div className="flex items-center mb-6">
+                                        <div className="w-16 h-16 bg-gray-200 rounded-full mr-4"></div>
+                                        <div className="space-y-2">
+                                            <div className="h-6 bg-gray-200 rounded w-32"></div>
+                                            <div className="h-4 bg-gray-200 rounded w-24"></div>
+                                        </div>
+                                    </div>
+                                    {[1, 2, 3].map((i) => (
+                                        <div key={i} className="border-b pb-4">
+                                            <div className="flex space-x-3">
+                                                <div className="w-10 h-10 bg-gray-200 rounded-full"></div>
+                                                <div className="flex-1 space-y-2">
+                                                    <div className="h-4 bg-gray-200 rounded w-40"></div>
+                                                    <div className="h-3 bg-gray-200 rounded w-24"></div>
+                                                    <div className="h-4 bg-gray-200 rounded w-full"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : driverReviews.length > 0 ? (
+                                <>
+                                    <div className="flex items-center mb-8">
+                                        <div className="bg-amber-50 p-4 rounded-lg text-center mr-6">
+                                            <div className="text-3xl font-bold text-amber-600">{averageRating}</div>
+                                            <div className="text-sm text-gray-500">out of 5</div>
+                                        </div>
+                                        <div>
+                                            <div className="flex items-center mb-1">
+                                                {[1, 2, 3, 4, 5].map((star) => (
+                                                    <Star
+                                                        key={star}
+                                                        className={`w-5 h-5 ${
+                                                            star <= Math.round(parseFloat(averageRating))
+                                                                ? 'text-amber-500 fill-amber-500'
+                                                                : 'text-gray-300'
+                                                        }`}
+                                                    />
+                                                ))}
+                                            </div>
+                                            <div className="text-sm text-gray-600">
+                                                Based on {driverReviews.length} review{driverReviews.length !== 1 ? 's' : ''}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="space-y-6">
+                                        {driverReviews.map((review) => (
+                                            <div key={review.id} className="border-b pb-6 last:border-b-0 last:pb-0">
+                                                <div className="flex items-start">
+                                                    <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200 mr-4 flex-shrink-0">
+                                                        {review.reviewer?.image ? (
+                                                            <img
+                                                                src={review.reviewer.image}
+                                                                alt={review.reviewer.name || 'Reviewer'}
+                                                                className="w-full h-full object-cover"
+                                                            />
+                                                        ) : (
+                                                            <div className="w-full h-full flex items-center justify-center bg-amber-100 text-amber-800">
+                                                                {(review.reviewer?.name || 'A')[0].toUpperCase()}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div>
+                                                        <div className="font-medium">{review.reviewer?.name || 'Anonymous'}</div>
+                                                        <div className="flex items-center mt-1">
+                                                            {[1, 2, 3, 4, 5].map((star) => (
+                                                                <Star
+                                                                    key={star}
+                                                                    className={`w-4 h-4 ${
+                                                                        star <= review.rating
+                                                                            ? 'text-amber-500 fill-amber-500'
+                                                                            : 'text-gray-300'
+                                                                    }`}
+                                                                />
+                                                            ))}
+                                                            <span className="text-xs text-gray-500 ml-2">
+                                                                {new Date(review.created_at).toLocaleDateString('en-US', {
+                                                                    year: 'numeric',
+                                                                    month: 'long',
+                                                                    day: 'numeric'
+                                                                })}
+                                                            </span>
+                                                        </div>
+                                                        {review.comment && (
+                                                            <p className="mt-2 text-gray-700">{review.comment}</p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="text-center py-12 border rounded-lg bg-gray-50">
+                                    <Star className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                                    <h3 className="text-lg font-medium text-gray-700 mb-2">No Reviews Yet</h3>
+                                    <p className="text-gray-500 max-w-md mx-auto">
+                                        You haven't received any reviews yet. Reviews will appear here after passengers rate their experience with you.
+                                    </p>
+                                </div>
+                            )}
                         </div>
                     </div>
                 );
