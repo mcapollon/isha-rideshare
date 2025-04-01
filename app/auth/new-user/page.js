@@ -252,14 +252,13 @@ export default function Page() {
                   <Controller
                     name="location"
                     control={control}
-                    defaultValue=""
                     render={({ field }) => (
                       <Autocomplete
                         {...field}
+                        value={field.value || ''} // Ensure value is always a string
                         placeholder="Please enter a city"
                         apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS}
                         onPlaceSelected={(place) => {
-                          // Extract the city name from the selected place
                           if (place && place.address_components) {
                             const cityName = place.address_components[0].long_name;
                             setValue('location', cityName);
