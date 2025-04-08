@@ -15,7 +15,7 @@ export default function Page() {
               Mckinsley Apollon
             </h1>
             <p className="text-lg text-gray-600">
-              Lead Developer - Isha RideShare
+              Creator - Isha RideShare
             </p>
           </div>
 
@@ -27,9 +27,7 @@ export default function Page() {
             <div className="border-t border-gray-200 pt-6 mt-6">
               <h2 className="text-xl font-semibold mb-4">Contact Information</h2>
               <ul className="space-y-2 text-gray-600">
-                <li>Email: mckinsley.apollon@gmail.com</li>
-                <li>LinkedIn: <a href="https://www.linkedin.com/in/mckinsley-apollon" className="text-amber-600 hover:text-amber-500">linkedin.com/in/mckinsley-apollon</a></li>
-                <li>GitHub: <a href="https://github.com/mckinsley1" className="text-amber-600 hover:text-amber-500">github.com/mckinsley1</a></li>
+                <li>Email: mckinsleyapollon@hotmail.com</li>
               </ul>
             </div>
           </div>
