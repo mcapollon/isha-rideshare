@@ -28,6 +28,7 @@ export default function Page() {
               <h2 className="text-xl font-semibold mb-4">Contact Information</h2>
               <ul className="space-y-2 text-gray-600">
                 <li>Email: mckinsleyapollon@hotmail.com</li>
+                <li>Address: 4120 rue de la martinière, Terrebonne, QC, Canada</li>
               </ul>
             </div>
           </div>
