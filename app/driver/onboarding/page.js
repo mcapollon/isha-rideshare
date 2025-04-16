@@ -20,21 +20,18 @@ export default function DriverOnboarding() {
   useEffect(() => {
     async function checkOnboardingStatus() {
       try {
-        // Check if user already has a Stripe account
         const { data, error } = await supabase.schema('next_auth')
           .from('users')
           .select('stripe_connect_id, stripe_onboarding_complete')
           .eq('id', session.user.id)
           .single()
         
-        if (data?.stripe_onboarding_complete) {
-          // Already onboarded - update state to reflect this
-          console.log('already onboarded')
-          setLoading(false) // <-- Add this line
+        // FIX: Only consider onboarding complete if BOTH are true
+        if (data?.stripe_connect_id && data?.stripe_onboarding_complete) {
+          setLoading(false)
+          setAccountLink(null) // Hide onboarding form
           return
         }
-        
-        console.log('user not onboarded')
         
         // If not onboarded or no account yet, create an account link
         const response = await fetch('/api/stripe/create-account-link', {
@@ -44,12 +41,11 @@ export default function DriverOnboarding() {
         })
         
         const result = await response.json()
-        console.log(result)
         setAccountLink(result.url)
         setLoading(false)
       } catch (error) {
         console.error("Error during onboarding check:", error)
-        setLoading(false) // Always ensure loading state is updated even on error
+        setLoading(false)
       }
     }
     

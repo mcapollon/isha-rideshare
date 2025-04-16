@@ -1,13 +1,11 @@
 'use client'
 
 import { useSession, signOut, update } from "next-auth/react"
-import { redirect } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { createClient } from "@/utils/supabase/client"
 import { addYears } from 'date-fns'
 import { useForm, Controller } from "react-hook-form" // Add Controller import
-import * as yup from "yup"
-import { yupResolver } from "@hookform/resolvers/yup"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -19,26 +17,17 @@ export default function Page() {
   const { data: session, status, update } = useSession()
   const [loading, setLoading] = useState(true)
   const [uploadStatus, setUploadStatus] = useState('')
+  const [formLoading, setFormLoading] = useState(false)
+  const [formError, setFormError] = useState('')
   const supabase = createClient()
   
+  const router = useRouter();  
   // Calculate the maximum allowed date (16 years ago from today)
   const maxDate = new Date()
   maxDate.setFullYear(maxDate.getFullYear() - 16)
   const formattedMaxDate = maxDate.toISOString().split('T')[0]
 
-  const schema = yup.object().shape({
-    name: yup.string().required('Name is required'),
-    phone: yup.string().required('Phone number is required'),
-    email: yup.string().email('Must be a valid email').required('Email is required'),
-    location: yup.string().required('Location is required'),
-    dateOfBirth: yup.date()
-      .max(maxDate, 'You must be at least 16 years old')
-      .required('Date of birth is required'),
-    image: yup.string()
-  })
-
   const { register, handleSubmit, setValue, watch, formState: { errors }, control } = useForm({
-    resolver: yupResolver(schema),
     defaultValues: {
       phone: '',
       email: '',
@@ -90,21 +79,33 @@ export default function Page() {
   }
 
   const onSubmit = async (formData) => {
-    console.log(session, 'session')
-    const { error } = await supabase.schema('next_auth')
-      .from('users')
-      .update({
-        phone_number: formData.phone,
-        email: formData.email,
-        location: formData.location,
-        dateOfBirth: formData.dateOfBirth,
-        name: formData.name,
-        image: formData.image
-      })
-      .eq('id', session.user?.id)
+    alert('this worked onsubmit');
+    setFormLoading(true)
+    setFormError('')
+    try {
+      const { error } = await supabase.schema('next_auth')
+        .from('users')
+        .update({
+          phone_number: formData.phone,
+          email: formData.email,
+          location: formData.location,
+          dateOfBirth: formData.dateOfBirth,
+          name: formData.name,
+          image: formData.image
+        })
+        .eq('id', session.user?.id)
 
-    if (!error) {
-      redirect('/')
+      if (!error) {
+        router.push('/')
+      } else {
+        setFormError('Failed to update profile. Please try again.')
+        console.log(error)
+      }
+    } catch (err) {
+      setFormError('An unexpected error occurred. Please try again.')
+      console.log(err)
+    } finally {
+      setFormLoading(false)
     }
   }
 
@@ -210,7 +211,7 @@ export default function Page() {
                 <Label htmlFor="name">Name</Label>
                 <Input
                   id="name"
-                  {...register('name')}
+                  {...register('name', { required: 'Name is required' })}
                   type="text"
                   autoComplete="off"
                 />
@@ -223,7 +224,7 @@ export default function Page() {
                 <Label htmlFor="phone">Phone Number</Label>
                 <Input
                   id="phone"
-                  {...register('phone')}
+                  {...register('phone', { required: 'Phone number is required' })}
                   type="tel"
                   autoComplete="off"
                 />
@@ -236,7 +237,13 @@ export default function Page() {
                 <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
-                  {...register('email')}
+                  {...register('email', {
+                    required: 'Email is required',
+                    pattern: {
+                      value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                      message: 'Must be a valid email'
+                    }
+                  })}
                   type="email"
                   autoComplete="off"
                 />
@@ -252,10 +259,11 @@ export default function Page() {
                   <Controller
                     name="location"
                     control={control}
+                    rules={{ required: 'Location is required' }}
                     render={({ field }) => (
                       <Autocomplete
                         {...field}
-                        value={field.value || ''} // Ensure value is always a string
+                        value={field.value || ''}
                         placeholder="Please enter a city"
                         apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS}
                         onPlaceSelected={(place) => {
@@ -290,7 +298,18 @@ export default function Page() {
                 </Label>
                 <Input
                   id="dateOfBirth"
-                  {...register('dateOfBirth')}
+                  {...register('dateOfBirth', {
+                    required: 'Date of birth is required',
+                    validate: value => {
+                      if (!value) return 'Date of birth is required';
+                      const minDate = new Date();
+                      minDate.setFullYear(minDate.getFullYear() - 16);
+                      if (new Date(value) > minDate) {
+                        return 'You must be at least 16 years old';
+                      }
+                      return true;
+                    }
+                  })}
                   type="date"
                   max={formattedMaxDate}
                   autoComplete="off"
@@ -300,11 +319,15 @@ export default function Page() {
                 )}
               </div>
 
+              {formError && (
+                <div className="text-red-600 text-center text-sm">{formError}</div>
+              )}
               <Button 
                 type="submit" 
                 className="w-full bg-amber-600 hover:bg-amber-500"
+                disabled={formLoading}
               >
-                Complete Profile
+                {formLoading ? 'Saving...' : 'Complete Profile'}
               </Button>
             </form>
           </CardContent>
