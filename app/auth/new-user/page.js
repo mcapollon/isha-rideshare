@@ -79,7 +79,6 @@ export default function Page() {
   }
 
   const onSubmit = async (formData) => {
-    alert('this worked onsubmit');
     setFormLoading(true)
     setFormError('')
     try {
