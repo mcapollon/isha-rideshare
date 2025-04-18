@@ -250,13 +250,7 @@ export default function PayoutsSection() {
                       {formatCurrency(payout.amount)}
                     </div>
                     <div className="text-sm text-gray-500">
-                      {payout.source === 'scheduled' ? (
-                        <div className="flex items-center justify-end text-amber-600">
-                          <Clock className="w-3 h-3 mr-1" />
-                          Scheduled for {format(payout.arrival_date, 'MMM d')} 
-                          <span className="ml-1 text-xs">(3-day hold)</span>
-                        </div>
-                      ) : payout.status === 'pending' ? (
+                      {payout.status === 'pending' ? (
                         <div className="flex items-center justify-end">
                           <Clock className="w-3 h-3 mr-1" />
                           {payout.arrival_date 
@@ -296,7 +290,7 @@ export default function PayoutsSection() {
       <div className="bg-amber-50 p-4 rounded-lg border border-amber-100 mt-8">
         <h3 className="font-medium text-amber-800 mb-2">About Payouts</h3>
         <p className="text-sm text-amber-700">
-          Payouts are automatically processed 3 days after a ride is completed. 
+          Payouts are automatically processed 1 day after a ride is completed. 
           Funds will be transferred to your connected bank account. Platform fees of 10% are deducted from each payout.
         </p>
       </div>

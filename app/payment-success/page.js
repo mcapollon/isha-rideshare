@@ -6,12 +6,10 @@ import { useSearchParams } from 'next/navigation'
 import { format } from "date-fns";
 import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
-import { createClient } from '@/utils/supabase/client';
 
 function Page() {
   const searchParams = useSearchParams()
   const { data: session, status } = useSession()
-  const supabase = createClient()
 
   useEffect(() => {
     if (status !== 'loading' && !session) {
@@ -27,8 +25,6 @@ function Page() {
     )
   }
 
-  const id = searchParams.get('id')
-  const paymentIntent = searchParams.get('payment_intent')
   const amount = searchParams.get('amount') / 100
   const pricePerSeat = searchParams.get('pricePerSeat')
   const startingCity = decodeURI(searchParams.get('startingCity'))

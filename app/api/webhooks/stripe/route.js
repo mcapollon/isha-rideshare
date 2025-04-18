@@ -80,11 +80,11 @@ export async function POST(request) {
         .maybeSingle();
 
       if (existingBooking) {
-        return
+        return NextResponse.json({ received: true });
       }
 
       if (fetchError) {
-        return
+        return NextResponse.json({ error: fetchError.message }, { status: 500 });
       }
 
       // Get driver's name
@@ -97,10 +97,8 @@ export async function POST(request) {
 
       if (driverError) {
         console.error('Error fetching driver:', driverError);
-        return;
+        return NextResponse.json({ error: 'Error fetching driver' }, { status: 500 });
       }
-
-      
 
       const { data, error } = await supabase
         .from('bookings')
@@ -118,41 +116,44 @@ export async function POST(request) {
 
       if (error) {
         console.error(error)
+        return NextResponse.json({ error: error.message }, { status: 500 });
       }
 
       const { error: updateError } = await supabase
         .rpc('decrement_remaining_seats', { ride_id: id, seats_booked: seats })
         .single()
 
-        const response = await fetch(`${baseUrl}/api/send-ride-receipt`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            email: userEmail, // Make sure to get user's email from session
-            tripDetails: {
-              startingCity: startingCity,
-              ishaYogaCenter: ishaYogaCenter,
-              rideDate: format(departure, 'PP'),
-              rideTime: format(departure, 'p'),
-              rideDuration,
-              rideDistanceKm: distance,
-              seatsBooked: seats,
-              pricePerSeat: pricePerSeat,
-              totalAmount: formatCurrency(amount),
-              paymentIntent: paymentIntent.id,
-              driverName: driver.name,
-              userName,
-            }
-          })
-        });
-  
-        if (!response.ok) {
-          console.error('Failed to send receipt email', response);
-        } else if (response.ok) {
-          console.log('email sent')
-        }
+      const response = await fetch(`${baseUrl}/api/send-ride-receipt`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: userEmail, // Make sure to get user's email from session
+          tripDetails: {
+            startingCity: startingCity,
+            ishaYogaCenter: ishaYogaCenter,
+            rideDate: format(departure, 'PP'),
+            rideTime: format(departure, 'p'),
+            rideDuration,
+            rideDistanceKm: distance,
+            seatsBooked: seats,
+            pricePerSeat: pricePerSeat,
+            totalAmount: formatCurrency(amount),
+            paymentIntent: paymentIntent.id,
+            driverName: driver.name,
+            userName,
+          }
+        })
+      });
+
+      if (!response.ok) {
+        console.error('Failed to send receipt email', response);
+        return NextResponse.json({ error: 'Failed to send receipt email' }, { status: 500 });
+      } else if (response.ok) {
+        console.log('email sent')
+      }
+      return NextResponse.json({ received: true });
     }
 
     if (event.type === 'transfer.created') {
@@ -185,6 +186,11 @@ export async function POST(request) {
         }
       }
 
+      if (!booking) {
+        console.log(`No booking found for charge: ${transfer.source_transaction}`);
+        return NextResponse.json({ error: 'No booking found for charge' }, { status: 404 });
+      }
+
       if (booking) {
         // Get ride information
         const { data: ride, error: rideError } = await supabase
@@ -207,6 +213,7 @@ export async function POST(request) {
 
         if (userError) {
           console.error('Error fetching user:', userError);
+          return NextResponse.json({ error: 'Error fetching user' }, { status: 500 });
         }
 
         // Get driver information
@@ -218,6 +225,7 @@ export async function POST(request) {
 
         if (driverError) {
           console.error('Error fetching driver:', driverError);
+          return NextResponse.json({ error: 'Error fetching driver' }, { status: 500 });
         }
 
         // Create comprehensive metadata for the transfer
@@ -243,12 +251,11 @@ export async function POST(request) {
               status: 'completed'
             })
             .eq('id', booking.id);
-
+          return NextResponse.json({ received: true });
         } catch (updateError) {
           console.error('Error updating transfer metadata:', updateError);
+          return NextResponse.json({ error: updateError.message }, { status: 500 });
         }
-      } else {
-        console.log(`No booking found for charge: ${transfer.source_transaction}`);
       }
     }
 
