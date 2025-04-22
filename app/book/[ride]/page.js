@@ -44,7 +44,7 @@ function Page({ params }) {
   const [totalPrice, setTotalPrice] = useState(1)
   const [totalPriceSubUnit, setTotalPriceSubUnit] = useState(1)
   const [isBookingInProgress, setIsBookingInProgress] = useState(false);
-  
+  const [bookedUsers, setBookedUsers] = useState([]);
 
   useEffect(() => {
     if (ride.ride) {
@@ -58,6 +58,31 @@ function Page({ params }) {
       updatePaymentStoreAmountInCents((seatCount * paymentStorePricePerSeat) + 3) 
     }
   }, [seatCount, paymentStorePricePerSeat, rideData]);
+
+  useEffect(() => {
+    async function fetchBookedUsers() {
+      if (!rideData?.id) return;
+      // 1. Get all bookings for this ride
+      const { data: bookings, error: bookingsError } = await supabase
+        .from('bookings')
+        .select('userId')
+        .eq('ride_id', rideData.id);
+      if (bookingsError || !bookings) return;
+      const userIds = bookings.map(b => b.userId).filter(Boolean);
+      if (userIds.length === 0) { setBookedUsers([]); return; }
+      // 2. Fetch user details from next_auth.users
+      const { data: users, error: usersError } = await supabase
+        .schema('next_auth')
+        .from('users')
+        .select('id, name, image, sex')
+        .in('id', userIds);
+      if (usersError || !users) { setBookedUsers([]); return; }
+      // 3. Display users in the same order as bookings
+      const usersById = Object.fromEntries(users.map(u => [u.id, u]));
+      setBookedUsers(userIds.map(uid => usersById[uid]).filter(Boolean));
+    }
+    if (rideData) fetchBookedUsers();
+  }, [rideData]);
 
   async function fetchRideData(rideId) {
     let { data: ride, error } = await supabase
@@ -345,6 +370,39 @@ function Page({ params }) {
           <div className="bg-white rounded-xl shadow-sm p-6">
             <h3 className="text-lg font-semibold mb-4">Driver Reviews</h3>
             <DriverReviews driverId={rideData?.createdByUser} />
+          </div>
+
+          {/* Passengers Booked Section */}
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <h3 className="text-lg font-semibold mb-4">Passengers Booked</h3>
+            {bookedUsers.length === 0 ? (
+              <div className="text-gray-500">No bookings yet for this ride.</div>
+            ) : (
+              <div className="space-y-3">
+                {bookedUsers.map((user, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center gap-4 bg-gray-50 border border-gray-200 rounded-lg p-3 hover:shadow transition-shadow"
+                  >
+                    <img
+                      src={user.image || '/default-user-icon.png'}
+                      alt={user.name || 'Passenger'}
+                      className="w-12 h-12 rounded-full object-cover border border-gray-300 shadow-sm"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 font-medium truncate text-gray-900">
+                        {user.name || 'Anonymous'}
+                        {user.sex && (
+                          <span className="inline-block px-2 py-0.5 text-xs rounded-full bg-amber-100 text-amber-700 font-semibold align-middle">
+                            {user.sex}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Payment Section */}
