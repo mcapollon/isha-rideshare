@@ -29,6 +29,7 @@ function Page({ params }) {
 
   const paymentStoreAmount = usePaymentStore((state) => state.paymentStoreAmount)
   const paymentStorePricePerSeat = usePaymentStore((state) => state.paymentStorePricePerSeat)
+  const paymentStoreServiceFee = usePaymentStore((state) => state.paymentStoreServiceFee)
   const paymentStoreAmountInCents = usePaymentStore((state) => state.paymentStoreAmountInCents)
   const updatePaymentStorePricePerSeat = usePaymentStore((state) => state.updatePaymentStorePricePerSeat)
   const updatePaymentStoreAmount = usePaymentStore((state) => state.updatePaymentStoreAmount)
@@ -41,8 +42,6 @@ function Page({ params }) {
   const [rideData, setRideData] = useState(null)
   const [userData, setUserData] = useState(null);
   const [seatCount, setSeatCount] = useState(1);
-  const [totalPrice, setTotalPrice] = useState(1)
-  const [totalPriceSubUnit, setTotalPriceSubUnit] = useState(1)
   const [isBookingInProgress, setIsBookingInProgress] = useState(false);
   const [bookedUsers, setBookedUsers] = useState([]);
 
@@ -54,9 +53,13 @@ function Page({ params }) {
 
   useEffect(() => {
     if (rideData) {
-      updatePaymentStoreAmount((seatCount * paymentStorePricePerSeat) + 3) // Add service fee
-      updatePaymentStoreAmountInCents((seatCount * paymentStorePricePerSeat) + 3) 
+      updatePaymentStoreAmount((seatCount * paymentStorePricePerSeat) + paymentStoreServiceFee) // Add service fee
+      updatePaymentStoreAmountInCents((seatCount * paymentStorePricePerSeat) + paymentStoreServiceFee) 
     }
+
+    console.log(paymentStoreServiceFee, 'fee')
+    console.log(paymentStoreAmount, 'payment store amount')
+    console.log(paymentStoreAmountInCents, 'payment store amount in cents')
   }, [seatCount, paymentStorePricePerSeat, rideData]);
 
   useEffect(() => {
@@ -129,8 +132,8 @@ function Page({ params }) {
   const incrementSeatCount = () => {
     if (seatCount < rideData.seats) {
       setSeatCount(seatCount + 1);
-      updatePaymentStoreAmount(seatCount * paymentStorePricePerSeat)
-      updatePaymentStoreAmountInCents(seatCount * paymentStorePricePerSeat)
+      updatePaymentStoreAmount(((seatCount + 1) * paymentStorePricePerSeat) + paymentStoreServiceFee)
+      updatePaymentStoreAmountInCents(((seatCount + 1) * paymentStorePricePerSeat) + paymentStoreServiceFee)
       updatePaymentStoreSeatCountIncrement()
     }
   };
@@ -138,8 +141,8 @@ function Page({ params }) {
   const decrementSeatCount = () => {
     if (seatCount > 1) {
       setSeatCount(seatCount - 1);
-      updatePaymentStoreAmount(seatCount * paymentStorePricePerSeat)
-      updatePaymentStoreAmountInCents(seatCount * paymentStorePricePerSeat)
+      updatePaymentStoreAmount(((seatCount - 1) * paymentStorePricePerSeat) + paymentStoreServiceFee)
+      updatePaymentStoreAmountInCents(((seatCount - 1) * paymentStorePricePerSeat) + paymentStoreServiceFee)
       updatePaymentStoreSeatCountDecrement()
     }
   };
@@ -451,7 +454,7 @@ function Page({ params }) {
 
               <div className="flex justify-between text-sm">
                 <span>Service fee</span>
-                <span>$3</span>
+                <span>${paymentStoreServiceFee}</span>
               </div>
 
               <div className="border-t pt-4">

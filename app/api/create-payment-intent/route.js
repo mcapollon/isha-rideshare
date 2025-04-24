@@ -48,7 +48,7 @@ export async function POST(request) {
     
     // Calculate platform fee (10%)
     const platformFeePercent = 10;
-    const platformFee = Math.round(amount * (platformFeePercent / 100));
+    const platformFee = amount * (platformFeePercent / 100);
 
     console.log(ride, 'ride data')
     

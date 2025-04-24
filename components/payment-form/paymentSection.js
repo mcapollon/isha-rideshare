@@ -66,9 +66,8 @@ export default function PaymentSection({ totalPrice, tripSummary, ref, session, 
 
     const {error: submitError} = await elements.submit();
     if (submitError) {
-      return new Error(submitError || "Payment failed");
       setErrorMessage(submitError.message);
-      return;
+      return new Error(submitError || "Payment failed");
     }
     
     setPaymentLoading(true);

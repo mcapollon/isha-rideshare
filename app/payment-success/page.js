@@ -6,10 +6,12 @@ import { useSearchParams } from 'next/navigation'
 import { format } from "date-fns";
 import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
+import usePaymentStore from '@/components/payment-form/paymentStore';
 
 function Page() {
   const searchParams = useSearchParams()
   const { data: session, status } = useSession()
+  const paymentStoreServiceFee = usePaymentStore((state) => state.paymentStoreServiceFee)
 
   useEffect(() => {
     if (status !== 'loading' && !session) {
@@ -79,7 +81,7 @@ function Page() {
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Service fee</span>
-                <span className="font-medium">$3.00</span>
+                <span className="font-medium">${paymentStoreServiceFee}</span>
               </div>
               <div className="border-t pt-2 mt-2">
                 <div className="flex justify-between">

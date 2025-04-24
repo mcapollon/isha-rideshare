@@ -33,7 +33,7 @@ export const RideReceiptEmail = ({
   driverPhoto = 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop',
   pricePerSeat,
   seatsBooked,
-  serviceFee = 3.00,
+  serviceFee = 5.00,
   totalAmount,
   paymentMethod = 'Visa •••• 4242',
   paymentIntent = 'RIDE-12345',
