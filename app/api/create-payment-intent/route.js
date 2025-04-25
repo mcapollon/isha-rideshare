@@ -7,9 +7,6 @@ export async function POST(request) {
     const { amount, session, rideData, seats} = await request.json();
     let rideId = rideData.id
 
-    console.log(session, 'session data payment intent')
-    console.log(rideData, 'session data payment intent')
-
     if (!amount || !rideId || !session || !seats) {
       return NextResponse.json(
         { error: 'Amount, ride data, session and seats are required' }, 
@@ -50,7 +47,7 @@ export async function POST(request) {
     const platformFeePercent = 10;
     const platformFee = amount * (platformFeePercent / 100);
 
-    console.log(ride, 'ride data')
+    console.log(ride, 'ride data payment intent')
     
     // Create a payment intent with Connect destination and application fee
     const paymentIntent = await stripe.paymentIntents.create({

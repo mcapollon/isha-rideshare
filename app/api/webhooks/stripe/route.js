@@ -175,6 +175,7 @@ export async function POST(request) {
 
         if (data) {
           booking = data;
+          console.log(booking, 'booking data')
           break;
         }
 
@@ -228,20 +229,39 @@ export async function POST(request) {
           return NextResponse.json({ error: 'Error fetching driver' }, { status: 500 });
         }
 
-        // Create comprehensive metadata for the transfer
+        // Create robust metadata for the transfer
         const transferMetadata = {
           departureLocation: ride.startingCity,
           destinationLocation: ride.ishaYogaCenter,
           departureTime: ride.departure,
+          bookingId: booking.id,
+          rideId: ride.id,
+          userId: booking.userId,
+          seatsBooked: booking.seats_booked,
+          userEmail: user.email,
+          driverId: ride.createdByUser,
+          driverEmail: driver.email,
         };
 
-        // Update the transfer with the metadata
+        // Idempotency: Only update if not already set
         try {
-          const updatedTransfer = await stripe.transfers.update(
-            transfer.id,
-            { metadata: transferMetadata }
-          );
-          console.log('Transfer metadata updated successfully:', updatedTransfer.id);
+          const currentTransfer = await stripe.transfers.retrieve(transfer.id);
+          let needsUpdate = false;
+          for (const key in transferMetadata) {
+            if (!currentTransfer.metadata || currentTransfer.metadata[key] !== String(transferMetadata[key])) {
+              needsUpdate = true;
+              break;
+            }
+          }
+          if (needsUpdate) {
+            await stripe.transfers.update(
+              transfer.id,
+              { metadata: transferMetadata }
+            );
+            console.log('Transfer metadata updated successfully:', transfer.id);
+          } else {
+            console.log('Transfer metadata already up to date:', transfer.id);
+          }
 
           // Update the booking to indicate the transfer was processed
           await supabase
