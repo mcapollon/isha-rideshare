@@ -109,7 +109,7 @@ export async function POST(request) {
             ride_id: id,
             userId,
             seats_booked: seats,
-            totalPrice: amount,
+            totalPrice: (amount / 100).toFixed(2),
           },
         ])
         .select()

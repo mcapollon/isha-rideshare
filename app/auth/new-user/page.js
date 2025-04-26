@@ -34,7 +34,8 @@ export default function Page() {
       location: '',
       dateOfBirth: '',
       name: '',
-      image: ''
+      image: '',
+      sex: ''
     }
   })
   
@@ -56,6 +57,7 @@ export default function Page() {
       setValue('dateOfBirth', data.dateOfBirth)
       setValue('name', data.name)
       setValue('image', data.image)
+      setValue('sex', data.sex) // Prefill sex if available
     }
 
     setLoading(false)
@@ -90,7 +92,8 @@ export default function Page() {
           location: formData.location,
           dateOfBirth: formData.dateOfBirth,
           name: formData.name,
-          image: formData.image
+          image: formData.image,
+          sex: formData.sex
         })
         .eq('id', session.user?.id)
 
@@ -315,6 +318,22 @@ export default function Page() {
                 />
                 {errors.dateOfBirth && (
                   <p className="text-sm text-red-600">{errors.dateOfBirth.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="sex">Sex</Label>
+                <select
+                  id="sex"
+                  {...register('sex', { required: 'Sex is required' })}
+                  className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                >
+                  <option value="">Select...</option>
+                  <option value="M">Male</option>
+                  <option value="F">Female</option>
+                </select>
+                {errors.sex && (
+                  <p className="text-sm text-red-600">{errors.sex.message}</p>
                 )}
               </div>
 

@@ -23,7 +23,7 @@ import {
     Search,
     Loader2,
     AlertCircle,
-    Star,
+    Star
 } from 'lucide-react';
 import { createClient } from "@/utils/supabase/client"
 import { useSearchParams } from 'next/navigation'
@@ -265,7 +265,9 @@ function Page() {
                 phone: data.phone_number || '',
                 email: data.email || '',
                 location: data.location || '',
-                dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null
+                dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
+                image: data.image || '',
+                sex: data.sex || ''
             });
             setProfileLoading(false)
         }
@@ -401,7 +403,8 @@ function Page() {
                     email: profileData.email,
                     location: profileData.location,
                     dateOfBirth: profileData.dateOfBirth ? profileData.dateOfBirth.toISOString() : null,
-                    image: profileData.image
+                    image: profileData.image,
+                    sex: profileData.sex
                 })
                 .eq('id', session.user?.id)
                 .select()
@@ -630,6 +633,27 @@ function Page() {
                                                 )}
                                             </div>
                                         </div>
+                                        <div className="flex items-center space-x-3">
+                                            <User className="w-5 h-5 text-gray-400" />
+                                            <div>
+                                                <div className="text-sm text-gray-500">Sex</div>
+                                                {isEditingProfile ? (
+                                                    <select
+                                                        value={profileData.sex}
+                                                        onChange={e => setProfileData({ ...profileData, sex: e.target.value })}
+                                                        className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                                                    >
+                                                        <option value="">Select...</option>
+                                                        <option value="male">Male</option>
+                                                        <option value="female">Female</option>
+                                                        <option value="other">Other</option>
+                                                        <option value="prefer_not_to_say">Prefer not to say</option>
+                                                    </select>
+                                                ) : (
+                                                    <div className="font-medium">{profileData?.sex ? profileData.sex.charAt(0).toUpperCase() + profileData.sex.slice(1).replaceAll('_', ' ') : ''}</div>
+                                                )}
+                                            </div>
+                                        </div>
                                     </div>
 
                                     <div className="space-y-4">
@@ -711,7 +735,7 @@ function Page() {
             case 'payments':
                 return (
                     <div className="space-y-6">
-                        <div className="bg-white rounded-lg shadow p-6">
+                        {/* <div className="bg-white rounded-lg shadow p-6">
                             <h3 className="text-lg font-semibold mb-4">Payment Methods</h3>
                             <div className="flex items-center space-x-4 p-4 border rounded-lg">
                                 <CreditCard className="w-8 h-8 text-blue-600" />
@@ -721,20 +745,8 @@ function Page() {
                                 </div>
                                 <button className="ml-auto text-blue-600 hover:text-blue-700">Edit</button>
                             </div>
-                        </div>
-
-                        {/* <div className="bg-white rounded-lg shadow p-6">
-                            <h3 className="text-lg font-semibold mb-4">Payout Information</h3>
-                            <div className="flex items-center space-x-4 p-4 border rounded-lg">
-                                <Wallet className="w-8 h-8 text-green-600" />
-                                <div>
-                                    <div className="font-medium">Direct Deposit</div>
-                                    <div className="text-sm text-gray-500">Account ending in 1234</div>
-                                </div>
-                                <button className="ml-auto text-blue-600 hover:text-blue-700">Edit</button>
-                                <PayoutsSection />
-                            </div>
                         </div> */}
+
 
                         <div className="bg-white rounded-lg shadow p-6">
                             <h3 className="text-lg font-semibold mb-4">Recent Transactions</h3>
