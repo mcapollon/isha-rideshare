@@ -46,7 +46,7 @@ const luggageOptions = [
     { value: "large", label: "Large" },
 ]
 
-export default function RideDetailsStep() {
+export default function RideDetailsStep({ vehicles = [] }) {
     const { register, control, setValue, setError, formState: { errors }, clearErrors } = useFormContext()
 
     const formStoreStartingCoordinates = useFormStore((state) => state.formStoreStartingCoordinates)
@@ -188,6 +188,32 @@ export default function RideDetailsStep() {
                     )}
                 />
                 {errors.seats && <span className="text-red-500">{errors.seats.message}</span>}
+            </div>
+            <div className="space-y-2">
+                <Label htmlFor="vehicleId">Vehicle</Label>
+                <Controller
+                    name="vehicleId"
+                    control={control}
+                    defaultValue=""
+                    render={({ field }) => (
+                        <Select {...field} onValueChange={(e) => { field.onChange(e); clearErrors('vehicleId') }}>
+                            <SelectTrigger autoComplete="off">
+                                <SelectValue placeholder="Select your vehicle" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {vehicles.map((vehicle) => (
+                                    <SelectItem key={vehicle.id} value={vehicle.id.toString()}>
+                                        {vehicle.year} {vehicle.make} {vehicle.model} {vehicle.color ? `(${vehicle.color})` : ''}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    )}
+                />
+                {vehicles.length === 0 && (
+                    <div className="text-sm text-gray-500 mt-1">No vehicles found. Add one in your account.</div>
+                )}
+                {errors.vehicleId && <span className="text-red-500">{errors.vehicleId.message}</span>}
             </div>
             <div className="space-y-2 col-span-full">
                 <Label>Luggage</Label>

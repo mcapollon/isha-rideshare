@@ -21,12 +21,26 @@ const steps = ['Ride Details', 'Pricing', 'Review'];
 
 export default function MultistepForm() {
     const [step, setStep] = useState(1)
-
+    const [vehicles, setVehicles] = useState([])
     const formStoreRouteStatus = useFormStore((state) => state.formStoreRouteStatus)
     const formStoreStartingCoordinates = useFormStore((state) => state.formStoreStartingCoordinates)
     const formStoreRideDuration = useFormStore((state) => state.formStoreRideDuration)
-
     const {data: session} = useSession()
+
+    // Fetch vehicles for the current user
+    useEffect(() => {
+        async function fetchVehicles() {
+            if (!session?.user?.id) return;
+            const supabase = createClient();
+            const { data, error } = await supabase
+                .from('vehicles')
+                .select('*')
+                .eq('user_id', session.user.id)
+                .order('created_at', { ascending: false });
+            if (!error && data) setVehicles(data);
+        }
+        fetchVehicles();
+    }, [session]);
 
     const schema = yup
         .object({
@@ -45,7 +59,8 @@ export default function MultistepForm() {
             departure: yup.date().required('Departure date & time is required'),
             seats: yup.string().required('Please choose the amount of available seats for your trip'),
             luggage: yup.string().required('Please choose luggage'),
-            description: yup.string().required('Description is required')
+            description: yup.string().required('Description is required'),
+            vehicleId: yup.string().required('Please select a vehicle'),
 
         })
         .required()
@@ -60,7 +75,8 @@ export default function MultistepForm() {
             seats: '',
             luggage: '',
             description: '',
-            rideDistanceMeters: null
+            rideDistanceMeters: null,
+            vehicleId: '',
         },
         resolver: yupResolver(schema),
     })
@@ -85,7 +101,12 @@ export default function MultistepForm() {
     const onSubmit = async (data) => {
         try {
             const supabase = createClient()
-            
+            // Format departure as local time string (YYYY-MM-DDTHH:mm)
+            let departureLocal = null;
+            if (data.departure instanceof Date && !isNaN(data.departure)) {
+                const pad = n => n.toString().padStart(2, '0');
+                departureLocal = `${data.departure.getFullYear()}-${pad(data.departure.getMonth()+1)}-${pad(data.departure.getDate())}T${pad(data.departure.getHours())}:${pad(data.departure.getMinutes())}`;
+            }
             // First get the driver's Stripe Connect ID
             const { data: userData, error: userError } = await supabase.schema('next_auth')
                 .from('users')
@@ -113,7 +134,7 @@ export default function MultistepForm() {
                     startingPointCoordinates: formStoreStartingCoordinates,
                     startingCity: data.startingCity,
                     ishaYogaCenter: data.ishaYogaCenter,
-                    departure: data.departure,
+                    departure: departureLocal,
                     seats: data.seats,
                     luggage: data.luggage,
                     description: data.description,
@@ -124,7 +145,8 @@ export default function MultistepForm() {
                     seatsRemaining: data.seats,
                     driver_stripe_connect_id: userData.stripe_connect_id,
                     payInCash: data.payInCash,
-                    currency: data.currency
+                    currency: data.currency,
+                    vehicle_id: data.vehicleId,
                 })
                 
             if (error) {
@@ -143,7 +165,7 @@ export default function MultistepForm() {
     const renderStep = () => {
         switch (step) {
             case 1:
-                return <RideDetailsStep />
+                return <RideDetailsStep vehicles={vehicles} />
             case 2:
                 return <PricingStep />
             case 3:

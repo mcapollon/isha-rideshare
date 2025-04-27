@@ -54,6 +54,7 @@ function Page({ params }) {
   const [convertedPricePerSeat, setConvertedPricePerSeat] = useState(null);
   const [convertedServiceFee, setConvertedServiceFee] = useState(null);
   const [convertedTotal, setConvertedTotal] = useState(null);
+  const [vehicle, setVehicle] = useState(null);
 
   // Fetch exchange rates and convert prices
   useEffect(() => {
@@ -168,6 +169,18 @@ function Page({ params }) {
       updatePaymentStoreAmountInCents(ride.pricePerSeat)
       updatePaymentStorePaymentStoreSeatLimit(ride.seats)
       setLoading(false)
+
+      // Fetch vehicle info if available
+      if (ride.vehicle_id) {
+        const { data: vehicleData, error: vehicleError } = await supabase
+          .from('vehicles')
+          .select('*')
+          .eq('id', ride.vehicle_id)
+          .single();
+        if (!vehicleError) setVehicle(vehicleData);
+      } else {
+        setVehicle(null);
+      }
     }
   }
 
@@ -412,11 +425,19 @@ function Page({ params }) {
                 <div className="font-medium">{rideData.seatsRemaining} seats available</div>
               </div>
 
-              {/* // TODO Need to collect vehicule information during ride creation */}
-              {/* <div className="flex items-center space-x-3">
-                <Car className="w-6 h-6 text-gray-400" />
-                <div className="font-medium">Tesla Model 3 (2022) · White</div>
-              </div> */}
+              {vehicle && (
+                <div className="flex items-center space-x-3 mt-2">
+                  <Car className="w-6 h-6 text-gray-400" />
+                  <div className="flex items-center space-x-3">
+                    {vehicle.image_url && (
+                      <img src={vehicle.image_url} alt="Vehicle" className="w-16 h-10 object-cover rounded border" />
+                    )}
+                    <div className="font-medium">
+                      {vehicle.year} {vehicle.make} {vehicle.model}{vehicle.color ? ` · ${vehicle.color}` : ''}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
