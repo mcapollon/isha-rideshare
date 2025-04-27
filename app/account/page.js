@@ -78,6 +78,7 @@ function Page() {
     const [vehicleDeleteLoading, setVehicleDeleteLoading] = useState(false);
     const [vehicleDeleteError, setVehicleDeleteError] = useState('');
     const [vehicleDeleteSuccess, setVehicleDeleteSuccess] = useState('');
+    const [vehicleImageFile, setVehicleImageFile] = useState(null);
 
     const searchParams = useSearchParams()
 
@@ -451,12 +452,31 @@ function Page() {
         setVehicleFormError('');
         setVehicleFormSuccess('');
         setVehicleFormLoading(true);
+        let imageUrl = '';
         try {
-            const imageRes = await fetch(`https://www.carimagery.com/api.asmx/GetImageUrl?searchTerm=${encodeURIComponent(vehicleForm.year + ' ' + vehicleForm.make + ' ' + vehicleForm.model)}`);
-            const imageText = await imageRes.text();
-            const imageUrlMatch = imageText.match(/<string xmlns=\".*?\">(.*?)<\/string>/);
-            const imageUrl = imageUrlMatch ? imageUrlMatch[1] : '';
-
+            // If user uploaded an image, upload to Supabase Storage
+            if (vehicleImageFile) {
+                const fileExt = vehicleImageFile.name.split('.').pop();
+                const fileName = `${crypto.randomUUID()}.${fileExt}`;
+                const filePath = `vehicle-images/${fileName}`;
+                const { data, error } = await supabase.storage
+                    .from('profile-pictures')
+                    .upload(filePath, vehicleImageFile, {
+                        cacheControl: '3600',
+                    });
+                if (error) throw error;
+                const { data: publicURL } = supabase
+                    .storage
+                    .from('profile-pictures')
+                    .getPublicUrl(data.path);
+                imageUrl = publicURL.publicUrl;
+            } else {
+                // Fallback to carimagery.com API (does not support color)
+                const carimageryRes = await fetch(`https://www.carimagery.com/api.asmx/GetImageUrl?searchTerm=${encodeURIComponent(vehicleForm.year + ' ' + vehicleForm.make + ' ' + vehicleForm.model)}`);
+                const carimageryText = await carimageryRes.text();
+                const match = carimageryText.match(/<string xmlns=\"http:\/\/www.carimagery.com\/\">(.*)<\/string>/);
+                imageUrl = match ? match[1] : '';
+            }
             const { error } = await supabase.from('vehicles').insert({
                 user_id: session.user.id,
                 make: vehicleForm.make,
@@ -468,6 +488,7 @@ function Page() {
             if (error) throw error;
             setVehicleFormSuccess('Vehicle added!');
             setVehicleForm({ make: '', model: '', year: '', color: '' });
+            setVehicleImageFile(null);
             fetchUserVehicles();
         } catch (err) {
             setVehicleFormError('Failed to add vehicle.');
@@ -1255,6 +1276,10 @@ function Page() {
                                 <input required type="text" placeholder="Model" value={vehicleForm.model} onChange={e => setVehicleForm({ ...vehicleForm, model: e.target.value })} className="border rounded px-3 py-2" />
                                 <input required type="number" placeholder="Year" value={vehicleForm.year} onChange={e => setVehicleForm({ ...vehicleForm, year: e.target.value })} className="border rounded px-3 py-2" />
                                 <input type="text" placeholder="Color" value={vehicleForm.color} onChange={e => setVehicleForm({ ...vehicleForm, color: e.target.value })} className="border rounded px-3 py-2" />
+                                <div className="col-span-1 md:col-span-2">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Upload Car Image (optional)</label>
+                                    <input type="file" accept="image/*" onChange={e => setVehicleImageFile(e.target.files[0])} className="border rounded px-3 py-2 w-full" />
+                                </div>
                                 <button type="submit" disabled={vehicleFormLoading} className="col-span-1 md:col-span-2 bg-amber-600 text-white rounded px-4 py-2 mt-2 disabled:opacity-60">{vehicleFormLoading ? 'Adding...' : 'Add Vehicle'}</button>
                                 {vehicleFormError && <div className="col-span-2 text-red-500">{vehicleFormError}</div>}
                                 {vehicleFormSuccess && <div className="col-span-2 text-green-600">{vehicleFormSuccess}</div>}

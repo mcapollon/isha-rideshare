@@ -60,8 +60,6 @@ export default function MultistepForm() {
             seats: yup.string().required('Please choose the amount of available seats for your trip'),
             luggage: yup.string().required('Please choose luggage'),
             description: yup.string().required('Description is required'),
-            vehicleId: yup.string().required('Please select a vehicle'),
-
         })
         .required()
 
@@ -146,7 +144,7 @@ export default function MultistepForm() {
                     driver_stripe_connect_id: userData.stripe_connect_id,
                     payInCash: data.payInCash,
                     currency: data.currency,
-                    vehicle_id: data.vehicleId,
+                    vehicle_id: data.vehicleId ? data.vehicleId : null,
                 })
                 
             if (error) {
