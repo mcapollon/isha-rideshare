@@ -6,10 +6,14 @@ import { useSearchParams } from 'next/navigation'
 import { format } from "date-fns";
 import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
+import usePaymentStore from '../../components/payment-form/paymentStore'
 
 function Page() {
   const searchParams = useSearchParams()
   const { data: session, status } = useSession()
+  const paymentStoreIsCash = usePaymentStore((state) => state.paymentStoreIsCash)
+  const paymentStoreDisplayTotal = usePaymentStore((state) => state.paymentStoreDisplayTotal)
+  const paymentStorePricePerSeat = usePaymentStore((state) => state.paymentStorePricePerSeat)
 
   useEffect(() => {
     if (status !== 'loading' && !session) {
@@ -25,8 +29,9 @@ function Page() {
     )
   }
 
-  const pricePerSeat = searchParams.get('pricePerSeat')
-  const amount = searchParams.get('amount') / 100
+  // Use paymentStore values for display if available
+  const pricePerSeat = paymentStorePricePerSeat || searchParams.get('pricePerSeat')
+  const amount = paymentStoreDisplayTotal || (searchParams.get('amount') / 100)
   const currency = searchParams.get('curr')
   const seatsBooked = searchParams.get('seats')
   const serviceFee = searchParams.get('serviceFee')
@@ -36,6 +41,7 @@ function Page() {
   const rideDuration = searchParams.get('duration')
   const rideDistance = searchParams.get('distance')
   const currencySymbols = { USD: '$', CAD: 'CA$', INR: '₹' };
+  const payInCash = searchParams.get('payInCash') === 'true';
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -75,10 +81,15 @@ function Page() {
           {/* Payment Details */}
           <div className="bg-gray-50 rounded-lg p-6 mb-8">
             <h2 className="font-semibold text-lg mb-4">Payment Details</h2>
+            {payInCash && (
+              <div className="mb-4 p-3 rounded bg-amber-100 text-amber-700 text-sm font-medium">
+                This ride is paid in cash to the driver. Please prepare the cash amount shown below and pay your driver directly.
+              </div>
+            )}
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span className="text-gray-600">Seat price</span>
-                <span className="font-medium">{currencySymbols[currency] || currency}{(amount - serviceFee) / seatsBooked}</span>
+                <span className="font-medium">{currencySymbols[currency] || currency}{pricePerSeat}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Service fee</span>

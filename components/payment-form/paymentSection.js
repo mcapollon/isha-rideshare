@@ -35,7 +35,8 @@ export default function PaymentSection({ totalPrice, tripSummary, ref, session, 
         seats, 
         session,
         serviceFee,
-        pricePerSeat: pricePerSeat 
+        pricePerSeat: pricePerSeat,
+        payInCash: tripSummary.payInCash // Pass payInCash to API
       }) 
     })
       .then((res) => {
@@ -80,7 +81,7 @@ export default function PaymentSection({ totalPrice, tripSummary, ref, session, 
         elements,
         clientSecret,
         confirmParams: {
-          return_url: `${window.location.origin}/payment-success?id=${tripSummary.id}&amount=${totalPrice}&serviceFee=${serviceFee}&curr=${currency.toUpperCase()}&pricePerSeat=${pricePerSeat}&startingCity=${encodeURI(tripSummary?.startingCity)}&iyc=${encodeURI(tripSummary?.ishaYogaCenter)}&departure=${tripSummary?.departure}&duration=${tripSummary.rideDuration}&distance=${tripSummary.rideDistanceKm}&seats=${seats}`,
+          return_url: `${window.location.origin}/payment-success?id=${tripSummary.id}&amount=${totalPrice}&serviceFee=${serviceFee}&curr=${currency.toUpperCase()}&pricePerSeat=${pricePerSeat}&startingCity=${encodeURI(tripSummary?.startingCity)}&iyc=${encodeURI(tripSummary?.ishaYogaCenter)}&departure=${tripSummary?.departure}&duration=${tripSummary.rideDuration}&distance=${tripSummary.rideDistanceKm}&seats=${seats}&payInCash=${tripSummary.payInCash}`,
         },
       });
 

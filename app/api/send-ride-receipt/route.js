@@ -20,7 +20,8 @@ export async function POST(request) {
                 driverName,
                 userName,
                 currency,
-                serviceFee
+                serviceFee,
+                payInCash // Add payInCash from tripDetails
             }
         } = await request.json()
 
@@ -42,7 +43,8 @@ export async function POST(request) {
                 driverName: driverName,
                 userName: userName,
                 currency,
-                serviceFee
+                serviceFee,
+                payInCash: !!payInCash // Pass payInCash to email
             })
         })
 

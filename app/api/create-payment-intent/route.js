@@ -4,7 +4,7 @@ import { createClient } from '@/utils/supabase/server';
 
 export async function POST(request) {
   try {
-    const { amount, session, rideData, seats, currency, pricePerSeat, serviceFee } = await request.json();
+    const { amount, session, rideData, seats, currency, pricePerSeat, serviceFee, payInCash } = await request.json();
     console.log(pricePerSeat, 'payment intent price per seat')
     let rideId = rideData.id
 
@@ -78,7 +78,8 @@ export async function POST(request) {
         userId: session.user.id,
         userEmail: session.user.email,
         amount,
-        serviceFee
+        serviceFee,
+        payInCash: payInCash ? 'true' : 'false' // Add payInCash to metadata
       }
     });
     

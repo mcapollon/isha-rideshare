@@ -38,6 +38,7 @@ export const RideReceiptEmail = ({
   paymentMethod = 'Visa •••• 4242',
   paymentIntent = 'RIDE-12345',
   currency = 'USD',
+  payInCash = false // Add payInCash prop
 }) => {
   const baseUrl = 'https://isharideshare.com';
   const currencySymbols = { USD: '$', CAD: 'CA$', INR: '₹' };
@@ -63,7 +64,6 @@ export const RideReceiptEmail = ({
           {/* Main Content */}
           <Section style={content}>
             <Heading style={heading}>Your Ride Receipt</Heading>
-            
             <Text style={thankYouText}>
               Thank you for riding with Isha RideShare, {userName}!
             </Text>
@@ -127,6 +127,11 @@ export const RideReceiptEmail = ({
             {/* Payment Details */}
             <Section style={paymentSection}>
               <Text style={sectionTitle}>Payment Details</Text>
+              {payInCash && (
+                <Text style={{...paymentValue, color: '#D97706', marginBottom: 12}}>
+                  This ride is paid in cash to the driver. Please prepare the cash amount and pay your driver directly.
+                </Text>
+              )}
               <Row style={paymentRow}>
                 <Column>
                   <Text style={paymentLabel}>Ride fare</Text>
@@ -154,10 +159,10 @@ export const RideReceiptEmail = ({
               <Hr style={divider} />
               <Row style={totalRow}>
                 <Column>
-                  <Text style={totalLabel}>Total</Text>
+                  <Text style={totalLabel}>Total Paid</Text>
                 </Column>
                 <Column style={{ textAlign: 'right' }}>
-                  <Text style={totalValue}>{symbol}{totalAmount}</Text>
+                  <Text style={totalValue}>{symbol}{payInCash ? serviceFee : totalAmount}</Text>
                 </Column>
               </Row>
               

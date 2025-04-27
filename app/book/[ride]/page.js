@@ -32,6 +32,10 @@ function Page({ params }) {
   const paymentStorePricePerSeat = usePaymentStore((state) => state.paymentStorePricePerSeat)
   const paymentStoreServiceFee = usePaymentStore((state) => state.paymentStoreServiceFee)
   const paymentStoreAmountInCents = usePaymentStore((state) => state.paymentStoreAmountInCents)
+  const paymentStoreIsCash = usePaymentStore((state) => state.paymentStoreIsCash)
+  const paymentStoreDisplayTotal = usePaymentStore((state) => state.paymentStoreDisplayTotal)
+  const updatePaymentStoreIsCash = usePaymentStore((state) => state.updatePaymentStoreIsCash)
+  const updatePaymentStoreDisplayTotal = usePaymentStore((state) => state.updatePaymentStoreDisplayTotal)
   const updatePaymentStorePricePerSeat = usePaymentStore((state) => state.updatePaymentStorePricePerSeat)
   const updatePaymentStoreAmount = usePaymentStore((state) => state.updatePaymentStoreAmount)
   const updatePaymentStoreAmountInCents = usePaymentStore((state) => state.updatePaymentStoreAmountInCents)
@@ -70,21 +74,33 @@ function Page({ params }) {
         };
         const convertedSeat = convert(pricePerSeat, from, to);
         const convertedFee = convert(serviceFeeCAD, 'CAD', to);
-        const convertedTotal = convert((seatCount * pricePerSeat), from, to) + convertedFee;
-        setConvertedPricePerSeat(convertedSeat);
-        setConvertedServiceFee(convertedFee);
-        setConvertedTotal(convertedTotal);
-        // Update payment store with converted values
-        updatePaymentStorePricePerSeat(convertedSeat);
-        updatePaymentStoreServiceFee(convertedFee);
-        updatePaymentStoreAmount(convertedTotal);
-        updatePaymentStoreAmountInCents(convertedTotal);
+        let convertedTotal;
+        setConvertedPricePerSeat(convertedSeat); // Always set for display
+        if (rideData.payInCash) {
+          // Only charge the service fee, but display the real total
+          setConvertedServiceFee(convertedFee);
+          setConvertedTotal(convertedFee);
+          updatePaymentStoreIsCash(true);
+          updatePaymentStorePricePerSeat(convertedSeat); // for display
+          updatePaymentStoreServiceFee(convertedFee);
+          updatePaymentStoreAmount(convertedFee); // for Stripe
+          updatePaymentStoreAmountInCents(convertedFee);
+          updatePaymentStoreDisplayTotal((seatCount * convertedSeat) + convertedFee); // real total for display/receipt
+        } else {
+          convertedTotal = (seatCount * convertedSeat) + convertedFee;
+          setConvertedServiceFee(convertedFee);
+          setConvertedTotal(convertedTotal);
+          updatePaymentStoreIsCash(false);
+          updatePaymentStorePricePerSeat(convertedSeat);
+          updatePaymentStoreServiceFee(convertedFee);
+          updatePaymentStoreAmount(convertedTotal);
+          updatePaymentStoreAmountInCents(convertedTotal);
+          updatePaymentStoreDisplayTotal(convertedTotal);
+        }
       }
-
-      console.log(paymentStorePricePerSeat, 'price per seat payment store')
     }
     if (rideData) fetchRatesAndConvert();
-  }, [rideData, userCurrency, seatCount, paymentStorePricePerSeat]);
+  }, [rideData, userCurrency, seatCount]);
 
   const currencySymbols = { USD: '$', CAD: 'CA$', INR: '₹' };
 
@@ -485,9 +501,14 @@ function Page({ params }) {
           <div className="bg-white rounded-xl shadow-sm p-6 sticky top-8">
             <div className="text-center mb-6">
               <div className="text-3xl font-bold text-black">
-                {convertedPricePerSeat !== null ? `${currencySymbols[userCurrency] || userCurrency}${convertedPricePerSeat}` : `$${paymentStorePricePerSeat}`}
+                {convertedPricePerSeat !== null ? `${currencySymbols[userCurrency] || userCurrency}${convertedPricePerSeat}` : '...'}
               </div>
               <div className="text-gray-500">per seat</div>
+              {rideData?.payInCash && (
+                <div className="mt-2 text-xs text-amber-600 font-medium">
+                  This ride is paid in cash to the driver
+                </div>
+              )}
             </div>
 
             <div className="space-y-4 mb-6">

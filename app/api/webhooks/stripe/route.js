@@ -74,6 +74,13 @@ export async function POST(request) {
       const userId = metadata.userId
       const baseUrl = process.env.BASE_URL
       const currency = paymentIntent.currency
+      const payInCash = metadata.payInCash === 'true';
+      let displayTotal;
+      if (payInCash) {
+        displayTotal = (pricePerSeat * seats) + Number(serviceFee);
+      } else {
+        displayTotal = amount / 100;
+      }
 
       console.log(amount, 'webhook success amount')
       console.log(currency, 'webhook success currency')
@@ -145,12 +152,13 @@ export async function POST(request) {
             rideDistanceKm: distance,
             seatsBooked: seats,
             pricePerSeat: pricePerSeat,
-            totalAmount: (amount / 100).toFixed(2),
+            totalAmount: displayTotal,
             paymentIntent: paymentIntent.id,
             driverName: driver.name,
             userName,
             currency,
-            serviceFee
+            serviceFee,
+            payInCash
           }
         })
       });
