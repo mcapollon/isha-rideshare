@@ -47,6 +47,8 @@ function Page() {
     const [activeTab, setActiveTab] = useState('profile');
     const [userListings, setUserListings] = useState([]);
     const [userBookings, setUserBookings] = useState([]);
+    const [userVehicles, setUserVehicles] = useState([]);
+    const [vehicleForm, setVehicleForm] = useState({ make: '', model: '', year: '', color: '' });
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [isBookingDetailsModalOpen, setIsBookingDetailsModalOpen] = useState(false);
@@ -69,6 +71,13 @@ function Page() {
     const [driverReviews, setDriverReviews] = useState([]);
     const [reviewsLoading, setReviewsLoading] = useState(true);
     const [averageRating, setAverageRating] = useState(0);
+    const [vehicleFormLoading, setVehicleFormLoading] = useState(false);
+    const [vehicleFormError, setVehicleFormError] = useState('');
+    const [vehicleFormSuccess, setVehicleFormSuccess] = useState('');
+    const [vehicleToDelete, setVehicleToDelete] = useState(null);
+    const [vehicleDeleteLoading, setVehicleDeleteLoading] = useState(false);
+    const [vehicleDeleteError, setVehicleDeleteError] = useState('');
+    const [vehicleDeleteSuccess, setVehicleDeleteSuccess] = useState('');
 
     const searchParams = useSearchParams()
 
@@ -102,6 +111,8 @@ function Page() {
         if (activeTab === 'reviews') {
             fetchDriverReviews();
         }
+
+        if (activeTab === 'vehicles') fetchUserVehicles();
     }, [activeTab, session?.user?.id])
 
     // Move the fetchDriverReviews function outside of the renderTabContent
@@ -435,13 +446,75 @@ function Page() {
         }
     };
 
+    const handleAddVehicle = async (e) => {
+        e.preventDefault();
+        setVehicleFormError('');
+        setVehicleFormSuccess('');
+        setVehicleFormLoading(true);
+        try {
+            const imageRes = await fetch(`https://www.carimagery.com/api.asmx/GetImageUrl?searchTerm=${encodeURIComponent(vehicleForm.year + ' ' + vehicleForm.make + ' ' + vehicleForm.model)}`);
+            const imageText = await imageRes.text();
+            const imageUrlMatch = imageText.match(/<string xmlns=\".*?\">(.*?)<\/string>/);
+            const imageUrl = imageUrlMatch ? imageUrlMatch[1] : '';
+
+            const { error } = await supabase.from('vehicles').insert({
+                user_id: session.user.id,
+                make: vehicleForm.make,
+                model: vehicleForm.model,
+                year: vehicleForm.year,
+                color: vehicleForm.color,
+                image_url: imageUrl
+            });
+            if (error) throw error;
+            setVehicleFormSuccess('Vehicle added!');
+            setVehicleForm({ make: '', model: '', year: '', color: '' });
+            fetchUserVehicles();
+        } catch (err) {
+            setVehicleFormError('Failed to add vehicle.');
+        } finally {
+            setVehicleFormLoading(false);
+        }
+    }
+
+    async function fetchUserVehicles() {
+        if (!session?.user?.id) return;
+        const { data, error } = await supabase
+            .from('vehicles')
+            .select('*')
+            .eq('user_id', session.user.id)
+            .order('created_at', { ascending: false });
+        if (!error) setUserVehicles(data || []);
+    }
+
+    // Delete vehicle handler
+    async function handleDeleteVehicle(vehicleId) {
+        setVehicleDeleteLoading(true);
+        setVehicleDeleteError('');
+        setVehicleDeleteSuccess('');
+        try {
+            const { error } = await supabase.from('vehicles').delete().eq('id', vehicleId);
+            if (error) throw error;
+            setVehicleDeleteSuccess('Vehicle deleted!');
+            setTimeout(() => {
+                setVehicleDeleteSuccess('');
+            }, 3000)
+            setVehicleToDelete(null);
+            fetchUserVehicles();
+        } catch (err) {
+            setVehicleDeleteError('Failed to delete vehicle.');
+        } finally {
+            setVehicleDeleteLoading(false);
+        }
+    }
+
     const tabs = [
         { id: 'profile', label: 'Profile & Personal Information', icon: User },
         { id: 'payments', label: 'Payments & Payouts', icon: CreditCard },
         { id: 'rides', label: 'Rides & Bookings', icon: Car },
         { id: 'listings', label: 'My Listings', icon: Users },
         { id: 'reviews', label: 'My Reviews', icon: Star },
-        {id: 'payouts', label: 'Driver Payouts', icon: Wallet}
+        {id: 'payouts', label: 'Driver Payouts', icon: Wallet},
+        { id: 'vehicles', label: 'My Vehicles', icon: Car },
     ];
 
     const renderTabContent = () => {
@@ -1142,6 +1215,76 @@ function Page() {
                                 </div>
                             )}
                         </div>
+                    </div>
+                );
+
+            case 'vehicles':
+                return (
+                    <div className="space-y-8">
+                        <div>
+                            <h3 className="text-lg font-semibold mb-4">My Vehicles</h3>
+                            {userVehicles.length === 0 ? (
+                                <div className="text-gray-500">No vehicles added yet.</div>
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    {userVehicles.map(vehicle => (
+                                        <div key={vehicle.id} className="border rounded-lg p-4 flex items-center space-x-4 bg-gray-50 relative">
+                                            <img src={vehicle.image_url || '/default-user-icon.png'} alt="Vehicle" className="w-24 h-16 object-cover rounded" />
+                                            <div>
+                                                <div className="font-medium">{vehicle.year} {vehicle.make} {vehicle.model}</div>
+                                                <div className="text-sm text-gray-600">Color: {vehicle.color || 'N/A'}</div>
+                                            </div>
+                                            <button
+                                                className="absolute top-2 right-2 text-red-500 hover:text-red-700"
+                                                onClick={() => setVehicleToDelete(vehicle.id)}
+                                                title="Delete vehicle"
+                                            >
+                                                <Trash2 className="w-5 h-5" />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                            {vehicleDeleteError && <div className="text-red-500 mt-2">{vehicleDeleteError}</div>}
+                            {vehicleDeleteSuccess && <div className="text-green-600 mt-2">{vehicleDeleteSuccess}</div>}
+                        </div>
+                        <div className="bg-white rounded-lg shadow p-6">
+                            <h4 className="text-md font-semibold mb-2">Add a Vehicle</h4>
+                            <form onSubmit={handleAddVehicle} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <input required type="text" placeholder="Make" value={vehicleForm.make} onChange={e => setVehicleForm({ ...vehicleForm, make: e.target.value })} className="border rounded px-3 py-2" />
+                                <input required type="text" placeholder="Model" value={vehicleForm.model} onChange={e => setVehicleForm({ ...vehicleForm, model: e.target.value })} className="border rounded px-3 py-2" />
+                                <input required type="number" placeholder="Year" value={vehicleForm.year} onChange={e => setVehicleForm({ ...vehicleForm, year: e.target.value })} className="border rounded px-3 py-2" />
+                                <input type="text" placeholder="Color" value={vehicleForm.color} onChange={e => setVehicleForm({ ...vehicleForm, color: e.target.value })} className="border rounded px-3 py-2" />
+                                <button type="submit" disabled={vehicleFormLoading} className="col-span-1 md:col-span-2 bg-amber-600 text-white rounded px-4 py-2 mt-2 disabled:opacity-60">{vehicleFormLoading ? 'Adding...' : 'Add Vehicle'}</button>
+                                {vehicleFormError && <div className="col-span-2 text-red-500">{vehicleFormError}</div>}
+                                {vehicleFormSuccess && <div className="col-span-2 text-green-600">{vehicleFormSuccess}</div>}
+                            </form>
+                        </div>
+                        {/* Vehicle delete confirmation dialog */}
+                        {vehicleToDelete && (
+                            <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
+                                <div className="bg-white rounded-lg shadow-lg p-6 max-w-sm w-full">
+                                    <h4 className="text-lg font-semibold mb-4">Delete Vehicle</h4>
+                                    <p className="mb-4">Are you sure you want to delete this vehicle?</p>
+                                    <div className="flex justify-end gap-2">
+                                        <button
+                                            className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+                                            onClick={() => setVehicleToDelete(null)}
+                                            disabled={vehicleDeleteLoading}
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-60"
+                                            onClick={() => handleDeleteVehicle(vehicleToDelete)}
+                                            disabled={vehicleDeleteLoading}
+                                        >
+                                            {vehicleDeleteLoading ? 'Deleting...' : 'Delete'}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 );
 
