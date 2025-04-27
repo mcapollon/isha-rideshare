@@ -953,8 +953,11 @@ function Page() {
                                                     <div className="flex items-center justify-between border-t pt-4">
                                                         <div className="flex items-center space-x-4">
                                                             <div className="text-sm">
-                                                                <span className="font-medium text-green-600">${listing.pricePerSeat}</span>
-                                                                <span className="text-gray-500"> per seat</span>
+                                                                {(() => {
+                                                                    const currencySymbols = { USD: '$', CAD: 'CA$', INR: '₹' };
+                                                                    const symbol = currencySymbols[listing.currency] || listing.currency;
+                                                                    return <><span className="font-medium text-green-600">{symbol}{listing.pricePerSeat}</span><span className="text-gray-500"> per seat</span></>;
+                                                                })()}
                                                             </div>
                                                             {listing.bookings?.length > 0 && (
                                                                 <button
@@ -970,8 +973,11 @@ function Page() {
                                                         </div>
                                                         {listing.bookings?.length > 0 && (
                                                             <div className="text-sm">
-                                                                <span className="font-medium text-green-600">${listing.pricePerSeat * listing.bookedSeats}</span>
-                                                                <span className="text-gray-500"> total earnings</span>
+                                                                {(() => {
+                                                                    const currencySymbols = { USD: '$', CAD: 'CA$', INR: '₹' };
+                                                                    const symbol = currencySymbols[listing.currency] || listing.currency;
+                                                                    return <><span className="font-medium text-green-600">{symbol}{listing.pricePerSeat * listing.bookedSeats}</span><span className="text-gray-500"> total earnings</span></>;
+                                                                })()}
                                                             </div>
                                                         )}
                                                     </div>

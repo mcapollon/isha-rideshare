@@ -68,6 +68,7 @@ export default function MultistepForm() {
     const { setValue, getValues, setError, clearErrors } = methods
 
     const nextStep = (data) => {
+        console.log("Form data:", methods.getValues())
         methods.trigger().then((isValid) => {
             if (step > 1) {
                 if (isValid) {
@@ -121,7 +122,9 @@ export default function MultistepForm() {
                     pricePerSeat: data.pricePerSeat,
                     createdByUser: session.user.id,
                     seatsRemaining: data.seats,
-                    driver_stripe_connect_id: userData.stripe_connect_id
+                    driver_stripe_connect_id: userData.stripe_connect_id,
+                    payInCash: data.payInCash,
+                    currency: data.currency
                 })
                 
             if (error) {

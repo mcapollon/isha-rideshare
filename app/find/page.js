@@ -15,6 +15,7 @@ import Autocomplete from "react-google-autocomplete";
 import Link from "next/link";
 import "../styles/custom-datepicker.css";
 import DriverRatingDisplay from '@/components/reviews/DriverRatingDisplay';
+import useGlobalStore from "@/lib/globalStore"
 
 export default function Page() {
   const ishaYogaCenters = [
@@ -200,6 +201,45 @@ export default function Page() {
     setItemsPerPage(10)
     getAllRides().then(rides => setRides(rides))
     setFormModified(false)
+  }
+
+  // Currency conversion utility
+  const currencySymbols = { USD: '$', CAD: 'CA$', INR: '₹' };
+
+  async function fetchExchangeRates(base) {
+    // Open Exchange Rates or similar API endpoint
+    // For demo, use exchangerate-api.com (free, no key required for demo)
+    // You should use your own API key and endpoint for production
+    const res = await fetch(`https://open.er-api.com/v6/latest/${base}`);
+    const data = await res.json();
+    return data.rates;
+  }
+
+  const userCurrency = useGlobalStore(state => state.globalStoreCurrency) || 'USD';
+  const [exchangeRates, setExchangeRates] = useState({ USD: 1, CAD: 1.35, INR: 83 });
+  const [convertedPrices, setConvertedPrices] = useState({});
+
+  useEffect(() => {
+    fetchExchangeRates(userCurrency).then((rates) => {
+      setExchangeRates(rates);
+      // Convert all ride prices once rates are fetched
+      const newConverted = {};
+      rides.forEach(ride => {
+        const price = ride.currency === userCurrency
+          ? ride.pricePerSeat
+          : convertPrice(ride.pricePerSeat, ride.currency, userCurrency);
+        newConverted[ride.id] = price;
+      });
+      setConvertedPrices(newConverted);
+    });
+  }, [userCurrency, rides]);
+
+  // Helper to convert price
+  function convertPrice(amount, fromCurrency, toCurrency) {
+    if (!exchangeRates[fromCurrency] || !exchangeRates[toCurrency]) return amount;
+    // Convert from 'fromCurrency' to USD, then to 'toCurrency'
+    const amountInBase = amount / exchangeRates[fromCurrency];
+    return Math.round(amountInBase * exchangeRates[toCurrency]);
   }
 
   return (
@@ -454,7 +494,15 @@ export default function Page() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-2xl font-bold text-amber-600">${ride.pricePerSeat}</div>
+                      <div className="text-2xl font-bold text-amber-600">
+                        {(() => {
+                          const symbol = currencySymbols[userCurrency] || userCurrency;
+                          const price = convertedPrices[ride.id] !== undefined
+                            ? convertedPrices[ride.id]
+                            : '...';
+                          return `${symbol}${price}`;
+                        })()}
+                      </div>
                       <div className="text-sm text-gray-500">per seat</div>
                     </div>
                   </div>

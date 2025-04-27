@@ -41,7 +41,13 @@ export default function RideCreationSuccessStep() {
                         </div>
                         <div className="flex justify-between">
                             <span className="text-gray-600">Price per Seat:</span>
-                            <span className="font-medium">${formData.pricePerSeat}</span>
+                            <span className="font-medium">
+                              {(() => {
+                                const currencySymbols = { USD: '$', CAD: 'CA$', INR: '₹' };
+                                const symbol = currencySymbols[formData.currency] || formData.currency;
+                                return `${symbol}${formData.pricePerSeat} - ${formData.currency}`;
+                              })()}
+                            </span>
                         </div>
                     </div>
                 </div>

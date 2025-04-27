@@ -12,6 +12,7 @@ import usePaymentStore from '../../../components/payment-form/paymentStore'
 import DriverRatingDisplay from '@/components/reviews/DriverRatingDisplay';
 import DriverReviews from '@/components/reviews/DriverReviews';
 import Link from 'next/link';
+import useGlobalStore from '@/lib/globalStore'
 
 if (process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY === undefined) {
   throw new Error("Stripe Public Key is not defined")
@@ -37,6 +38,7 @@ function Page({ params }) {
   const updatePaymentStoreSeatCountIncrement = usePaymentStore((state) => state.updatePaymentStoreSeatCountIncrement)
   const updatePaymentStoreSeatCountDecrement = usePaymentStore((state) => state.updatePaymentStoreSeatCountDecrement)
   const updatePaymentStorePaymentStoreSeatLimit = usePaymentStore((state) => state.updatePaymentStorePaymentStoreSeatLimit)
+  const updatePaymentStoreServiceFee = usePaymentStore((state) => state.updatePaymentStoreServiceFee)
 
   const [loading, setLoading] = useState(true)
   const [rideData, setRideData] = useState(null)
@@ -44,6 +46,47 @@ function Page({ params }) {
   const [seatCount, setSeatCount] = useState(1);
   const [isBookingInProgress, setIsBookingInProgress] = useState(false);
   const [bookedUsers, setBookedUsers] = useState([]);
+  const userCurrency = useGlobalStore(state => state.globalStoreCurrency) || 'USD';
+  const [convertedPricePerSeat, setConvertedPricePerSeat] = useState(null);
+  const [convertedServiceFee, setConvertedServiceFee] = useState(null);
+  const [convertedTotal, setConvertedTotal] = useState(null);
+
+  // Fetch exchange rates and convert prices
+  useEffect(() => {
+    async function fetchRatesAndConvert() {
+      const res = await fetch(`https://open.er-api.com/v6/latest/${rideData?.currency || 'CAD'}`);
+      const data = await res.json();
+      
+      if (rideData) {
+        const from = rideData.currency || 'CAD';
+        const to = userCurrency;
+        const pricePerSeat = rideData.pricePerSeat;
+        // Always convert service fee from CAD to user's currency
+        const serviceFeeCAD = 5;
+        const convert = (amount, fromCur, toCur) => {
+          if (!data.rates[fromCur] || !data.rates[toCur]) return amount;
+          const amountInBase = amount / data.rates[fromCur];
+          return Math.round(amountInBase * data.rates[toCur]);
+        };
+        const convertedSeat = convert(pricePerSeat, from, to);
+        const convertedFee = convert(serviceFeeCAD, 'CAD', to);
+        const convertedTotal = convert((seatCount * pricePerSeat), from, to) + convertedFee;
+        setConvertedPricePerSeat(convertedSeat);
+        setConvertedServiceFee(convertedFee);
+        setConvertedTotal(convertedTotal);
+        // Update payment store with converted values
+        updatePaymentStorePricePerSeat(convertedSeat);
+        updatePaymentStoreServiceFee(convertedFee);
+        updatePaymentStoreAmount(convertedTotal);
+        updatePaymentStoreAmountInCents(convertedTotal);
+      }
+
+      console.log(paymentStorePricePerSeat, 'price per seat payment store')
+    }
+    if (rideData) fetchRatesAndConvert();
+  }, [rideData, userCurrency, seatCount, paymentStorePricePerSeat]);
+
+  const currencySymbols = { USD: '$', CAD: 'CA$', INR: '₹' };
 
   useEffect(() => {
     if (ride.ride) {
@@ -51,16 +94,16 @@ function Page({ params }) {
     }
   }, [ride])
 
-  useEffect(() => {
-    if (rideData) {
-      updatePaymentStoreAmount((seatCount * paymentStorePricePerSeat) + paymentStoreServiceFee) // Add service fee
-      updatePaymentStoreAmountInCents((seatCount * paymentStorePricePerSeat) + paymentStoreServiceFee) 
-    }
+  // useEffect(() => {
+  //   if (rideData) {
+  //     updatePaymentStoreAmount((seatCount * paymentStorePricePerSeat) + paymentStoreServiceFee) // Add service fee
+  //     updatePaymentStoreAmountInCents((seatCount * paymentStorePricePerSeat) + paymentStoreServiceFee) 
+  //   }
 
-    console.log(paymentStoreServiceFee, 'fee')
-    console.log(paymentStoreAmount, 'payment store amount')
-    console.log(paymentStoreAmountInCents, 'payment store amount in cents')
-  }, [seatCount, paymentStorePricePerSeat, rideData]);
+  //   console.log(paymentStoreServiceFee, 'fee')
+  //   console.log(paymentStoreAmount, 'payment store amount')
+  //   console.log(paymentStoreAmountInCents, 'payment store amount in cents')
+  // }, [seatCount, paymentStorePricePerSeat, rideData]);
 
   useEffect(() => {
     async function fetchBookedUsers() {
@@ -419,16 +462,19 @@ function Page({ params }) {
                 stripe={stripePromise}
                 options={{
                   mode: 'payment',
-                  amount: paymentStoreAmountInCents,
-                  currency: 'cad'
+                  amount: convertedTotal ? convertedTotal * 100 : paymentStoreAmountInCents, // Stripe expects amount in cents/paise
+                  currency: userCurrency.toLowerCase(),
                 }}>
                 <PaymentSection 
                   ref={paymentSectionRef} 
                   totalPrice={paymentStoreAmountInCents}
+                  currency={userCurrency.toLowerCase()}
                   tripSummary={rideData}
+                  serviceFee={convertedServiceFee}
+                  pricePerSeat={paymentStorePricePerSeat}
                   seats={seatCount}
                   session={session}
-                  />
+                />
               </Elements>
             </div>
           </div>
@@ -438,7 +484,9 @@ function Page({ params }) {
         <div className="lg:col-span-1 drop-shadow-md">
           <div className="bg-white rounded-xl shadow-sm p-6 sticky top-8">
             <div className="text-center mb-6">
-              <div className="text-3xl font-bold text-black">${paymentStorePricePerSeat}</div>
+              <div className="text-3xl font-bold text-black">
+                {convertedPricePerSeat !== null ? `${currencySymbols[userCurrency] || userCurrency}${convertedPricePerSeat}` : `$${paymentStorePricePerSeat}`}
+              </div>
               <div className="text-gray-500">per seat</div>
             </div>
 
@@ -454,13 +502,13 @@ function Page({ params }) {
 
               <div className="flex justify-between text-sm">
                 <span>Service fee</span>
-                <span>${paymentStoreServiceFee}</span>
+                <span>{convertedServiceFee !== null ? `${currencySymbols[userCurrency] || userCurrency}${convertedServiceFee}` : '...'}</span>
               </div>
 
               <div className="border-t pt-4">
                 <div className="flex justify-between font-semibold">
                   <span>Total</span>
-                  <span>${paymentStoreAmount}</span>
+                  <span>{convertedTotal !== null ? `${currencySymbols[userCurrency] || userCurrency}${convertedTotal}` : '...'}</span>
                 </div>
               </div>
             </div>

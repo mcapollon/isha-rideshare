@@ -19,6 +19,8 @@ export async function POST(request) {
                 paymentIntent,
                 driverName,
                 userName,
+                currency,
+                serviceFee
             }
         } = await request.json()
 
@@ -34,11 +36,13 @@ export async function POST(request) {
                 duration: rideDuration,
                 distance: rideDistanceKm,
                 seatsBooked: seatsBooked,
-                pricePerSeat: pricePerSeat,
-                totalAmount: totalAmount,
+                pricePerSeat: typeof pricePerSeat === 'string' ? pricePerSeat.replace(/[^\d.]/g, '') : pricePerSeat,
+                totalAmount: typeof totalAmount === 'string' ? totalAmount.replace(/[^\d.]/g, '') : totalAmount,
                 paymentIntent: paymentIntent,
                 driverName: driverName,
                 userName: userName,
+                currency,
+                serviceFee
             })
         })
 

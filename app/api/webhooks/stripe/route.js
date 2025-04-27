@@ -65,13 +65,18 @@ export async function POST(request) {
       const departure = metadata.departureTime
       const driverId = metadata.driverId
       const seats = metadata.seats
-      const amount = metadata.amount
+      const amount = paymentIntent.amount
+      const serviceFee = metadata.serviceFee
       const pricePerSeat = metadata.pricePerSeat
       const rideDuration = metadata.duration
       const distance = metadata.distance
       const userName = metadata.user
       const userId = metadata.userId
       const baseUrl = process.env.BASE_URL
+      const currency = paymentIntent.currency
+
+      console.log(amount, 'webhook success amount')
+      console.log(currency, 'webhook success currency')
 
       const { data: existingBooking, error: fetchError } = await supabase
         .from('bookings')
@@ -110,6 +115,7 @@ export async function POST(request) {
             userId,
             seats_booked: seats,
             totalPrice: (amount / 100).toFixed(2),
+            currency
           },
         ])
         .select()
@@ -139,10 +145,12 @@ export async function POST(request) {
             rideDistanceKm: distance,
             seatsBooked: seats,
             pricePerSeat: pricePerSeat,
-            totalAmount: formatCurrency(amount),
+            totalAmount: (amount / 100).toFixed(2),
             paymentIntent: paymentIntent.id,
             driverName: driver.name,
             userName,
+            currency,
+            serviceFee
           }
         })
       });

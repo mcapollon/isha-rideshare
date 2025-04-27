@@ -4,7 +4,8 @@ import { createClient } from '@/utils/supabase/server';
 
 export async function POST(request) {
   try {
-    const { amount, session, rideData, seats} = await request.json();
+    const { amount, session, rideData, seats, currency, pricePerSeat, serviceFee } = await request.json();
+    console.log(pricePerSeat, 'payment intent price per seat')
     let rideId = rideData.id
 
     if (!amount || !rideId || !session || !seats) {
@@ -52,7 +53,7 @@ export async function POST(request) {
     // Create a payment intent with Connect destination and application fee
     const paymentIntent = await stripe.paymentIntents.create({
       amount: amount,
-      currency: 'cad',
+      currency: currency,
       application_fee_amount: platformFee,
       transfer_data: {
         destination: driver.stripe_connect_id,
@@ -71,12 +72,13 @@ export async function POST(request) {
         departureTime: ride.departure,
         duration: ride.rideDuration.text,
         distance: ride.rideDistanceMeters,
-        pricePerSeat: ride.pricePerSeat,
+        pricePerSeat: pricePerSeat,       // new: in payment currency
         seats,
         user: session.user.name,
         userId: session.user.id,
         userEmail: session.user.email,
         amount,
+        serviceFee
       }
     });
     

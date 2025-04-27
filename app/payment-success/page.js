@@ -6,12 +6,10 @@ import { useSearchParams } from 'next/navigation'
 import { format } from "date-fns";
 import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
-import usePaymentStore from '@/components/payment-form/paymentStore';
 
 function Page() {
   const searchParams = useSearchParams()
   const { data: session, status } = useSession()
-  const paymentStoreServiceFee = usePaymentStore((state) => state.paymentStoreServiceFee)
 
   useEffect(() => {
     if (status !== 'loading' && !session) {
@@ -27,14 +25,17 @@ function Page() {
     )
   }
 
-  const amount = searchParams.get('amount') / 100
   const pricePerSeat = searchParams.get('pricePerSeat')
+  const amount = searchParams.get('amount') / 100
+  const currency = searchParams.get('curr')
+  const seatsBooked = searchParams.get('seats')
+  const serviceFee = searchParams.get('serviceFee')
   const startingCity = decodeURI(searchParams.get('startingCity'))
   const ishaYogaCenter = decodeURI(searchParams.get('iyc'))
   const departure = format(searchParams.get('departure'), 'PPPPpppp')
   const rideDuration = searchParams.get('duration')
   const rideDistance = searchParams.get('distance')
-  const seatsBooked = searchParams.get('seats')
+  const currencySymbols = { USD: '$', CAD: 'CA$', INR: '₹' };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -77,16 +78,16 @@ function Page() {
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span className="text-gray-600">Seat price</span>
-                <span className="font-medium">${pricePerSeat} {seatsBooked > 1 ? `X ${seatsBooked}` : ''}</span>
+                <span className="font-medium">{currencySymbols[currency] || currency}{(amount - serviceFee) / seatsBooked}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Service fee</span>
-                <span className="font-medium">${paymentStoreServiceFee}</span>
+                <span className="font-medium">{currencySymbols[currency] || currency}{serviceFee}</span>
               </div>
               <div className="border-t pt-2 mt-2">
                 <div className="flex justify-between">
                   <span className="font-semibold">Total paid</span>
-                  <span className="font-semibold">${amount}</span>
+                  <span className="font-semibold">{currencySymbols[currency] || currency}{amount}</span>
                 </div>
               </div>
             </div>

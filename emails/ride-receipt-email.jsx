@@ -19,8 +19,8 @@ import {
 // Add these Base64 encoded SVG icons at the top of the file
 const ICONS = {
   calendar: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMTkgNEg1QzMuODk1NDMgNCAzIDQuODk1NDMgMyA2VjIwQzMgMjEuMTA0NiAzLjg5NTQzIDIyIDUgMjJIMTlDMjAuMTA0NiAyMiAyMSAyMS4xMDQ2IDIxIDIwVjZDMjEgNC44OTU0MyAyMC4xMDQ2IDQgMTkgNFoiIHN0cm9rZT0iIzZCN0M5MyIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48cGF0aCBkPSJNMTYgMlY2IiBzdHJva2U9IiM2QjdDOTMiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHBhdGggZD0iTTggMlY2IiBzdHJva2U9IiM2QjdDOTMiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHBhdGggZD0iTTMgMTBIMjEiIHN0cm9rZT0iIzZCN0M5MyIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48L3N2Zz4=",
-  mapPin: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMjEgMTBDMjEgMTcgMTIgMjMgMTIgMjNDMTIgMjMgMyAxNyAzIDEwQzMgNy42MTMwNSAzLjk0ODIxIDUuMzIzODcgNS42MzYwNCAzLjYzNjA0QzcuMzIzODcgMS45NDgyMSA5LjYxMzA1IDEgMTIgMUMxNC4zODcgMSAxNi42NzYxIDEuOTQ4MjEgMTguMzY0IDMuNjM2MDRDMjAuMDUxOCA1LjMyMzg3IDIxIDcuNjEzMDUgMjEgMTBaIiBzdHJva2U9IiM2QjdDOTMiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHBhdGggZD0iTTEyIDEzQzEzLjY1NjkgMTMgMTUgMTEuNjU2OSAxNSAxMEMxNSA4LjM0MzE1IDEzLjY1NjkgNyAxMiA3QzEwLjM0MzEgNyA5IDguMzQzMTUgOSAxMEM5IDExLjY1NjkgMTAuMzQzMSAxMyAxMiAxM1oiIHN0cm9rZT0iIzZCN0M5MyIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48L3N2Zz4=",
-  user: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMjAgMjFWMTlDMjAgMTcuOTM5MSAxOS41Nzg2IDE2LjkyMTcgMTguODI4NCAxNi4xNzE2QzE4LjA3ODMgMTUuNDIxNCAxNy4wNjA5IDE1IDE2IDE1SDhDNi45MzkxMyAxNSA1LjkyMTcyIDE1LjQyMTQgNS4xNzE1NyAxNi4xNzE2QzQuNDIxNDMgMTYuOTIxNyA0IDE3LjkzOTEgNCAxOVYyMSIgc3Ryb2tlPSIjNkI3QzkzIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxwYXRoIGQ9Ik0xMiAxMUMxNC4yMDkxIDExIDE2IDkuMjA5MTQgMTYgN0MxNiA0Ljc5MDg2IDE0LjIwOTEgMyAxMiAzQzkuNzkwODYgMyA4IDQuNzkwODYgOCA3QzggOS4yMDkxNCA5Ljc5MDg2IDExIDEyIDExWiIgc3Ryb2tlPSIjNkI3QzkzIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjwvc3ZnPg=="
+  mapPin: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1zbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMjEgMTBDMjEgMTcgMTIgMjMgMTIgMjNDMTIgMjMgMyAxNyAzIDEwQzMgNy42MTMwNSAzLjk0ODIxIDUuMzIzODcgNS42MzYwNCAzLjYzNjA0QzcuMzIzODcgMS45NDgyMSA5LjYxMzA1IDEgMTIgMUMxNC4zODcgMSAxNi42NzYxIDEuOTQ4MjEgMTguMzY0IDMuNjM2MDRDMjAuMDUxOCA1LjMyMzg3IDIxIDcuNjEzMDUgMjEgMTBaIiBzdHJva2U9IiM2QjdDOTMiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHBhdGggZD0iTTEyIDEzQzEzLjY1NjkgMTMgMTUgMTEuNjU2OSAxNSAxMEMxNSA4LjM0MzE1IDEzLjY1NjkgNyAxMiA3QzEwLjM0MzEgNyA5IDguMzQzMTUgOSAxMEM5IDExLjY1NjkgMTAuMzQzMSAxMyAxMiAxM1oiIHN0cm9rZT0iIzZCN0M5MyIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48L3N2Zz4=",
+  user: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1zbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMjAgMjFWMTlDMjAgMTcuOTM5MSAxOS41Nzg2IDE2LjkyMTcgMTguODI4NCAxNi4xNzE2QzE4LjA3ODMgMTUuNDIxNCAxNy4wNjA5IDE1IDE2IDE1SDhDNi45MzkxMyAxNSA1LjkyMTcyIDE1LjQyMTQgNS4xNzE1NyAxNi4xNzE2QzQuNDIxNDMgMTYuOTIxNyA0IDE3LjkzOTEgNCAxOVYyMSIgc3Ryb2tlPSIjNkI3QzkzIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxwYXRoIGQ9Ik0xMiAxMUMxNC4yMDkxIDExIDE2IDkuMjA5MTQgMTYgN0MxNiA0Ljc5MDg2IDE0LjIwOTEgMyAxMiAzQzkuNzkwODYgMyA4IDQuNzkwODYgOCA3QzggOS4yMDkxNCA5Ljc5MDg2IDExIDEyIDExWiIgc3Ryb2tlPSIjNkI3QzkzIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjwvc3ZnPg=="
 };
 
 export const RideReceiptEmail = ({
@@ -33,12 +33,15 @@ export const RideReceiptEmail = ({
   driverPhoto = 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop',
   pricePerSeat,
   seatsBooked,
-  serviceFee = 5.00,
+  serviceFee,
   totalAmount,
   paymentMethod = 'Visa •••• 4242',
   paymentIntent = 'RIDE-12345',
+  currency = 'USD',
 }) => {
   const baseUrl = 'https://isharideshare.com';
+  const currencySymbols = { USD: '$', CAD: 'CA$', INR: '₹' };
+  const symbol = currencySymbols[currency.toUpperCase()] || currency;
 
   return (
     <Html>
@@ -124,17 +127,14 @@ export const RideReceiptEmail = ({
             {/* Payment Details */}
             <Section style={paymentSection}>
               <Text style={sectionTitle}>Payment Details</Text>
-              
               <Row style={paymentRow}>
                 <Column>
                   <Text style={paymentLabel}>Ride fare</Text>
                 </Column>
                 <Column style={{ textAlign: 'right' }}>
-                  <Text style={paymentValue}>${pricePerSeat}</Text>
+                  <Text style={paymentValue}>{symbol}{pricePerSeat}</Text>
                 </Column>
               </Row>
-
-
               <Row style={paymentRow}>
                 <Column>
                   <Text style={seatsLabel}>Number of seats</Text>
@@ -143,24 +143,21 @@ export const RideReceiptEmail = ({
                   <Text style={paymentValue}>X {seatsBooked}</Text>
                 </Column>
               </Row>
-              
               <Row style={paymentRow}>
                 <Column>
                   <Text style={paymentLabel}>Service fee</Text>
                 </Column>
                 <Column style={{ textAlign: 'right' }}>
-                  <Text style={paymentValue}>${serviceFee}</Text>
+                  <Text style={paymentValue}>{symbol}{serviceFee}</Text>
                 </Column>
               </Row>
-
               <Hr style={divider} />
-              
               <Row style={totalRow}>
                 <Column>
                   <Text style={totalLabel}>Total</Text>
                 </Column>
                 <Column style={{ textAlign: 'right' }}>
-                  <Text style={totalValue}>{totalAmount}</Text>
+                  <Text style={totalValue}>{symbol}{totalAmount}</Text>
                 </Column>
               </Row>
               

@@ -79,7 +79,13 @@ export default function ReviewStep() {
                 
                 <div className="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm mb-2">
                   <span className="text-gray-700">Price per seat</span>
-                  <span className="text-xl font-bold text-[#d98e3e]">${formData.pricePerSeat}</span>
+                  <span className="text-xl font-bold text-[#d98e3e]">
+                    {(() => {
+                      const currencySymbols = { USD: '$', CAD: 'CA$', INR: '₹' };
+                      const symbol = currencySymbols[formData.currency] || formData.currency;
+                      return `${symbol}${formData.pricePerSeat} - ${formData.currency}`;
+                    })()}
+                  </span>
                 </div>
               </div>
             </div>

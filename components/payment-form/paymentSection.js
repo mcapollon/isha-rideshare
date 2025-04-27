@@ -6,34 +6,36 @@ import { CheckCircle, Shield, Lock, CreditCard } from 'lucide-react';
 import usePaymentStore from '../../components/payment-form/paymentStore'
 import { useSession } from 'next-auth/react';
 
-export default function PaymentSection({ totalPrice, tripSummary, ref, session, seats }) {
+export default function PaymentSection({ totalPrice, tripSummary, ref, session, seats, currency, serviceFee, pricePerSeat }) {
   const stripe = useStripe();
   const elements = useElements();
   const [errorMessage, setErrorMessage] = useState('')
   const [clientSecret, setClientSecret] = useState()
   const [paymentLoading, setPaymentLoading] = useState(false)
 
-  const paymentStoreSeatCount = usePaymentStore((state) => state.paymentStoreSeatCount)
+  // const paymentStorePricePerSeat = usePaymentStore((state) => state.paymentStorePricePerSeat)
 
   useEffect(() => {
+    console.log(pricePerSeat, 'payment section price per seat')
     if (!tripSummary || !tripSummary.id) {
       console.error("Missing ride information");
       setErrorMessage("Missing ride information");
       return;
     }
 
-    console.log(tripSummary, 'trip summary')
-
     fetch("/api/create-payment-intent", {
       method: "POST",
       headers: {
-      "Content-Type": "application/json",
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({ 
-      amount: totalPrice,
-      rideData: tripSummary,
-      seats, 
-      session
+        amount: totalPrice,
+        rideData: tripSummary,
+        currency,
+        seats, 
+        session,
+        serviceFee,
+        pricePerSeat: pricePerSeat 
       }) 
     })
       .then((res) => {
@@ -78,12 +80,11 @@ export default function PaymentSection({ totalPrice, tripSummary, ref, session, 
         elements,
         clientSecret,
         confirmParams: {
-          return_url: `${window.location.origin}/payment-success?id=${tripSummary.id}&amount=${totalPrice}&pricePerSeat=${tripSummary?.pricePerSeat}&startingCity=${encodeURI(tripSummary?.startingCity)}&iyc=${encodeURI(tripSummary?.ishaYogaCenter)}&departure=${tripSummary?.departure}&duration=${tripSummary.rideDuration}&distance=${tripSummary.rideDistanceKm}&seats=${paymentStoreSeatCount}`,
+          return_url: `${window.location.origin}/payment-success?id=${tripSummary.id}&amount=${totalPrice}&serviceFee=${serviceFee}&curr=${currency.toUpperCase()}&pricePerSeat=${pricePerSeat}&startingCity=${encodeURI(tripSummary?.startingCity)}&iyc=${encodeURI(tripSummary?.ishaYogaCenter)}&departure=${tripSummary?.departure}&duration=${tripSummary.rideDuration}&distance=${tripSummary.rideDistanceKm}&seats=${seats}`,
         },
       });
 
       if (error) {
-        console.log(error, 'error from payment section')
         setErrorMessage(error.message);
         return new Error(error.message || "Payment failed");
       } 

@@ -13,6 +13,7 @@ const usePaymentStore = create((set) => ({
     updatePaymentStorePaymentStoreSeatLimit: (seats) => set(() => ({paymentStoreSeatLimit: seats})),
     updatePaymentStoreAmount: (amount) => set(() => ({paymentStoreAmount: amount})),
     updatePaymentStoreAmountInCents: (amount) => set(() => ({paymentStoreAmountInCents: amount * 100})),
+    updatePaymentStoreServiceFee: (amount) => set(() => ({paymentStoreServiceFee: amount})),
 }))
 
 export default usePaymentStore
