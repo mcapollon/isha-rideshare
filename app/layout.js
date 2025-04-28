@@ -32,7 +32,7 @@ export default async function RootLayout({ children }) {
         <SessionProvider session={session}>
           <Navbar />
           {children}
-          <footer className="w-full border-t bg-gray-50 mt-12">
+          <footer className="w-full border-t bg-gray-50">
             <div className="max-w-7xl mx-auto px-4 py-8 flex flex-col md:flex-row items-center justify-between text-sm text-gray-500">
               <div className="mb-2 md:mb-0">&copy; {new Date().getFullYear()} Sangha Rides. All rights reserved.</div>
               <div className="flex space-x-4">

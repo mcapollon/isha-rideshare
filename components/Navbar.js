@@ -227,12 +227,50 @@ export default function Navbar() {
               />
             </a>
             <div className="flex flex-1 justify-end items-center gap-2">
-              <a
-                href="/auth/sign-up"
-                className="rounded-md bg-amber-600 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-amber-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-              >
-                Sign up
-              </a>
+              {session ? (
+                <Menu as="div" className="relative flex-1 flex justify-end">
+                  <div>
+                    <MenuButton className="relative flex rounded-full bg-gray-800 text-sm focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800 focus:outline-hidden">
+                      <span className="absolute -inset-1.5" />
+                      <span className="sr-only">Open user menu</span>
+                      <img
+                        alt=""
+                        src={session?.user.image || "./default-user-icon.png"}
+                        className="size-8 rounded-full"
+                      />
+                    </MenuButton>
+                  </div>
+                  <MenuItems
+                    transition
+                    className="absolute right-0 z-10 mt-10 w-48 origin-top-right rounded-md bg-white py-1 ring-1 shadow-lg ring-black/5 transition focus:outline-hidden data-closed:scale-95 data-closed:transform data-closed:opacity-0 data-enter:duration-100 data-enter:ease-out data-leave:duration-75 data-leave:ease-in"
+                  >
+                    <MenuItem>
+                      <a
+                        href="/account"
+                        className="block px-4 py-2 text-sm text-gray-700 data-focus:bg-gray-100 data-focus:outline-hidden"
+                      >
+                        Your Profile
+                      </a>
+                    </MenuItem>
+                    <MenuItem>
+                      <a
+                        href="#"
+                        className="block px-4 py-2 text-sm text-red-700 data-focus:bg-gray-100 data-focus:outline-hidden"
+                        onClick={() => signOut()}
+                      >
+                        Sign out
+                      </a>
+                    </MenuItem>
+                  </MenuItems>
+                </Menu>
+              ) : (
+                <a
+                  href="/auth/sign-up"
+                  className="rounded-md bg-amber-600 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-amber-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                >
+                  Sign up
+                </a>
+              )}
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(false)}
@@ -256,14 +294,16 @@ export default function Navbar() {
                   </a>
                 ))}
               </div>
-              <div className="py-6">
-                <a
-                  href="/auth/sign-in"
-                  className="-mx-3 block rounded-lg px-3 py-2.5 text-base/7 font-semibold text-gray-900 hover:bg-gray-50"
-                >
-                  Log in
-                </a>
-              </div>
+              {!session && (
+                <div className="py-6">
+                  <a
+                    href="/auth/sign-in"
+                    className="-mx-3 block rounded-lg px-3 py-2.5 text-base/7 font-semibold text-gray-900 hover:bg-gray-50"
+                  >
+                    Log in
+                  </a>
+                </div>
+              )}
               {/* Currency selector at the very bottom of the mobile dialog */}
               <div className="pt-6 border-t mt-6 relative">
                 {hydrated && (

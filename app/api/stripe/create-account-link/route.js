@@ -6,7 +6,7 @@ export async function POST(request) {
   try {
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
     const supabase = await createClient();
-    const { userId } = await request.json();
+    const { userId, country } = await request.json();
 
     console.log(userId, 'user id')
     
@@ -27,6 +27,7 @@ export async function POST(request) {
     if (!accountId) {
       const account = await stripe.accounts.create({
         type: 'express',
+        country,
         capabilities: {
           card_payments: { requested: true },
           transfers: { requested: true },

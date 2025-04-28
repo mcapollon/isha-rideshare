@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { createClient } from '@/utils/supabase/client'
+import useGlobalStore from '@/lib/globalStore'
 const { redirect } = require('next/navigation')
 
 export default function DriverOnboarding() {
@@ -10,6 +11,7 @@ export default function DriverOnboarding() {
   const [accountLink, setAccountLink] = useState(null)
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
+  const userCountry = useGlobalStore(state => state.globalStoreLocation) || 'CA'
   // Redirect to login if user is not authenticated
   useEffect(() => {
     if (!session) {
@@ -37,7 +39,7 @@ export default function DriverOnboarding() {
         const response = await fetch('/api/stripe/create-account-link', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: session.user.id }),
+          body: JSON.stringify({ userId: session.user.id, country: userCountry }),
         })
         
         const result = await response.json()
@@ -52,7 +54,7 @@ export default function DriverOnboarding() {
     if (session) {
       checkOnboardingStatus()
     }
-  }, [session])
+  }, [session, userCountry])
 
   return (
     <>
