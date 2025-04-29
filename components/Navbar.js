@@ -180,6 +180,29 @@ export default function Navbar() {
             >
               Sign up
             </a>
+            {hydrated && (
+                <Listbox value={selectedCurrency} onChange={handleCurrencyChange} className="hidden lg:block">
+                  <div className="relative">
+                    <Listbox.Button className="flex items-center rounded-md border border-gray-300 bg-white px-2 py-1 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition w-20">
+                      {selectedCurrency.label}
+                      <svg className="ml-2 h-4 w-4 text-gray-400" viewBox="0 0 20 20" fill="none" stroke="currentColor"><path d="M7 7l3-3 3 3M7 13l3 3 3-3" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    </Listbox.Button>
+                    <Listbox.Options className="absolute right-0 mt-1 w-20 rounded-md bg-white shadow-lg ring-1 ring-black/5 z-20">
+                      {currencyOptions.map((option) => (
+                        <Listbox.Option
+                          key={option.code}
+                          value={option}
+                          className={({ active }) =>
+                            `cursor-pointer select-none px-3 py-2 text-sm ${active ? 'bg-amber-100 text-amber-900' : 'text-gray-900'}`
+                          }
+                        >
+                          {option.label}
+                        </Listbox.Option>
+                      ))}
+                    </Listbox.Options>
+                  </div>
+                </Listbox>
+              )}
           </div>
         )}
 

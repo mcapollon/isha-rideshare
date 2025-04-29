@@ -137,16 +137,23 @@ export default function Page() {
   const [searchStartingPoint, setSearchStartingPoint] = useState('')
   const [searchIshaYogaCenter, setSearchIshaYogaCenter] = useState('')
 
-  async function getRidesFiltered(page = currentPage, items = itemsPerPage) {    
+  async function getRidesFiltered(page = currentPage, items = itemsPerPage, selectedDate) {    
     if (searchStartingPoint && searchIshaYogaCenter) {
       const from = (page - 1) * items
       const to = from + items - 1
+
+      const selectedDate = watch('searchDeparture')
+
+      function formatToLocalISO(date) {
+        if (!(date instanceof Date) || isNaN(date)) return null;
       
-      // Get current date/time for filtering - use the beginning of the current day
-      // This will allow rides scheduled for later today to appear in results
-      const currentDate = new Date()
-      currentDate.setHours(0, 0, 0, 0) // Set to beginning of the current day
-      const currentDateISO = currentDate.toISOString()
+        const pad = n => n.toString().padStart(2, '0');
+        return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+      }
+
+      const formatedDate = formatToLocalISO(selectedDate)
+      console.log(watch('searchDeparture'), 'selected date rides filtered')
+      console.log(formatedDate, 'selected date rides formatted')
 
       // Prepare search terms by:
       // 1. Removing URL encoding which can interfere with wildcards
@@ -162,7 +169,7 @@ export default function Page() {
         .or(`startingCity.ilike.%${startingPointTerm}%,startingPointAddress.ilike.%${startingPointTerm}%`)
         .ilike('ishaYogaCenter', `%${ishaYogaCenterTerm}%`)
         .gt('seatsRemaining', 0)
-        .gte('departure', currentDateISO) // Greater than or equal to start of today
+        .gte('departure', formatedDate) // Greater than or equal to start of today
         .neq('cancelled', true)
 
       setTotalItems(count)
@@ -174,7 +181,7 @@ export default function Page() {
         .or(`startingCity.ilike.%${startingPointTerm}%,startingPointAddress.ilike.%${startingPointTerm}%`)
         .ilike('ishaYogaCenter', `%${ishaYogaCenterTerm}%`)
         .gt('seatsRemaining', 0)
-        .gte('departure', currentDateISO) // Greater than or equal to start of today
+        .gte('departure', formatedDate) // Greater than or equal to start of today
         .neq('cancelled', true)
         .range(from, to)
         .order('created_at', { ascending: false })
