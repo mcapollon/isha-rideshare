@@ -56,7 +56,7 @@ export async function GET(request) {
       })
     ]);
 
-    console.log(transfers, 'transfers')
+    // console.log(transfers, 'transfers')
     
     const now = Math.floor(Date.now() / 1000); // Current time in seconds
     

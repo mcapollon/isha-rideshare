@@ -18,7 +18,7 @@ export default function Home() {
             const data = await res.json();
             const country = data.address?.country_code?.toUpperCase() || data.address?.country || null;
             if (country) {
-              console.log('User country:', country)
+              // console.log('User country:', country)
               updateGlobalStoreLocation(country);
               // Set currency based on country
               if (country === 'US') {
@@ -47,7 +47,7 @@ export default function Home() {
               Rideshare to bliss
             </h1>
             <p className="mt-8 text-lg font-medium text-pretty text-gray-500 sm:text-xl/8">
-            Looking for a convenient and eco-friendly way to travel to Isha programs? Our platform connects you with fellow travelers heading to major Isha Yoga Centers, making it easy to find and share rides. Enjoy a smooth, hassle-free journey while fostering meaningful connections with like-minded seekers.
+            Looking for a convenient and eco-friendly way to travel to Isha programs? Our platform connects you with fellow travelers heading to major Isha Yoga Centers in north america, making it easy to find and share rides. Enjoy a smooth, hassle-free journey while fostering meaningful connections with like-minded seekers.
             </p>
             <div className="mt-10 flex items-center gap-x-6">
               <a

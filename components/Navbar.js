@@ -14,7 +14,7 @@ const navigation = [
 const currencyOptions = [
   { code: 'CAD', label: 'CAD' },
   { code: 'USD', label: 'USD' },
-  { code: 'INR', label: 'INR' },
+  // { code: 'INR', label: 'INR' },
 ]
 
 export default function Navbar() {
@@ -29,10 +29,6 @@ export default function Navbar() {
   const handleCurrencyChange = (selected) => {
     updateGlobalStoreCurrency(selected.code)
   }
-
-  useEffect(() => {
-    console.log(globalStoreCurrency, 'payment store currency')
-  }, [globalStoreCurrency])
 
   const [hydrated, setHydrated] = useState(false)
   useEffect(() => {

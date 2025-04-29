@@ -19,21 +19,21 @@ import useGlobalStore from "@/lib/globalStore"
 
 export default function Page() {
   const ishaYogaCenters = [
-    {
-        name: 'Isha Yoga Center, Coimbatore',
-        address: 'XPGP+CMF, Isha Yoga Center Rd, Ikkaraibooluvampatti, Tamil Nadu 641114, India',
-        coordinates: { lat: '10.9763407', long: '76.7342506' }
-    },
-    {
-        name: 'Sadhguru Sannidhi, Bengaluru',
-        address: 'FPP4+MH, Avalagurki, Karnataka 562101',
-        coordinates: { lat: '13.4861346', long: '77.7064053' }
-    },
-    {
-        name: 'Sadhguru Sanndhi, Chattarpur',
-        address: 'Mandi Road, 4, Osho Dr, Gadaipur, New Delhi, Delhi 110030',
-        coordinates: { lat: '28.4813421', long: '77.1517377' }
-    },
+    // {
+    //     name: 'Isha Yoga Center, Coimbatore',
+    //     address: 'XPGP+CMF, Isha Yoga Center Rd, Ikkaraibooluvampatti, Tamil Nadu 641114, India',
+    //     coordinates: { lat: '10.9763407', long: '76.7342506' }
+    // },
+    // {
+    //     name: 'Sadhguru Sannidhi, Bengaluru',
+    //     address: 'FPP4+MH, Avalagurki, Karnataka 562101',
+    //     coordinates: { lat: '13.4861346', long: '77.7064053' }
+    // },
+    // {
+    //     name: 'Sadhguru Sanndhi, Chattarpur',
+    //     address: 'Mandi Road, 4, Osho Dr, Gadaipur, New Delhi, Delhi 110030',
+    //     coordinates: { lat: '28.4813421', long: '77.1517377' }
+    // },
     {
         name: 'Isha Institute of Inner-sciences (iii)',
         address: '951 Isha Lane, McMinnville, TN - 37110, USA',
@@ -180,7 +180,7 @@ export default function Page() {
         .order('created_at', { ascending: false })
 
       if (error) {
-        console.log(error, 'error getting rides')
+        //console.log(error, 'error getting rides')
         return
       }
 

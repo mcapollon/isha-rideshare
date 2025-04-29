@@ -39,7 +39,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
     }
 
-    console.log(`✅ Event received: ${event.type}`);
+    // console.log(`✅ Event received: ${event.type}`);
 
     const handlePaymentComplete = async (paymentIntent, supabase) => {
       
@@ -82,8 +82,8 @@ export async function POST(request) {
         displayTotal = amount / 100;
       }
 
-      console.log(amount, 'webhook success amount')
-      console.log(currency, 'webhook success currency')
+      // console.log(amount, 'webhook success amount')
+      // console.log(currency, 'webhook success currency')
 
       const { data: existingBooking, error: fetchError } = await supabase
         .from('bookings')
@@ -174,7 +174,7 @@ export async function POST(request) {
 
     if (event.type === 'transfer.created') {
       const transfer = event.data.object;
-      console.log(transfer, 'transfer created event object');
+      // console.log(transfer, 'transfer created event object');
 
       // Find the corresponding booking using source_transaction (charge ID)
       const supabase = await createClient();
@@ -191,20 +191,20 @@ export async function POST(request) {
 
         if (data) {
           booking = data;
-          console.log(booking, 'booking data')
+          // console.log(booking, 'booking data')
           break;
         }
 
         // Wait before retrying
         retryCount++;
         if (retryCount < maxRetries) {
-          console.log(`Booking not found, retry ${retryCount}/${maxRetries} for charge: ${transfer.source_transaction}`);
+          // console.log(`Booking not found, retry ${retryCount}/${maxRetries} for charge: ${transfer.source_transaction}`);
           await new Promise(resolve => setTimeout(resolve, 2000));
         }
       }
 
       if (!booking) {
-        console.log(`No booking found for charge: ${transfer.source_transaction}`);
+        // console.log(`No booking found for charge: ${transfer.source_transaction}`);
         return NextResponse.json({ error: 'No booking found for charge' }, { status: 404 });
       }
 
@@ -217,7 +217,7 @@ export async function POST(request) {
           .single();
 
         if (rideError) {
-          console.error('Error fetching ride:', rideError);
+          // console.error('Error fetching ride:', rideError);
           return NextResponse.json({ error: 'Error fetching ride' }, { status: 500 });
         }
 
@@ -274,7 +274,7 @@ export async function POST(request) {
               transfer.id,
               { metadata: transferMetadata }
             );
-            console.log('Transfer metadata updated successfully:', transfer.id);
+            // console.log('Transfer metadata updated successfully:', transfer.id);
           } else {
             console.log('Transfer metadata already up to date:', transfer.id);
           }
@@ -289,7 +289,7 @@ export async function POST(request) {
             .eq('id', booking.id);
           return NextResponse.json({ received: true });
         } catch (updateError) {
-          console.error('Error updating transfer metadata:', updateError);
+          // console.error('Error updating transfer metadata:', updateError);
           return NextResponse.json({ error: updateError.message }, { status: 500 });
         }
       }

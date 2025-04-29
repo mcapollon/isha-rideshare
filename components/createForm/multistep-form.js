@@ -82,7 +82,7 @@ export default function MultistepForm() {
     const { setValue, getValues, setError, clearErrors } = methods
 
     const nextStep = (data) => {
-        console.log("Form data:", methods.getValues())
+        //console.log("Form data:", methods.getValues())
         methods.trigger().then((isValid) => {
             if (step > 1) {
                 if (isValid) {

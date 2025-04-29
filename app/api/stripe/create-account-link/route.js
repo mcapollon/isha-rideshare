@@ -7,8 +7,6 @@ export async function POST(request) {
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
     const supabase = await createClient();
     const { userId, country } = await request.json();
-
-    console.log(userId, 'user id')
     
     // Check if user already has a Stripe account
     const { data: userData, error: userError } = await supabase.schema('next_auth')
@@ -33,6 +31,11 @@ export async function POST(request) {
           transfers: { requested: true },
         },
         business_type: 'individual',
+        business_profile: {
+          url: process.env.PRODUCTION_URL,
+          mcc: '4789',
+          product_description: 'Rideshare driver providing transportation services through the Sangha Rides Rideshare platform.' 
+        }
       });
       
       accountId = account.id;
@@ -57,7 +60,7 @@ export async function POST(request) {
     
     return NextResponse.json({ url: accountLink.url });
   } catch (error) {
-    console.log('Error creating account link:', error);
+    // console.log('Error creating account link:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

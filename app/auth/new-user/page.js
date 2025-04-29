@@ -101,11 +101,11 @@ export default function Page() {
         router.push('/')
       } else {
         setFormError('Failed to update profile. Please try again.')
-        console.log(error)
+        // console.log(error)
       }
     } catch (err) {
       setFormError('An unexpected error occurred. Please try again.')
-      console.log(err)
+      // console.log(err)
     } finally {
       setFormLoading(false)
     }

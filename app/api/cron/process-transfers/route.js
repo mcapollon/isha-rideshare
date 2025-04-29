@@ -26,7 +26,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Failed to fetch scheduled transfers' }, { status: 500 });
     }
     
-    console.log(`Found ${scheduledTransfers.length} transfers to process`);
+    // console.log(`Found ${scheduledTransfers.length} transfers to process`);
     
     // Process each scheduled transfer
     const results = await Promise.all(

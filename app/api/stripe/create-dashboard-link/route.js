@@ -17,7 +17,7 @@ export async function GET(request) {
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
     );
 
-    console.log(session.user.id,' session')
+    // console.log(session.user.id,' session')
     
     // Get driver's Stripe Connect account ID
     const { data: driver, error } = await supabase.schema('next_auth')

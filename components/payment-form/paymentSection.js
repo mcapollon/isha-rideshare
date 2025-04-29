@@ -16,7 +16,6 @@ export default function PaymentSection({ totalPrice, tripSummary, ref, session, 
   // const paymentStorePricePerSeat = usePaymentStore((state) => state.paymentStorePricePerSeat)
 
   useEffect(() => {
-    console.log(pricePerSeat, 'payment section price per seat')
     if (!tripSummary || !tripSummary.id) {
       console.error("Missing ride information");
       setErrorMessage("Missing ride information");

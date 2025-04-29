@@ -41,10 +41,10 @@ export default function PayoutsSection() {
         }
         
         const data = await response.json();
-        console.log('Stripe payout data:', data);
+        //console.log('Stripe payout data:', data);
         setPayoutData(data);
       } catch (err) {
-        console.log('Error fetching payouts:', err);
+        //console.log('Error fetching payouts:', err);
         setError(err.message || 'Failed to load payouts');
       } finally {
         setLoading(false);
@@ -86,10 +86,6 @@ export default function PayoutsSection() {
       setDashboardLoading(false);
     }
   };
-
-  useEffect(() => {
-    console.log(error, 'error message')
-  }, [error])
 
   return (
     <div className="space-y-6">

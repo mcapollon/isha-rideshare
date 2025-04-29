@@ -107,7 +107,7 @@ export async function POST(request) {
                 paymentIntent: booking.payment_intent,
               })
             });
-            console.log(`Refund email sent to ${userEmail}`);
+            // console.log(`Refund email sent to ${userEmail}`);
           } catch (emailError) {
             console.error(`Failed to send refund email to ${userEmail}:`, emailError);
             // Continue with the refund process even if email sending fails

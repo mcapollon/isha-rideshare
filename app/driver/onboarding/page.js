@@ -10,8 +10,29 @@ export default function DriverOnboarding() {
   const { data: session } = useSession()
   const [accountLink, setAccountLink] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [errorMessage, setErrorMessage] = useState(null)
   const supabase = createClient()
+  const updateGlobalStoreLocation = useGlobalStore(state => state.updateGlobalStoreLocation)
   const userCountry = useGlobalStore(state => state.globalStoreLocation) || 'CA'
+
+  // Fetch country by IP address for stripe account link creation
+  useEffect(() => {
+    async function fetchCountryByIP() {
+      try {
+        const res = await fetch('https://ipapi.co/json/')
+        const data = await res.json()
+        if (data && data.country_code) {
+          updateGlobalStoreLocation(data.country_code)
+          //console.log('Detected country by IP:', data.country_code)
+        }
+      } catch (e) {
+        updateGlobalStoreLocation('CA')
+        //console.log('Falling back to CA')
+      }
+    }
+    fetchCountryByIP()
+  }, [])
+
   // Redirect to login if user is not authenticated
   useEffect(() => {
     if (!session) {
@@ -27,31 +48,33 @@ export default function DriverOnboarding() {
           .select('stripe_connect_id, stripe_onboarding_complete')
           .eq('id', session.user.id)
           .single()
-        
-        // FIX: Only consider onboarding complete if BOTH are true
         if (data?.stripe_connect_id && data?.stripe_onboarding_complete) {
           setLoading(false)
-          setAccountLink(null) // Hide onboarding form
+          setAccountLink(null)
+          setErrorMessage(null)
           return
         }
-        
-        // If not onboarded or no account yet, create an account link
         const response = await fetch('/api/stripe/create-account-link', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ userId: session.user.id, country: userCountry }),
         })
-        
         const result = await response.json()
-        setAccountLink(result.url)
+        if (result.error) {
+          setErrorMessage(result.error)
+          setAccountLink(null)
+        } else {
+          setAccountLink(result.url)
+          setErrorMessage(null)
+        }
         setLoading(false)
       } catch (error) {
         console.error("Error during onboarding check:", error)
+        setErrorMessage('An unexpected error occurred. Please try again later.')
         setLoading(false)
       }
     }
-    
-    if (session) {
+    if (session && userCountry) {
       checkOnboardingStatus()
     }
   }, [session, userCountry])
@@ -61,7 +84,9 @@ export default function DriverOnboarding() {
       {session && (
         <div className="max-w-3xl mx-auto p-6">
         <h1 className="text-2xl font-bold mb-6">Set Up Driver Payouts</h1>
-        
+        {errorMessage && (
+          <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">{errorMessage}</div>
+        )}
         {loading ? (
           <div className="flex items-center justify-center p-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600"></div>
@@ -69,21 +94,19 @@ export default function DriverOnboarding() {
         ) : accountLink ? (
           <div className="space-y-6">
             <p>To receive payments for your rides, you need to connect your bank account through our secure payment provider, Stripe.</p>
-            
             <a 
               href={accountLink}
               className="block w-full text-center py-3 bg-amber-600 text-white rounded-lg hover:bg-amber-700"
             >
               Connect Your Bank Account
             </a>
-            
             <div className="text-sm text-gray-600 bg-amber-50 p-4 rounded-lg">
               <p>You'll be redirected to Stripe to complete the verification process. This is required by financial regulations to ensure secure and legitimate transactions.</p>
             </div>
           </div>
-        ) : (
+        ) : (!errorMessage && !accountLink && !loading) ? (
           <div>Your account is already set up for payouts!</div>
-        )}
+        ) : null}
       </div>
       )}
     </>

@@ -5,7 +5,7 @@ import { createClient } from '@/utils/supabase/server';
 export async function POST(request) {
   try {
     const { amount, session, rideData, seats, currency, pricePerSeat, serviceFee, payInCash } = await request.json();
-    console.log(pricePerSeat, 'payment intent price per seat')
+    // console.log(pricePerSeat, 'payment intent price per seat')
     let rideId = rideData.id
 
     if (!amount || !rideId || !session || !seats) {
@@ -48,7 +48,7 @@ export async function POST(request) {
     const platformFeePercent = 10;
     const platformFee = amount * (platformFeePercent / 100);
 
-    console.log(ride, 'ride data payment intent')
+    // console.log(ride, 'ride data payment intent')
     
     // Create a payment intent with Connect destination and application fee
     const paymentIntent = await stripe.paymentIntents.create({
