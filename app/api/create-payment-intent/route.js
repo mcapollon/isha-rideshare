@@ -49,7 +49,7 @@ export async function POST(request) {
     const platformFee = amount * (platformFeePercent / 100);
 
     // console.log(ride, 'ride data payment intent')
-    
+    console.log(driver.stripe_connect_id, 'stripe connect id payment intent')
     // Create a payment intent with Connect destination and application fee
     const paymentIntent = await stripe.paymentIntents.create({
       amount: amount,
@@ -59,6 +59,7 @@ export async function POST(request) {
         destination: driver.stripe_connect_id,
       },
       automatic_payment_methods: { enabled: true },
+      on_behalf_of: driver.stripe_connect_id, // Removed as not required for destination charges
       metadata: {
         rideId: rideId,
         driverId: ride.createdByUser,

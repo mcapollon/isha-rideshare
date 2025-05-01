@@ -55,6 +55,7 @@ function Page({ params }) {
   const [convertedServiceFee, setConvertedServiceFee] = useState(null);
   const [convertedTotal, setConvertedTotal] = useState(null);
   const [vehicle, setVehicle] = useState(null);
+  const [driverStripeConnectId, setDriverStripeConnectId] = useState(null);
 
   // Fetch exchange rates and convert prices
   useEffect(() => {
@@ -169,6 +170,16 @@ function Page({ params }) {
       updatePaymentStoreAmountInCents(ride.pricePerSeat)
       updatePaymentStorePaymentStoreSeatLimit(ride.seats)
       setLoading(false)
+
+      // Fetch driver's stripe_connect_id
+      const { data: driver, error: driverError } = await supabase.schema('next_auth')
+        .from('users')
+        .select('stripe_connect_id')
+        .eq('id', ride.createdByUser)
+        .single();
+      if (!driverError && driver?.stripe_connect_id) {
+        setDriverStripeConnectId(driver.stripe_connect_id);
+      }
 
       // Fetch vehicle info if available
       if (ride.vehicle_id) {
@@ -501,6 +512,7 @@ function Page({ params }) {
                   mode: 'payment',
                   amount: convertedTotal ? convertedTotal * 100 : paymentStoreAmountInCents, // Stripe expects amount in cents/paise
                   currency: userCurrency.toLowerCase(),
+                  on_behalf_of: driverStripeConnectId
                 }}>
                 <PaymentSection 
                   ref={paymentSectionRef} 

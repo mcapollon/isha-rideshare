@@ -15,65 +15,64 @@ export default function PaymentSection({ totalPrice, tripSummary, ref, session, 
 
   // const paymentStorePricePerSeat = usePaymentStore((state) => state.paymentStorePricePerSeat)
 
-  useEffect(() => {
-    if (!tripSummary || !tripSummary.id) {
-      console.error("Missing ride information");
-      setErrorMessage("Missing ride information");
-      return;
-    }
-
-    fetch("/api/create-payment-intent", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ 
-        amount: totalPrice,
-        rideData: tripSummary,
-        currency,
-        seats, 
-        session,
-        serviceFee,
-        pricePerSeat: pricePerSeat,
-        payInCash: tripSummary.payInCash // Pass payInCash to API
-      }) 
-    })
-      .then((res) => {
-      if (!res.ok) {
-        return res.json().then(data => {
-        throw new Error(data.error || "Failed to initialize payment");
-        });
-      }
-      return res.json();
-      })
-      .then((data) => {
-      setClientSecret(data.clientSecret);
-      })
-      .catch((error) => {
-      console.error("Payment initialization error:", error);
-      setErrorMessage(error.message || "Failed to initialize payment");
-      });
-  }, [totalPrice, tripSummary, session, seats]);
-
   const handlePayment = async () => {
     if (!stripe || !elements) {
       return;
     }
 
-    // Check if clientSecret exists
-    if (!clientSecret) {
-      setErrorMessage("Payment cannot be initialized. Please try again later.");
+    // Only create payment intent when all required params are present and valid
+    if (
+      !tripSummary || !tripSummary.id ||
+      !totalPrice || isNaN(totalPrice) ||
+      !session || !session.user ||
+      !seats || isNaN(seats) ||
+      !currency ||
+      typeof serviceFee === 'undefined' || isNaN(serviceFee) ||
+      typeof pricePerSeat === 'undefined' || isNaN(pricePerSeat)
+    ) {
+      setErrorMessage("Missing or invalid payment parameters.");
+      return;
+    }
+
+    setPaymentLoading(true);
+    setErrorMessage(null);
+    let clientSecret;
+    try {
+      const res = await fetch("/api/create-payment-intent", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ 
+          amount: totalPrice,
+          rideData: tripSummary,
+          currency,
+          seats, 
+          session,
+          serviceFee,
+          pricePerSeat: pricePerSeat,
+          payInCash: tripSummary.payInCash // Pass payInCash to API
+        }) 
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to initialize payment");
+      }
+      const data = await res.json();
+      clientSecret = data.clientSecret;
+      setClientSecret(clientSecret);
+    } catch (error) {
+      setPaymentLoading(false);
+      setErrorMessage(error.message || "Failed to initialize payment");
       return;
     }
 
     const {error: submitError} = await elements.submit();
     if (submitError) {
       setErrorMessage(submitError.message);
+      setPaymentLoading(false);
       return new Error(submitError || "Payment failed");
     }
-    
-    setPaymentLoading(true);
-    setErrorMessage(null);
 
     try {
       const { error } = await stripe.confirmPayment({
@@ -86,6 +85,7 @@ export default function PaymentSection({ totalPrice, tripSummary, ref, session, 
 
       if (error) {
         setErrorMessage(error.message);
+        setPaymentLoading(false);
         return new Error(error.message || "Payment failed");
       } 
 

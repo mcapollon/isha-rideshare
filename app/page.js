@@ -1,43 +1,4 @@
-"use client"
-
-import useGlobalStore from '../lib/globalStore'
-import { useEffect } from 'react';
-
 export default function Home() {
-  const updateGlobalStoreLocation = useGlobalStore(state => state.updateGlobalStoreLocation)
-  const updateGlobalStoreCurrency = useGlobalStore(state => state.updateGlobalStoreCurrency)
-  useEffect(() => {
-    if (typeof window !== 'undefined' && navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        async (pos) => {
-          const lat = pos.coords.latitude;
-          const lng = pos.coords.longitude;
-          // Use Nominatim for reverse geocoding
-          try {
-            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`);
-            const data = await res.json();
-            const country = data.address?.country_code?.toUpperCase() || data.address?.country || null;
-            if (country) {
-              // console.log('User country:', country)
-              updateGlobalStoreLocation(country);
-              // Set currency based on country
-              if (country === 'US') {
-                updateGlobalStoreCurrency('USD');
-              } else if (country === 'IN') {
-                updateGlobalStoreCurrency('INR');
-              } else {
-                updateGlobalStoreCurrency('CAD');
-              }
-            }
-          } catch (e) {
-            // fallback or ignore
-          }
-        },
-        () => {}
-      );
-    }
-  }, [updateGlobalStoreLocation, updateGlobalStoreCurrency]);
-
   return (
     <div className="relative bg-white">
       <div className="mx-auto max-w-7xl lg:grid lg:grid-cols-12 lg:gap-x-8 lg:px-8">

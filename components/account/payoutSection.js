@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { format } from 'date-fns';
 import { 
@@ -9,6 +9,7 @@ import {
   DollarSign, ExternalLink
 } from 'lucide-react';
 import { formatCurrency } from '@/utils/utils';
+import useGlobalStore from '@/lib/globalStore';
 
 export default function PayoutsSection() {
   const [payoutData, setPayoutData] = useState({
@@ -17,11 +18,13 @@ export default function PayoutsSection() {
     balance: { available: 0, pending: 0 },
     stats: { pending: 0, completed: 0, totalEarned: 0 }
   });
+  const originalPayoutData = useRef(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('pending');
   const [dashboardLoading, setDashboardLoading] = useState(false);
   const [dashboardError, setDashboardError] = useState(null);
+  const userCurrency = useGlobalStore(state => state.globalStoreCurrency) || 'USD';
   
   const { data: session } = useSession();
 
@@ -41,8 +44,9 @@ export default function PayoutsSection() {
         }
         
         const data = await response.json();
-        //console.log('Stripe payout data:', data);
         setPayoutData(data);
+        originalPayoutData.current = data; // Store original data
+        console.log(data, 'stripe payout data')
       } catch (err) {
         //console.log('Error fetching payouts:', err);
         setError(err.message || 'Failed to load payouts');
@@ -53,6 +57,62 @@ export default function PayoutsSection() {
     
     fetchPayouts();
   }, [session]);
+
+  useEffect(() => {
+    async function fetchRatesAndConvertPayouts() {
+      if (!originalPayoutData.current || !originalPayoutData.current.pending) return;
+      const res = await fetch(`https://open.er-api.com/v6/latest/USD`); // Fetch all rates from USD as base
+      const data = await res.json();
+      const to = userCurrency;
+      const convert = (amount, fromCur, toCur) => {
+        console.log(fromCur, 'from cur convert func')
+        if (!data.rates[fromCur] || !data.rates[toCur]) return amount;
+        const amountInBase = amount / data.rates[fromCur];
+        return Math.round(amountInBase * data.rates[toCur]);
+      };
+
+      // Convert payout arrays using each payout's currency
+      const convertPayoutArray = (arr) =>
+        arr.map((payout) => {
+          // Ensure currency is uppercase and valid
+          const fromCurrency = (payout.currency && data.rates[payout.currency.toUpperCase()])
+            ? payout.currency.toUpperCase()
+            : 'USD'; // fallback to USD if missing/invalid
+          console.log('Converting payout:', payout.amount, payout.currency, 'from', fromCurrency, 'to', to);
+          return {
+            ...payout,
+            amount: convert(payout.amount, fromCurrency, to),
+          };
+        });
+
+      // Convert balance using payoutData.balance.currency if available
+      const balanceCurrency = originalPayoutData.current.balance.currency || 'USD';
+      const convertedBalance = {
+        ...originalPayoutData.current.balance,
+        available: convert(originalPayoutData.current.balance.available, balanceCurrency, to),
+        pending: convert(originalPayoutData.current.balance.pending, balanceCurrency, to),
+        currency: to,
+      };
+
+      // Convert stats using payoutData.stats.currency if available
+      const statsCurrency = originalPayoutData.current.stats.currency || 'USD';
+      const convertedStats = {
+        ...originalPayoutData.current.stats,
+        totalEarned: convert(originalPayoutData.current.stats.totalEarned, statsCurrency, to),
+        currency: to,
+      };
+
+      setPayoutData({
+        ...originalPayoutData.current,
+        pending: convertPayoutArray(originalPayoutData.current.pending),
+        completed: convertPayoutArray(originalPayoutData.current.completed),
+        balance: convertedBalance,
+        stats: convertedStats,
+        currency: to,
+      });
+    }
+    if (originalPayoutData.current && originalPayoutData.current.pending) fetchRatesAndConvertPayouts();
+  }, [userCurrency]);
   
   const getPayoutsToDisplay = () => {
     switch (activeTab) {
@@ -114,27 +174,13 @@ export default function PayoutsSection() {
       </div>
       
       {/* Balance Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white p-6 rounded-lg shadow">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm text-gray-500">Available Balance</p>
-              <p className="text-2xl font-semibold text-green-600">
-                {formatCurrency(payoutData.balance.available)}
-              </p>
-            </div>
-            <div className="p-2 bg-green-100 rounded-full">
-              <DollarSign className="w-6 h-6 text-green-600" />
-            </div>
-          </div>
-        </div>
-        
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">        
         <div className="bg-white p-6 rounded-lg shadow">
           <div className="flex items-start justify-between">
             <div>
               <p className="text-sm text-gray-500">Pending Balance</p>
               <p className="text-2xl font-semibold text-amber-600">
-                {formatCurrency(payoutData.balance.pending)}
+                {formatCurrency(payoutData.balance.pending)} - {userCurrency}
               </p>
             </div>
             <div className="p-2 bg-amber-100 rounded-full">
@@ -148,7 +194,7 @@ export default function PayoutsSection() {
             <div>
               <p className="text-sm text-gray-500">Total Paid Out</p>
               <p className="text-2xl font-semibold text-blue-600">
-                {formatCurrency(payoutData.stats.totalEarned)}
+                {formatCurrency(payoutData.stats.totalEarned)} - {userCurrency}
               </p>
             </div>
             <div className="p-2 bg-blue-100 rounded-full">
@@ -250,13 +296,13 @@ export default function PayoutsSection() {
                         <div className="flex items-center justify-end">
                           <Clock className="w-3 h-3 mr-1" />
                           {payout.arrival_date 
-                            ? `Arriving ${format(payout.arrival_date, 'MMM d')}`
+                            ? `Arriving ${format(new Date(payout.arrival_date * 1000), 'MMM d')}`
                             : 'Pending'}
                         </div>
                       ) : (
                         <div className="flex items-center justify-end text-green-600">
                           <CheckCircle className="w-3 h-3 mr-1" />
-                          Paid on {format(payout.arrivalDate, 'MMM d')}
+                          Paid on {format(new Date(payout.arrivalDate * 1000), 'MMM d')}
                         </div>
                       )}
                     </div>

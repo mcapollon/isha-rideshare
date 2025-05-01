@@ -69,6 +69,40 @@ export default function Page() {
     setFormModified(false)
   }, [])
 
+  const updateGlobalStoreLocation = useGlobalStore(state => state.updateGlobalStoreLocation)
+  const updateGlobalStoreCurrency = useGlobalStore(state => state.updateGlobalStoreCurrency)
+  useEffect(() => {
+    if (typeof window !== 'undefined' && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          // Use Nominatim for reverse geocoding
+          try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`);
+            const data = await res.json()
+            const country = data.address?.country_code?.toUpperCase() || data.address?.country || null;
+            if (country) {
+              // console.log('User country:', country)
+              updateGlobalStoreLocation(country);
+              // Set currency based on country
+              if (country === 'US') {
+                updateGlobalStoreCurrency('USD');
+              } else if (country === 'IN') {
+                updateGlobalStoreCurrency('INR');
+              } else {
+                updateGlobalStoreCurrency('CAD');
+              }
+            }
+          } catch (e) {
+            // fallback or ignore
+          }
+        },
+        () => {}
+      );
+    }
+  }, [updateGlobalStoreLocation, updateGlobalStoreCurrency]);
+
   async function getAllRides(page = currentPage, items = itemsPerPage) {
     const from = (page - 1) * items
     const to = from + items - 1
