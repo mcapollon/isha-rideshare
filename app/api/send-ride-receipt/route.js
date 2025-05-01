@@ -26,7 +26,7 @@ export async function POST(request) {
         } = await request.json()
 
         const data = await resend.emails.send({
-            from: 'no-reply@mckinsleyapollon.com',
+            from: 'no-reply@sangharides.com',
             to: email,
             subject: 'Your Ride Booking Confirmation',
             react: RideReceiptEmail({

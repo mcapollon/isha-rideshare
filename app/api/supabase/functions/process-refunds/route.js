@@ -92,7 +92,7 @@ export async function POST(request) {
         if (userEmail) {
           try {
             await resend.emails.send({
-              from: 'no-reply@mckinsleyapollon.com',
+              from: 'no-reply@sagnarides.com',
               to: userEmail,
               subject: 'Your Isha RideShare Refund Confirmation',
               react: RefundNotificationEmail({
