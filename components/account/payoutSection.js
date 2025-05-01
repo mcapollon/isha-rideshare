@@ -28,6 +28,11 @@ export default function PayoutsSection() {
   
   const { data: session } = useSession();
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [totalItems, setTotalItems] = useState(0);
+
   useEffect(() => {
     async function fetchPayouts() {
       if (!session?.user?.id) return;
@@ -123,6 +128,19 @@ export default function PayoutsSection() {
       default:
         return [];
     }
+  };
+
+  useEffect(() => {
+    const payouts = getPayoutsToDisplay();
+    setTotalItems(payouts.length);
+    setCurrentPage(1); // Reset to first page on tab/data change
+  }, [payoutData, activeTab]);
+
+  const paginatedPayouts = () => {
+    const payouts = getPayoutsToDisplay();
+    const from = (currentPage - 1) * itemsPerPage;
+    const to = from + itemsPerPage;
+    return payouts.slice(from, to);
   };
 
   const openStripeDashboard = async () => {
@@ -267,8 +285,9 @@ export default function PayoutsSection() {
           </p>
         </div>
       ) : (
+        <>
         <div className="space-y-4">
-          {getPayoutsToDisplay().map((payout) => (
+          {paginatedPayouts().map((payout) => (
             <div key={payout.id} className="bg-white rounded-lg shadow overflow-hidden">
               <div className="p-5">
                 <div className="flex justify-between items-start">
@@ -276,20 +295,24 @@ export default function PayoutsSection() {
                     <h3 className="font-medium">{payout.description}</h3>
                     <div className="text-sm text-gray-500 mt-1 space-y-1">
                       {payout.metadata?.departureTime && (
+                        activeTab === 'pending' && (
+                          <div className="flex items-center">
+                            <Calendar className="w-4 h-4 mr-1" />
+                            {format(payout.metadata.departureTime, 'PPP')}
+                          </div>
+                        )
+                      )}
+                      {activeTab === 'pending' && (
                         <div className="flex items-center">
-                          <Calendar className="w-4 h-4 mr-1" />
-                          {format(payout.metadata.departureTime, 'PPP')}
+                          <ArrowRightCircle className="w-4 h-4 mr-1" />
+                          {payout.metadata?.departureLocation} to {payout.metadata?.destinationLocation}
                         </div>
                       )}
-                      <div className="flex items-center">
-                        <ArrowRightCircle className="w-4 h-4 mr-1" />
-                        {payout.metadata?.departureLocation} to {payout.metadata?.destinationLocation}
-                      </div>
                     </div>
                   </div>
                   <div className="text-right">
                     <div className="font-medium text-lg">
-                      {formatCurrency(payout.amount)}
+                      {formatCurrency(payout.amount)} - {userCurrency}
                     </div>
                     <div className="text-sm text-gray-500">
                       {payout.status === 'pending' ? (
@@ -326,6 +349,47 @@ export default function PayoutsSection() {
             </div>
           ))}
         </div>
+        {/* Pagination Controls */}
+        <div className="mt-6 flex flex-col sm:flex-row justify-between items-center gap-4">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-600">Show</span>
+            <select
+              className="border rounded px-2 py-1 text-sm"
+              value={itemsPerPage}
+              onChange={e => {
+                setItemsPerPage(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+            >
+              {[5, 10, 15, 20, 25, 30].map(num => (
+                <option key={num} value={num}>{num} payouts</option>
+              ))}
+            </select>
+            <span className="text-sm text-gray-600">per page</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="text-sm text-gray-600">
+              Showing {totalItems === 0 ? 0 : ((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} payouts
+            </div>
+            <div className="flex gap-1">
+              <button
+                className="px-3 py-1 border rounded text-sm disabled:opacity-50"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(currentPage - 1)}
+              >
+                Previous
+              </button>
+              <button
+                className="px-3 py-1 border rounded text-sm disabled:opacity-50"
+                disabled={currentPage * itemsPerPage >= totalItems}
+                onClick={() => setCurrentPage(currentPage + 1)}
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        </div>
+        </>
       )}
       
       {/* Help Section */}
