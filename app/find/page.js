@@ -94,6 +94,12 @@ export default function Page() {
                 updateGlobalStoreCurrency('CAD');
               }
             }
+            // Set starting point to user's city if available
+            const city = data.address?.city || data.address?.town || data.address?.village || data.address?.hamlet || null;
+            if (city) {
+              setSearchStartingPoint(city);
+              setValue('searchStartingPoint', city);
+            }
           } catch (e) {
             // fallback or ignore
           }
