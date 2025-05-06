@@ -44,15 +44,26 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Driver onboarding not completed' }, { status: 400 });
     }
     
-    // Calculate platform fee (10%)
-    const platformFeePercent = 10;
-    const platformFee = amount * (platformFeePercent / 100);
+    // Calculate platform fee and amount correctly
+    let platformFee;
+    let paymentAmount;
+    const rideFare = pricePerSeat * seats; // ride fare only
+    if (payInCash) {
+      // Only charge the service fee for cash rides
+      platformFee = Math.round(serviceFee * 100); // Stripe expects cents
+      paymentAmount = Math.round(serviceFee * 100); // Only service fee is charged
+    } else {
+      // 10% of ride fare + service fee
+      platformFee = Math.round((rideFare * 0.10 + serviceFee) * 100); // cents
+      paymentAmount = Math.round((rideFare + serviceFee) * 100); // total amount in cents
+    }
 
-    // console.log(ride, 'ride data payment intent')
-    console.log(driver.stripe_connect_id, 'stripe connect id payment intent')
+    console.log(platformFee, 'platform fee');
+    console.log(paymentAmount, 'payment amount');
+
     // Create a payment intent with Connect destination and application fee
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: amount,
+      amount: paymentAmount,
       currency: currency,
       application_fee_amount: platformFee,
       transfer_data: {
@@ -65,7 +76,7 @@ export async function POST(request) {
         driverId: ride.createdByUser,
         platformFee: platformFee,
         stripeConnectId: driver.stripe_connect_id, // Store for webhook
-        driverAmount: amount - platformFee, // Store for webhook
+        driverAmount: paymentAmount - platformFee, // Store for webhook
         ishaYogaCenter: ride.ishaYogaCenter,
         startingPointAddress: ride.startingPointAddress,
         startingCity: ride.startingCity,
