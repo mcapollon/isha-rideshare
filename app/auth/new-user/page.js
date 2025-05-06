@@ -19,6 +19,8 @@ export default function Page() {
   const [uploadStatus, setUploadStatus] = useState('')
   const [formLoading, setFormLoading] = useState(false)
   const [formError, setFormError] = useState('')
+  const [imageUrl, setImageUrl] = useState('')
+  const [previewUrl, setPreviewUrl] = useState('')
   const supabase = createClient()
   
   const router = useRouter();  
@@ -92,7 +94,7 @@ export default function Page() {
           location: formData.location,
           dateOfBirth: formData.dateOfBirth,
           name: formData.name,
-          image: formData.image,
+          image: imageUrl,
           sex: formData.sex
         })
         .eq('id', session.user?.id)
@@ -112,6 +114,11 @@ export default function Page() {
   }
 
   const uploadProfilePicture = async (file) => {
+    if (file) {
+      setPreviewUrl(URL.createObjectURL(file))
+    } else {
+      return;
+    }
     try {
       setUploadStatus('uploading')
       const fileExt = file.name.split('.').pop()
@@ -125,17 +132,17 @@ export default function Page() {
         })
 
       if (error) {
-        console.error('Error uploading image:', error)
         setUploadStatus('error')
         return
       }
 
-      const { data: publicURL } = supabase
+      const { data: publicURL, error: publicUrlError } = supabase
         .storage
         .from('profile-pictures')
         .getPublicUrl(data.path)
 
       setValue('image', publicURL.publicUrl)
+      setImageUrl(publicURL.publicUrl)
       setUploadStatus('success')
 
       await update({
@@ -168,7 +175,7 @@ export default function Page() {
           <CardContent className="pt-6">
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               <div>
-                {!watch('image') && !session.user?.image ? (
+                {!(previewUrl || imageUrl || session.user?.image) ? (
                   <div className="w-24 h-24 my-6 rounded-full bg-gray-200 flex items-center justify-center cursor-pointer relative mx-auto">
                     <input
                       type="file"
@@ -181,7 +188,7 @@ export default function Page() {
                 ) : (
                   <div className="relative w-24 h-24 mx-auto my-6 group">
                     <img
-                      src={watch('image') || session.user?.image}
+                      src={previewUrl || imageUrl || session.user?.image}
                       alt="Profile"
                       className="w-24 h-24 rounded-full object-cover"
                     />
