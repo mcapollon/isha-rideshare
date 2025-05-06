@@ -468,6 +468,23 @@ export default function Page() {
               </div>
             </CardContent>
           </Card>
+          ) : !formModified && rides.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 px-4">
+              <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-6">
+                <Search className="w-10 h-10 text-gray-400" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-800 mb-2">There are no rides at the moment</h3>
+              <p className="text-gray-600 text-center max-w-md mb-6">
+                Please check back later or post a new ride.
+              </p>
+              <Link href="/create">
+                <button 
+                  className="flex items-center justify-center px-6 py-3 bg-amber-600 rounded-lg text-white hover:bg-amber-500"
+                >
+                  Post a ride
+                </button>
+              </Link>
+            </div>
           ) : noResults ? (
             <div className="flex flex-col items-center justify-center py-16 px-4">
               <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-6">
