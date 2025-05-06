@@ -109,8 +109,8 @@ function Page() {
             <h2 className="font-semibold text-lg mb-4">Next Steps</h2>
             <ul className="space-y-2 text-gray-700">
               <li>• Check your email for booking confirmation</li>
-              <li>• Contact details for your driver will be shared 24 hours before the trip</li>
-              <li>• You can message your driver through the platform for any questions</li>
+              <li>• Contact details for your driver are available in your profile under <Link href='/account?tab=rides' className='underline'>Rides & Bookings</Link></li>
+              <li>• You can contact your driver directly for any questions regarding the ride</li>
             </ul>
           </div>
 

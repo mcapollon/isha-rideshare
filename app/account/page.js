@@ -32,6 +32,7 @@ import { DeleteModal } from '@/components/account/listingDeleteModal';
 import { EditModal } from '@/components/account/listingEditModal';
 import PayoutsSection from '@/components/account/payoutSection';
 import ReportButton from '@/components/reviews/ReportButton';
+import DriverContactInfo from '@/components/account/DriverContactInfo';
 
 const supabase = createClient()
 
@@ -921,6 +922,8 @@ function Page() {
                                                     {format(new Date(booking.rides.departure), 'p')}
                                                 </div>
                                             </div>
+                                            {/* Driver contact info */}
+                                            <DriverContactInfo driverId={booking.rides.createdByUser} />
                                         </div>
                                     ))
                                 )}
