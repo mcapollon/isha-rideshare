@@ -15,7 +15,7 @@ export const { handlers, auth, signIn, signOut, useSession } = NextAuth({
   ],
   adapter: SupabaseAdapter({
     url: process.env.NEXT_PUBLIC_SUPABASE_URL,
-    secret: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    secret: process.env.SUPABASE_SERVICE_ROLE_KEY,
   }),
   pages: {
     newUser: '/auth/new-user',
