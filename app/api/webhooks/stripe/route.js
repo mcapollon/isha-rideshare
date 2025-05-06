@@ -45,11 +45,9 @@ export async function POST(request) {
       
     }
 
-    // if (event.type === 'payment_intent.created') {
-    //   const paymentIntent = event.data.object;
-
-    //   console.log(paymentIntent, 'paymentIntent created data object')
-    // }
+    if (event.type === 'payment_intent.created') {
+      return NextResponse.json({ message: 'Intent created successfully, webhook working' }, { status: 200 });
+    }
 
     // Handle payment_intent.succeeded event
     if (event.type === 'payment_intent.succeeded') {
