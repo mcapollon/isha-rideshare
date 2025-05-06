@@ -34,7 +34,7 @@ export default function DriverContactInfo({ driverId }) {
   return (
     <div className="flex items-center mt-2 text-sm text-gray-700">
       <Phone className="w-4 h-4 mr-1 text-amber-600" />
-      <span>Driver phone: <span className="font-medium">{phone}</span></span>
+      <span>Driver phone: <a href={`tel:${phone}`} className="font-medium underline hover:text-amber-700">{phone}</a></span>
     </div>
   );
 }
