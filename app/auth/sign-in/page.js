@@ -4,10 +4,11 @@ import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { signIn, useSession } from 'next-auth/react';
 import { useForm } from 'react-hook-form';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 const page = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { data: session, status } = useSession();
 
   // Redirect if user is already signed in
@@ -41,6 +42,13 @@ const page = () => {
 
   // Only render the sign-in page if the user is not authenticated
   if (status === "unauthenticated") {
+    // Check for OAuthAccountNotLinked error
+    const error = searchParams.get('error');
+    let errorMessage = '';
+    if (error === 'OAuthAccountNotLinked') {
+      errorMessage =
+        "This email is already associated with another login method. Please sign in with your original provider (e.g., Google or email (magic link)).";
+    }
     return (
       <div className="min-h-screen bg-gray-50">
         <main className="max-w-md mx-auto px-4 py-12">
@@ -49,7 +57,11 @@ const page = () => {
               <h1 className="text-2xl font-bold text-gray-900">Welcome back</h1>
               <p className="text-gray-600 mt-2">Sign in to your account</p>
             </div>
-
+            {errorMessage && (
+              <div className="mb-4 p-3 bg-red-100 text-red-700 rounded text-center text-sm">
+                {errorMessage}
+              </div>
+            )}
             {/* Social Login Buttons */}
             <div className="space-y-3 mb-6">
               <button
