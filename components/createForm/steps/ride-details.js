@@ -154,18 +154,83 @@ export default function RideDetailsStep({ vehicles = [] }) {
                     name="departure"
                     control={control}
                     defaultValue={null}
-                    render={({ field }) => (
-                        <DatePicker
-                            id="departure"
-                            selected={field.value}
-                            onChange={(date) => { field.onChange(date); clearErrors('departure') }}
-                            showTimeSelect
-                            dateFormat="MMMM d, yyyy h:mm aa"
-                            minDate={new Date()}
-                            className="w-full p-2 border rounded-md"
-                            autoComplete="off"
-                        />
-                    )}
+                    rules={{
+                        required: "Departure is required",
+                        validate: value => {
+                            if (!value) return "Departure is required";
+                            const now = new Date();
+                            const selected = new Date(value);
+                            if (selected < now) {
+                                return "Departure cannot be in the past.";
+                            }
+                            // Always check if selected is today
+                            const isToday = selected.getFullYear() === now.getFullYear() &&
+                                selected.getMonth() === now.getMonth() &&
+                                selected.getDate() === now.getDate();
+                            if (isToday) {
+                                const minDeparture = new Date(now.getTime() + 30 * 60000);
+                                if (selected < minDeparture) {
+                                    return "Departure must be at least 30 minutes from now if set for today.";
+                                }
+                            }
+                            return true;
+                        }
+                    }}
+                    render={({ field }) => {
+                        const now = new Date();
+                        const selected = field.value ? new Date(field.value) : null;
+                        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                        let isToday;
+                        if (selected) {
+                            isToday = selected.getFullYear() === now.getFullYear() &&
+                                selected.getMonth() === now.getMonth() &&
+                                selected.getDate() === now.getDate();
+                        } else {
+                            isToday = true;
+                        }
+                        let minTime;
+                        if (isToday) {
+                            minTime = new Date(now.getTime() + 30 * 60000);
+                        } else {
+                            minTime = new Date();
+                            minTime.setHours(0, 0, 0, 0);
+                        }
+                        const maxTime = new Date();
+                        maxTime.setHours(23, 59, 59, 999);
+                        return (
+                            <DatePicker
+                                id="departure"
+                                selected={field.value}
+                                onChange={(date) => {
+                                    // If switching to today and time is invalid, set to minTime
+                                    const now = new Date();
+                                    let newDate = date;
+                                    if (date) {
+                                        const isToday = date.getFullYear() === now.getFullYear() &&
+                                            date.getMonth() === now.getMonth() &&
+                                            date.getDate() === now.getDate();
+                                        if (isToday) {
+                                            const minDeparture = new Date(now.getTime() + 30 * 60000);
+                                            if (date < minDeparture) {
+                                                // Set to minDeparture
+                                                newDate = new Date(minDeparture);
+                                                // Keep the user's selected minutes if possible, but only if valid
+                                            }
+                                        }
+                                    }
+                                    field.onChange(newDate);
+                                    clearErrors('departure');
+                                }}
+                                showTimeSelect
+                                dateFormat="MMMM d, yyyy h:mm aa"
+                                minDate={now}
+                                minTime={minTime}
+                                maxTime={maxTime}
+                                className="w-full p-2 border rounded-md"
+                                autoComplete="off"
+                            />
+                        );
+                    }}
                 />
                 {errors.departure && <span className="text-red-500">{errors.departure.message}</span>}
             </div>
