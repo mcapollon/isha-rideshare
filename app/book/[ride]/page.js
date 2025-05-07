@@ -501,30 +501,30 @@ function Page({ params }) {
 
           {/* Payment Section */}
           <div className="bg-white rounded-xl shadow-sm p-6">
-
-            {/* Payment Methods */}
             <div className="space-y-6">
-
-              {/* Payment Process */}
-              <Elements 
-                stripe={stripePromise}
-                options={{
-                  mode: 'payment',
-                  amount: convertedTotal ? convertedTotal * 100 : paymentStoreAmountInCents, // Stripe expects amount in cents/paise
-                  currency: userCurrency.toLowerCase(),
-                  on_behalf_of: driverStripeConnectId
-                }}>
-                <PaymentSection 
-                  ref={paymentSectionRef} 
-                  totalPrice={paymentStoreAmountInCents}
-                  currency={userCurrency.toLowerCase()}
-                  tripSummary={rideData}
-                  serviceFee={convertedServiceFee}
-                  pricePerSeat={paymentStorePricePerSeat}
-                  seats={seatCount}
-                  session={session}
-                />
-              </Elements>
+              {(convertedTotal && convertedTotal > 0) ? (
+                <Elements 
+                  stripe={stripePromise}
+                  options={{
+                    mode: 'payment',
+                    amount: Math.round(convertedTotal * 100), // Stripe expects amount in cents/paise
+                    currency: userCurrency.toLowerCase(),
+                    on_behalf_of: driverStripeConnectId
+                  }}>
+                  <PaymentSection 
+                    ref={paymentSectionRef} 
+                    totalPrice={Math.round(convertedTotal * 100)}
+                    currency={userCurrency.toLowerCase()}
+                    tripSummary={rideData}
+                    serviceFee={convertedServiceFee}
+                    pricePerSeat={paymentStorePricePerSeat}
+                    seats={seatCount}
+                    session={session}
+                  />
+                </Elements>
+              ) : (
+                <div className="text-red-600 font-semibold">Error: Payment amount must be greater than 0. Please contact support.</div>
+              )}
             </div>
           </div>
         </div>

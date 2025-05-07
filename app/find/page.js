@@ -310,8 +310,10 @@ export default function Page() {
                       placeholder="Please enter a city"
                       apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS}
                       onPlaceSelected={(place) => {
-                        setSearchStartingPoint(place.address_components[0].long_name);
-                        field.onChange(place.address_components[0].long_name);
+                        if (place && Array.isArray(place.address_components) && place.address_components.length > 0) {
+                          setSearchStartingPoint(place.address_components[0].long_name);
+                          field.onChange(place.address_components[0].long_name);
+                        }
                         clearErrors('searchStartingPoint');
                         setFormModified(true);
                       }}
