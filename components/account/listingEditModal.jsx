@@ -97,7 +97,7 @@ export const EditModal = ({ isOpen, onClose, listing, getUserListings, setUserLi
                         <div className="flex space-x-3 pt-4">
                             <button
                                 type="submit"
-                                className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700"
+                                className="flex-1 bg-amber-600 text-white py-2 rounded-lg hover:bg-amber-500"
                             >
                                 Save Changes
                             </button>
