@@ -109,7 +109,7 @@ function Page() {
         if (activeTab === 'profile') {
             fetchUserProfile();
         }
-        
+
         if (activeTab === 'reviews') {
             fetchDriverReviews();
         }
@@ -120,7 +120,7 @@ function Page() {
     // Move the fetchDriverReviews function outside of the renderTabContent
     async function fetchDriverReviews() {
         if (!session?.user?.id) return;
-        
+
         setReviewsLoading(true);
         try {
             // Fetch reviews for the driver
@@ -135,12 +135,12 @@ function Page() {
                 setReviewsLoading(false);
                 return;
             }
-            
+
             // Calculate average rating
             if (data && data.length > 0) {
                 const total = data.reduce((sum, review) => sum + review.rating, 0);
                 setAverageRating((total / data.length).toFixed(1));
-                
+
                 // Fetch reviewer details for each review
                 const reviewsWithUsers = await Promise.all(
                     data.map(async (review) => {
@@ -151,7 +151,7 @@ function Page() {
                                 .select('name, image')
                                 .eq('id', review.reviewer_id)
                                 .single();
-                            
+
                             return {
                                 ...review,
                                 reviewer: userError ? null : userData
@@ -162,7 +162,7 @@ function Page() {
                         }
                     })
                 );
-                
+
                 setDriverReviews(reviewsWithUsers);
             } else {
                 setDriverReviews([]);
@@ -175,9 +175,9 @@ function Page() {
     }
 
     const checkUrlTab = () => {
-        
+
         const urlTab = searchParams.get('tab')
-        
+
         if (urlTab) {
             setActiveTab(urlTab)
         }
@@ -186,18 +186,18 @@ function Page() {
     const checkProfile = async () => {
         setProfileLoading(true)
         const { data, error } = await supabase.schema('next_auth')
-          .from('users')
-          .select('phone_number, location, dateOfBirth')
-          .eq('id', session.user?.id)
-          .single()
-    
+            .from('users')
+            .select('phone_number, location, dateOfBirth')
+            .eq('id', session.user?.id)
+            .single()
+
         if (data?.phone_number && data?.location && data?.dateOfBirth) {
-          // If profile is complete, redirect to home
-          setProfileLoading(false)
+            // If profile is complete, redirect to home
+            setProfileLoading(false)
         } else {
             redirect('/auth/new-user')
         }
-      }
+    }
 
     async function getUserListings() {
         let { data: rides, error } = await supabase
@@ -210,7 +210,7 @@ function Page() {
             console.error('Error fetching rides:', error)
             return []
         }
-        
+
         // Get booking information for each ride
         const ridesWithBookings = await Promise.all(rides.map(async (ride) => {
             // Use a simpler approach - fetch bookings first, then users separately
@@ -218,39 +218,39 @@ function Page() {
                 .from('bookings')
                 .select('*')
                 .eq('ride_id', ride.id)
-            
+
             if (bookingError) {
                 console.error('Error fetching bookings for ride:', bookingError)
-                return {...ride, bookings: [], bookedSeats: 0}
+                return { ...ride, bookings: [], bookedSeats: 0 }
             }
-            
+
             // For each booking, fetch user details
             const bookingsWithUsers = await Promise.all(bookings.map(async (booking) => {
                 if (!booking.userId) return booking;
-                
+
                 const { data: user } = await supabase.schema('next_auth')
                     .from('users')
                     .select('name, email, phone_number, image')
                     .eq('id', booking.userId)
                     .single()
-                    
+
                 return {
                     ...booking,
                     user: user || null
                 }
             }))
-            
+
             // Calculate total booked seats
-            const bookedSeats = bookings?.reduce((total, booking) => 
+            const bookedSeats = bookings?.reduce((total, booking) =>
                 total + (booking.seats_booked || 0), 0) || 0
-            
+
             return {
                 ...ride,
                 bookings: bookingsWithUsers || [],
                 bookedSeats: bookedSeats
             }
         }))
-        
+
         return ridesWithBookings
     }
 
@@ -306,26 +306,26 @@ function Page() {
             const fileExt = file.name.split('.').pop()
             const fileName = `${crypto.randomUUID()}.${fileExt}`
             const filePath = `public/${fileName}`
-    
+
             // Upload the file to Supabase storage
             const { data, error } = await supabase.storage
                 .from('profile-pictures')
                 .upload(filePath, file, {
                     cacheControl: '3600',
                 })
-    
-                if (error) {
-                    console.error('Error uploading image:', error)
-                    setUploadStatus('error'); // Set status to error
-                    return
-                }
-    
+
+            if (error) {
+                console.error('Error uploading image:', error)
+                setUploadStatus('error'); // Set status to error
+                return
+            }
+
             // Get the public URL
             const { data: publicURL } = supabase
                 .storage
                 .from('profile-pictures')
                 .getPublicUrl(data.path)
-    
+
             // Update profile data with new image URL
             setProfileData({ ...profileData, image: publicURL.publicUrl })
             setUploadStatus('success');
@@ -342,7 +342,7 @@ function Page() {
             setTimeout(() => {
                 setUploadStatus('');
             }, 3000);
-    
+
         } catch (error) {
             setUploadStatus('error');
         }
@@ -356,7 +356,7 @@ function Page() {
             location: '',
             dateOfBirth: ''
         };
-        
+
         // Phone validation - basic check for non-empty and numeric
         if (!profileData.phone) {
             errors.phone = 'Phone number is required';
@@ -365,7 +365,7 @@ function Page() {
             errors.phone = 'Please enter a valid phone number (10-15 digits)';
             isValid = false;
         }
-        
+
         // Email validation
         if (!profileData.email) {
             errors.email = 'Email address is required';
@@ -374,13 +374,13 @@ function Page() {
             errors.email = 'Please enter a valid email address';
             isValid = false;
         }
-        
+
         // Location validation
         if (!profileData.location) {
             errors.location = 'Location is required';
             isValid = false;
         }
-        
+
         // Date of Birth validation
         if (!profileData.dateOfBirth) {
             errors.dateOfBirth = 'Date of birth is required';
@@ -394,7 +394,7 @@ function Page() {
                 isValid = false;
             }
         }
-        
+
         setFormErrors(errors);
         return isValid;
     };
@@ -404,9 +404,9 @@ function Page() {
         if (!validateForm()) {
             return; // Stop if validation fails
         }
-        
+
         setIsSaving(true);
-        
+
         try {
             // Update the user profile in the database
             const { data, error } = await supabase.schema('next_auth')
@@ -426,7 +426,7 @@ function Page() {
                 console.error('Error updating profile:', error);
                 // Handle specific error cases if needed
                 if (error.code === '23505') { // Unique constraint violation (e.g., duplicate email)
-                    setFormErrors(prev => ({...prev, email: 'This email is already in use'}));
+                    setFormErrors(prev => ({ ...prev, email: 'This email is already in use' }));
                 }
             } else {
                 // Update the session with the new user data
@@ -455,6 +455,20 @@ function Page() {
         setVehicleFormLoading(true);
         let imageUrl = '';
         try {
+            // Validate vehicle existence using NHTSA API (improved: only use GetModelsForMakeYear)
+            const year = vehicleForm.year;
+            const make = vehicleForm.make.trim();
+            const model = vehicleForm.model.trim();
+            // Get all models for the make and year
+            const modelsRes = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/GetModelsForMakeYear/make/${encodeURIComponent(make)}/modelyear/${year}?format=json`);
+            const modelsData = await modelsRes.json();
+            // Check if any model matches (case-insensitive)
+            const foundModel = modelsData.Results.find(m => m.Model_Name.toLowerCase() === model.toLowerCase());
+            if (!foundModel) {
+                setVehicleFormError('Vehicle make/model/year not found. Please check your entry.');
+                setVehicleFormLoading(false);
+                return;
+            }
             // If user uploaded an image, upload to Supabase Storage
             if (vehicleImageFile) {
                 const fileExt = vehicleImageFile.name.split('.').pop();
@@ -535,7 +549,7 @@ function Page() {
         { id: 'rides', label: 'Rides & Bookings', icon: Car },
         { id: 'listings', label: 'My Listings', icon: Users },
         { id: 'reviews', label: 'My Reviews', icon: Star },
-        {id: 'payouts', label: 'Driver Payouts', icon: Wallet},
+        { id: 'payouts', label: 'Driver Payouts', icon: Wallet },
         { id: 'vehicles', label: 'My Vehicles', icon: Car },
     ];
 
@@ -592,45 +606,45 @@ function Page() {
                             <>
                                 <div className="flex items-center space-x-4 mb-8">
                                     {isEditingProfile ? (
-                                            <>  
-                                                <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center cursor-pointer relative">
-                                                    {uploadStatus === 'uploading' ? (
-                                                        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full">
-                                                            <svg className="animate-spin h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                                            </svg>
+                                        <>
+                                            <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center cursor-pointer relative">
+                                                {uploadStatus === 'uploading' ? (
+                                                    <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full">
+                                                        <svg className="animate-spin h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                        </svg>
+                                                    </div>
+                                                ) : uploadStatus === 'success' ? (
+                                                    <div className="absolute inset-0 flex items-center justify-center bg-green-500 bg-opacity-50 rounded-full">
+                                                        <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                                                        </svg>
+                                                    </div>
+                                                ) : uploadStatus === 'error' ? (
+                                                    <div className="absolute inset-0 flex items-center justify-center bg-red-500 bg-opacity-50 rounded-full">
+                                                        <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                                                        </svg>
+                                                    </div>
+                                                ) : (
+                                                    <div className="relative">
+                                                        <input
+                                                            type="file"
+                                                            accept="image/*"
+                                                            onChange={(e) => { uploadProfilePicture(e.target.files[0]) }}
+                                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer rounded-full"
+                                                        />
+                                                        <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center cursor-pointer">
+                                                            <span className="text-gray-500">Change</span>
                                                         </div>
-                                                    ) : uploadStatus === 'success' ? (
-                                                        <div className="absolute inset-0 flex items-center justify-center bg-green-500 bg-opacity-50 rounded-full">
-                                                            <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                                                            </svg>
-                                                        </div>
-                                                    ) : uploadStatus === 'error' ? (
-                                                        <div className="absolute inset-0 flex items-center justify-center bg-red-500 bg-opacity-50 rounded-full">
-                                                            <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
-                                                            </svg>
-                                                        </div>
-                                                    ) : (
-                                                                    <div className="relative">
-                                                                        <input
-                                                                            type="file"
-                                                                            accept="image/*"
-                                                                            onChange={(e) => { uploadProfilePicture(e.target.files[0]) }}
-                                                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer rounded-full"
-                                                                        />
-                                                                        <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center cursor-pointer">
-                                                                            <span className="text-gray-500">Change</span>
-                                                                        </div>
-                                                                    </div>
-                                                    )}
-                                                </div>
-                                            </>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </>
                                     ) : (
                                         <img
-                                            src={profileData?.image  ? profileData.image : session.user?.image || '/default-user-icon.png'}
+                                            src={profileData?.image ? profileData.image : session.user?.image || '/default-user-icon.png'}
                                             alt="Profile"
                                             className="w-24 h-24 rounded-full object-cover"
                                         />
@@ -874,7 +888,7 @@ function Page() {
                                                         {booking.rides?.startingCity} to {booking.rides?.ishaYogaCenter}
                                                     </div>
                                                     <div className="text-sm text-gray-500">
-                                                        {booking.rides?.departure && 
+                                                        {booking.rides?.departure &&
                                                             format(new Date(booking.rides.departure), 'MMMM d, yyyy p')}
                                                     </div>
                                                     <div className="text-xs text-slate-900 pt-2">
@@ -893,9 +907,9 @@ function Page() {
                         </div>
                     </div>
                 );
-            
+
             case 'payouts':
-            return <PayoutsSection />
+                return <PayoutsSection />
 
             case 'rides':
                 return (
@@ -1080,8 +1094,8 @@ function Page() {
                                                     </div>
                                                 </div>
                                             ))}
-                                    </div>
-                                )}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         }
@@ -1128,7 +1142,7 @@ function Page() {
                     <div className="space-y-6">
                         <div className="bg-white rounded-lg shadow p-6">
                             <h3 className="text-xl font-semibold mb-6">My Reviews & Ratings</h3>
-                            
+
                             {reviewsLoading ? (
                                 <div className="animate-pulse space-y-6">
                                     <div className="flex items-center mb-6">
@@ -1163,11 +1177,10 @@ function Page() {
                                                 {[1, 2, 3, 4, 5].map((star) => (
                                                     <Star
                                                         key={star}
-                                                        className={`w-5 h-5 ${
-                                                            star <= Math.round(parseFloat(averageRating))
+                                                        className={`w-5 h-5 ${star <= Math.round(parseFloat(averageRating))
                                                                 ? 'text-amber-500 fill-amber-500'
                                                                 : 'text-gray-300'
-                                                        }`}
+                                                            }`}
                                                     />
                                                 ))}
                                             </div>
@@ -1176,7 +1189,7 @@ function Page() {
                                             </div>
                                         </div>
                                     </div>
-                                    
+
                                     <div className="space-y-6">
                                         {driverReviews.map((review) => (
                                             <div key={review.id} className="border-b pb-6 last:border-b-0 last:pb-0">
@@ -1201,11 +1214,10 @@ function Page() {
                                                                 {[1, 2, 3, 4, 5].map((star) => (
                                                                     <Star
                                                                         key={star}
-                                                                        className={`w-4 h-4 ${
-                                                                            star <= review.rating
+                                                                        className={`w-4 h-4 ${star <= review.rating
                                                                                 ? 'text-amber-500 fill-amber-500'
                                                                                 : 'text-gray-300'
-                                                                        }`}
+                                                                            }`}
                                                                     />
                                                                 ))}
                                                                 <span className="text-xs text-gray-500 ml-2">
@@ -1221,7 +1233,7 @@ function Page() {
                                                             )}
                                                         </div>
                                                     </div>
-                                                    
+
                                                     {/* Add a button to report inappropriate reviews */}
                                                     <ReportButton review={review} />
                                                 </div>
@@ -1392,7 +1404,7 @@ function Page() {
                             listing={selectedListing}
                         />
                     </>
-                    
+
 
                 )}
 
