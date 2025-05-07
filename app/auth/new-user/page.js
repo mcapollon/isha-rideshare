@@ -86,6 +86,8 @@ export default function Page() {
     setFormLoading(true)
     setFormError('')
     try {
+      // Use the uploaded image if available, otherwise use the existing image from form or session
+      const finalImage = imageUrl || formData.image || session.user?.image || ''
       const { error } = await supabase.schema('next_auth')
         .from('users')
         .update({
@@ -94,7 +96,7 @@ export default function Page() {
           location: formData.location,
           dateOfBirth: formData.dateOfBirth,
           name: formData.name,
-          image: imageUrl,
+          image: finalImage,
           sex: formData.sex
         })
         .eq('id', session.user?.id)
@@ -103,11 +105,9 @@ export default function Page() {
         router.push('/')
       } else {
         setFormError('Failed to update profile. Please try again.')
-        // console.log(error)
       }
     } catch (err) {
       setFormError('An unexpected error occurred. Please try again.')
-      // console.log(err)
     } finally {
       setFormLoading(false)
     }
@@ -233,7 +233,13 @@ export default function Page() {
                 <Label htmlFor="phone">Phone Number</Label>
                 <Input
                   id="phone"
-                  {...register('phone', { required: 'Phone number is required' })}
+                  {...register('phone', {
+                    required: 'Phone number is required',
+                    pattern: {
+                      value: /^\+?([0-9]{1,3})?[-.\s]?\(?([0-9]{3})\)?[-.\s]?([0-9]{3})[-.\s]?([0-9]{4})$/,
+                      message: 'Must be a valid phone number'
+                    }
+                  })}
                   type="tel"
                   autoComplete="off"
                 />
