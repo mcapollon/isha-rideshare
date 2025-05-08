@@ -77,6 +77,11 @@ export default function Page() {
                 </li>
               </ul>
             </div>
+            <div className="mt-6 text-gray-600">
+              <p className="text-sm">
+                A portion of the profits from Sangha Rides goes directly to supporting the foundation, helping to further its mission and initiatives.
+              </p>
+            </div>
           </div>
         </div>
       </div>
