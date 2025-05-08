@@ -52,7 +52,7 @@ export default function Navbar() {
             <img
               alt=""
               src="/logo.png"
-              className="h-8 w-auto"
+              className="h-12 w-auto"
             />
           </a>
         </div>
@@ -242,7 +242,7 @@ export default function Navbar() {
               <img
                 alt=""
                 src='/logo.png'
-                className="h-8 w-auto"
+                className="h-12 w-auto"
               />
             </a>
             <div className="flex flex-1 justify-end items-center gap-2">
