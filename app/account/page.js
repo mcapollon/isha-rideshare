@@ -921,7 +921,11 @@ function Page() {
                                     <div className="text-center text-gray-500">No upcoming rides found.</div>
                                 ) : (
                                     userBookings.filter(booking => new Date(booking.rides.departure) > new Date()).map((booking, i) => (
-                                        <div key={i} className="p-4 border rounded-lg">
+                                        <div
+                                            key={i}
+                                            className="p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition"
+                                            onClick={() => window.location.href = `/book/${booking.rides.id}`}
+                                        >
                                             <div className="flex items-center justify-between mb-3">
                                                 <div className="font-medium">{booking.rides.startingCity} to {booking.rides.ishaYogaCenter}</div>
                                                 <div className="text-blue-600">${booking.rides.pricePerSeat}</div>
@@ -937,7 +941,7 @@ function Page() {
                                                 </div>
                                             </div>
                                             {/* Driver contact info */}
-                                            <DriverContactInfo driverId={booking.rides.createdByUser} />
+                                            <DriverContactInfo driverId={booking.rides.createdByUser} showName={true} />
                                         </div>
                                     ))
                                 )}
@@ -951,7 +955,11 @@ function Page() {
                                     <div className="text-center text-gray-500">No past rides found.</div>
                                 ) : (
                                     userBookings.filter(booking => new Date(booking.rides.departure) <= new Date()).map((booking, i) => (
-                                        <div key={i} className="p-4 border rounded-lg">
+                                        <div
+                                            key={i}
+                                            className="p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition"
+                                            onClick={() => window.location.href = `/book/${booking.rides.id}`}
+                                        >
                                             <div className="flex items-center justify-between mb-3">
                                                 <div className="font-medium">{booking.rides.startingCity} to {booking.rides.ishaYogaCenter}</div>
                                                 <div className="text-gray-600">${booking.rides.pricePerSeat}</div>
@@ -966,6 +974,8 @@ function Page() {
                                                     {format(new Date(booking.rides.departure), 'p')}
                                                 </div>
                                             </div>
+                                            {/* Driver contact info */}
+                                            <DriverContactInfo driverId={booking.rides.createdByUser} showName={true} />
                                         </div>
                                     ))
                                 )}
